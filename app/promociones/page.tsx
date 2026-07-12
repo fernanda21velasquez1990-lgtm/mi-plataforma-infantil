@@ -10,7 +10,7 @@ export default function Promociones() {
   const telegramChatId = "390820193"; // Ej: "987654321"
   
   // Enlace de tu base de datos (Google Sheets)
-  const urlBase = "https://script.google.com/macros/s/AKfycbzF9mUNcMJ_dKpnl2nLfULdMkqa3eY_zB6X_VvP9m1Q2Q2rVv0/exec";
+  const urlBase = "https://script.google.com/macros/s/AKfycbzF9mUNcMJ_dKpnl2nLfULdMkqa3eY_zQw5hw8lSVjyUjBT6lQj2zGwMZ79gH88alTL/exec";
 
   useEffect(() => {
     fetch(`${urlBase}?t=${new Date().getTime()}`)

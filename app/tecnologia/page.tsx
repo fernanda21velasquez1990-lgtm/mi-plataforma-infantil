@@ -5,7 +5,7 @@ export default function Tecnologia() {
   const [materiales, setMateriales] = useState<any[]>([]);
 
   // TU NUEVO ENLACE CON LA FUNCIÓN DE CATEGORÍAS
-  const urlBase = "https://script.google.com/macros/s/AKfycbxvVvFUKwHxM6bQUeJs9FH7uVmRUfln_RSvSLy0vAC5q_kh69FYJ0ZO8OQcphU7OHRIbg/exec";
+  const urlBase = "https://script.google.com/macros/s/AKfycbzyPBMI4PiDRYaetdrZ0SEBPzIVtXYDmgm_rC_i4qrzqE5EDtooWR2JAfZtJ-qkEyDfrw/exec";
 
   useEffect(() => {
     fetch(`${urlBase}?t=${new Date().getTime()}`)
