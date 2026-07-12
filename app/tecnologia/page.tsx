@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 export default function Tecnologia() {
   const [materiales, setMateriales] = useState<any[]>([]);
 
-  // TU NUEVO ENLACE CON LA FUNCIÓN DE CATEGORÍAS
-  const urlBase = "https://script.google.com/macros/s/AKfycbzyPBMI4PiDRYaetdrZ0SEBPzIVtXYDmgm_rC_i4qrzqE5EDtooWR2JAfZtJ-qkEyDfrw/exec";
+  // Asegúrate de que este enlace sea el mismo que probamos en la ventana de incógnito
+  const urlBase = "https://script.google.com/macros/s/AKfycbxvVvFUKwHxM6bQUeJs9FH7uVmRUfln_RSvSLy0vAC5q_kh69FYJ0ZO8OQcphU7OHRIbg/exec";
 
   useEffect(() => {
     fetch(`${urlBase}?t=${new Date().getTime()}`)
@@ -19,12 +19,13 @@ export default function Tecnologia() {
       <h1 className="text-4xl font-extrabold text-blue-900 mb-8 text-center">💻 Tecnología</h1>
       <div className="space-y-6">
         {materiales.map((m, i) => {
+          // Lógica para verificar si el material está disponible
           const estaDisponible = m.Disponible?.toString().toLowerCase().trim() !== "no";
 
           return (
             <div key={i} className="bg-white p-4 rounded-3xl shadow-sm border border-blue-100 overflow-hidden relative">
               
-              {/* ETIQUETA DE CATEGORÍA FLOTANTE */}
+              {/* Etiqueta de Categoría dinámica */}
               {m.Categoria && (
                 <span className="absolute top-6 right-6 bg-yellow-400 text-yellow-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-10">
                   {m.Categoria}
