@@ -5,7 +5,7 @@ export default function Tecnologia() {
   const [materiales, setMateriales] = useState<any[]>([]);
 
   // Asegúrate de que este enlace sea el mismo que probamos en la ventana de incógnito
-  const urlBase = "https://script.google.com/macros/s/AKfycbxvVvFUKwHxM6bQUeJs9FH7uVmRUfln_RSvSLy0vAC5q_kh69FYJ0ZO8OQcphU7OHRIbg/exec";
+  const urlBase = "https://script.google.com/macros/s/AKfycbzw1OkyBSaH7QJZnpcVLHDw5O0RDCUZaIdx6DxN95tLDBbhOEicBm5B-V2IbKnI4SwOfw/exec";
 
   useEffect(() => {
     fetch(`${urlBase}?t=${new Date().getTime()}`)
