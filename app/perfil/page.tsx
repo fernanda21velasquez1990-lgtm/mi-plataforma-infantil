@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 
-// Lista de 20 avatares estilo comiquita
 const avatares = [
   "https://cdn-icons-png.flaticon.com/128/3135/3135715.png", "https://cdn-icons-png.flaticon.com/128/3135/3135768.png", 
   "https://cdn-icons-png.flaticon.com/128/2922/2922506.png", "https://cdn-icons-png.flaticon.com/128/2922/2922510.png", 
@@ -21,10 +20,10 @@ export default function Perfil() {
   const [fechaCumple, setFechaCumple] = useState("");
   const [fechaAcceso, setFechaAcceso] = useState("");
 
-  // 🔴 PEGA AQUÍ TU ENLACE DE GOOGLE SCRIPT (Si cambió al hacer la Nueva Versión)
-  const urlScript = "https://script.google.com/macros/s/AKfycbx4T_Sd-8lLWFFRnXkr5JS2F6KTlVVajPd40i93AXmNei_IumkLLc8fUTpC7NLF3DX5/exec"
+  // 🔴 PEGA AQUÍ TU NUEVO ENLACE DE GOOGLE SCRIPT (El que copiaste en el Paso 1)
+  const urlScript = "https://script.google.com/macros/s/AKfycbx4T_Sd-8lLWFFRnXkr5JS2F6KTlVVajPd40i93AXmNei_IumkLLc8fUTpC7NLF3DX5/exec";
+
   useEffect(() => {
-    // Calculamos el día de sesión actual o usamos el guardado
     const fechaActual = new Date().toLocaleDateString("es-ES");
     const accesoRegistrado = localStorage.getItem("diaSesion") || fechaActual;
     
@@ -37,7 +36,6 @@ export default function Perfil() {
   const guardarPerfil = async () => {
     const idUsuario = localStorage.getItem("telefonoUsuario") || "anonimo";
     
-    // 🔴 AHORA ENVIAMOS LA FECHA DE ACCESO A TU EXCEL
     const params = new URLSearchParams({
       accion: "guardar",
       id: idUsuario,
@@ -48,20 +46,27 @@ export default function Perfil() {
     });
 
     try {
-      await fetch(`${urlScript}?${params.toString()}`);
-      localStorage.setItem("nombreUsuario", nombre);
-      localStorage.setItem("cumpleUsuario", fechaCumple);
-      localStorage.setItem("avatarUsuario", avatar);
-      alert("¡Perfil guardado correctamente! 🎁");
+      const respuesta = await fetch(`${urlScript}?${params.toString()}`);
+      const datos = await respuesta.json(); // 🔴 AHORA LEEMOS LA RESPUESTA
+
+      if (datos.status === "ok") {
+        localStorage.setItem("nombreUsuario", nombre);
+        localStorage.setItem("cumpleUsuario", fechaCumple);
+        localStorage.setItem("avatarUsuario", avatar);
+        alert("¡Perfil guardado correctamente! 🎁");
+      } else {
+        // Si Google devuelve el error de la hoja, saldrá aquí
+        alert(`Error desde Google: ${datos.error}`);
+      }
+
     } catch (e) {
       console.error("Error al guardar", e);
-      alert("Error al guardar. Verifica tu conexión.");
+      alert("Error de conexión. Verifica tu internet.");
     }
   };
 
   return (
     <main className="min-h-screen p-6 pt-24 max-w-md mx-auto bg-[#FAF8F5]">
-      {/* Parte Superior: Foto de perfil */}
       <div className="bg-white p-6 rounded-3xl shadow-sm text-center mb-6 border border-gray-100">
         <img src={avatar} alt="Avatar" className="w-32 h-32 rounded-full mx-auto mb-4 border-4 border-pink-200 shadow-md" />
         <p className="text-sm font-bold text-gray-500 mb-2">Selecciona tu personaje:</p>
@@ -72,7 +77,6 @@ export default function Perfil() {
         </div>
       </div>
 
-      {/* Parte Inferior: Información */}
       <div className="bg-white p-6 rounded-3xl shadow-sm space-y-4 border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Información de cuenta</h2>
         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
