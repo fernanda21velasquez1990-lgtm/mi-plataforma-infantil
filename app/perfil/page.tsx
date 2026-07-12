@@ -22,8 +22,7 @@ export default function Perfil() {
   const [fechaAcceso, setFechaAcceso] = useState("");
 
   // 🔴 PEGA AQUÍ TU ENLACE DE GOOGLE SCRIPT (Si cambió al hacer la Nueva Versión)
-  const urlScript = "https://script.google.com/macros/s/AKfycbz1eU4HFHQtliJsC0Hm8NidbjHP1W69BAO_mmL0cz7BYLM_0T0Ke6VjmebtyxbqdoN2FQ/exec";
-
+  const urlScript = "https://script.google.com/macros/s/AKfycbx4T_Sd-8lLWFFRnXkr5JS2F6KTlVVajPd40i93AXmNei_IumkLLc8fUTpC7NLF3DX5/exec"
   useEffect(() => {
     // Calculamos el día de sesión actual o usamos el guardado
     const fechaActual = new Date().toLocaleDateString("es-ES");
