@@ -17,6 +17,9 @@ export default function Menu() {
     }
   }, []);
 
+  // 🔴 VARIABLE DE CONTROL: Oculta los links si estamos en la página de inicio O en la de acceso
+  const ocultarLinks = rutaActual === "/" || rutaActual === "/acceso";
+
   return (
     <>
       <button 
@@ -38,8 +41,8 @@ export default function Menu() {
           <button onClick={() => setAbierto(false)} className="self-end text-gray-400 text-2xl mb-4 hover:text-gray-700">✖</button>
 
           <nav className="flex flex-col gap-2 flex-grow">
-            {/* CONDICIÓN: Si la ruta NO es la página de inicio ("/"), muestra estos enlaces */}
-            {rutaActual !== "/" && (
+            {/* CONDICIÓN: Si NO estamos en las páginas restringidas, mostramos el menú */}
+            {!ocultarLinks && (
               <>
                 <Link href="/" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">🚀 Mundo Digital JR</Link>
                 <Link href="/biblioteca" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">📚 Mi Biblioteca</Link>
@@ -53,7 +56,7 @@ export default function Menu() {
           </nav>
 
           <div className="mt-8">
-            {/* Este botón queda fuera de la condición para que SIEMPRE aparezca */}
+            {/* El botón de aporte queda afuera, siempre visible */}
             <Link 
               href="/acceso" 
               onClick={() => setAbierto(false)} 
