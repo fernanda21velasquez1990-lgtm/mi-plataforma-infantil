@@ -5,7 +5,7 @@ export default function Promociones() {
   const [promos, setPromos] = useState<any[]>([]);
   const numeroWhatsApp = "584144895281"; 
 
-  const urlBase = "https://script.google.com/macros/s/AKfycbwk5W_h7uC9JuUJVY0J8CQNc7kJk3zK5WUS1GbxxZNilmysCf1bKcqAtKAJQUtPoi1x/exec";
+  const urlBase = "https://script.google.com/macros/s/AKfycbzF9mUNcMJ_dKpnl2nLfULdMkqa3eY_zQw5hw8lSVjyUjBT6lQj2zGwMZ79gH88alTL/exec";
 
   useEffect(() => {
     // TRUCO: Agregamos la hora actual al final del enlace para que el navegador 
