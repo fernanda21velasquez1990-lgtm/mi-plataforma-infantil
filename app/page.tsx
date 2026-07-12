@@ -8,84 +8,54 @@ export default function Acceso() {
   const [cargando, setCargando] = useState(false);
   const router = useRouter();
 
-  const verificarAcceso = async () => {
+  const verificarAccesoVIP = async () => {
     if (!telefono) {
-      setMensaje("⚠️ Por favor ingresa un número.");
+      setMensaje("⚠️ Por favor ingresa tu número VIP.");
       return;
     }
 
     setCargando(true);
-    setMensaje("Buscando en la base de datos...");
+    setMensaje("Verificando tu membresía VIP...");
 
-    // 🔴 RECUERDA CAMBIAR ESTO POR EL NUEVO ENLACE DEL SCRIPT DE "USUARIOS"
-    const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec"; 
+    // ENLACE DE TU SCRIPT DE GOOGLE PARA USUARIOS (Mantenemos el que ya funcionaba)
+    const urlGoogleScript = "https://script.google.com/macros/s/AKfycbwQ-_4c4TrOUggmwnQaUXcDZTPPGVJpbxSLHAQ1CuA8UT7RKW3xBJXrNJNzgf0S9t2HfA/exec"; 
     
     try {
-      // Nota: Cambié ?telefono a ?whatsapp para que coincida con el script que programamos
       const respuesta = await fetch(`${urlGoogleScript}?whatsapp=${telefono}`);
       const datos = await respuesta.json();
 
-      if (datos.encontrado) {
-        if (datos.estado === "pagado") {
-          setMensaje("✅ ¡Acceso VIP concedido! Abriendo biblioteca...");
-          localStorage.setItem("accesoVIP", "true");
-          setTimeout(() => {
-            router.push("/biblioteca");
-          }, 1500);
-          
-        } else if (datos.estado === "prueba") {
-          // Calculamos si la hora de prueba ya pasó
-          const ahora = new Date().getTime();
-          const limite = datos.inicioPrueba + (60 * 60 * 1000); // 1 hora
-          
-          if (ahora > limite) {
-            setMensaje("⏳ Tu hora de prueba ha finalizado. ¡Realiza tu aporte para continuar!");
-          } else {
-            setMensaje("⏱️ Acceso de prueba validado. Entrando...");
-            // Guardamos el límite de tiempo en el navegador para usarlo en otras páginas
-            localStorage.setItem("limitePrueba", limite.toString()); 
-            setTimeout(() => {
-              router.push("/biblioteca");
-            }, 1500);
-          }
-        }
+      if (datos.encontrado && datos.estado === "pagado") {
+        setMensaje("✅ ¡Acceso VIP concedido! Abriendo plataforma...");
+        localStorage.setItem("accesoVIP", "true");
+        localStorage.removeItem("limitePrueba"); // Borramos cualquier prueba anterior
+        setTimeout(() => {
+          router.push("/tecnologia");
+        }, 1500);
       } else {
-        setMensaje("❌ Número no encontrado. ¿Ya enviaste tu comprobante?");
+        setMensaje("❌ Número no autorizado o aún no has pagado.");
       }
     } catch (error) {
       setMensaje("⚠️ Hubo un error de conexión. Intenta de nuevo.");
     }
-    
     setCargando(false);
   };
 
+  // Función para el botón automático de 1 hora de prueba
+  const iniciarPruebaExpress = () => {
+    const ahora = new Date().getTime();
+    const limite = ahora + (60 * 60 * 1000); // 1 hora en milisegundos
+    localStorage.setItem("limitePrueba", limite.toString());
+    localStorage.removeItem("accesoVIP"); // Aseguramos que no sea VIP
+    router.push("/tecnologia");
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[#FAF8F5] p-6">
       <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-gray-100">
         
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-2">
-          Desbloquea tu acceso 🔐
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Si el material te gustó, realiza tu pago y tendrás acceso <b>para siempre</b> a toda la biblioteca 🙌
-        </p>
-        
-        <a 
-          href="https://wa.me/584144895281?text=Hola,%20quiero%20hacer%20mi%20aporte%20para%20la%20plataforma" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-4 rounded-xl mb-8 transition-transform transform hover:scale-105 shadow-md"
-        >
-          <span>📲</span> Enviar mi comprobante
-        </a>
-
-        <div className="w-full h-px bg-gray-200 mb-8"></div>
-
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
-          ¿Ya hiciste tu aporte o quieres tu prueba gratis?
-        </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Entra con tu número de WhatsApp para activar tu cuenta.
+        <h1 className="text-3xl font-extrabold text-blue-900 mb-2">Desbloquea tu acceso 🔐</h1>
+        <p className="text-gray-600 mb-6 text-sm">
+          Si ya realizaste tu pago, ingresa tu WhatsApp para acceder a todo el material para siempre.
         </p>
         
         <input 
@@ -93,22 +63,38 @@ export default function Acceso() {
           placeholder="Ej: 584141234567" 
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
-          className="w-full p-4 border border-gray-300 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center text-lg"
+          className="w-full p-4 border-2 border-blue-100 rounded-xl mb-4 focus:outline-none focus:border-blue-500 text-center text-lg font-bold"
         />
         
         <button 
-          onClick={verificarAcceso}
+          onClick={verificarAccesoVIP}
           disabled={cargando}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-md transition-transform transform hover:scale-105 disabled:opacity-50"
         >
-          {cargando ? "Cargando..." : "Activar mi acceso ✅"}
+          {cargando ? "Verificando..." : "Entrar como VIP ✅"}
         </button>
 
         {mensaje && (
-          <p className={`mt-4 font-bold ${mensaje.includes("❌") || mensaje.includes("⏳") ? "text-red-500" : "text-gray-700"}`}>
+          <p className={`mt-4 font-bold ${mensaje.includes("❌") ? "text-red-500" : "text-green-600"}`}>
             {mensaje}
           </p>
         )}
+
+        <div className="w-full h-px bg-gray-200 my-8"></div>
+
+        {/* CUADRO DE PRUEBA GRATIS SOLICITADO */}
+        <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-2xl">
+          <h2 className="text-xl font-extrabold text-yellow-800 mb-2">¿Quieres una hora de prueba? ⏱️</h2>
+          <p className="text-sm text-yellow-700 mb-4">
+            Entra aquí para explorar la plataforma por 60 minutos (podrás ver el contenido, pero no descargarlo).
+          </p>
+          <button 
+            onClick={iniciarPruebaExpress}
+            className="w-full bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold py-3 rounded-xl shadow-sm transition-all"
+          >
+            Iniciar Prueba Gratis Ahora
+          </button>
+        </div>
 
       </div>
     </main>
