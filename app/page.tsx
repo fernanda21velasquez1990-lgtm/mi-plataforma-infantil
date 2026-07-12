@@ -27,10 +27,10 @@ export default function Inicio() {
           
           {/* AQUÍ VAS A ESCRIBIR TUS DATOS REALES DE PAGO MÓVIL */}
           <div className="bg-blue-50 p-5 rounded-2xl text-left text-sm text-blue-900 font-medium mb-6 space-y-3 border border-blue-200 shadow-inner">
-            <p>🏦 <span className="font-bold text-gray-600">Banco:</span> Banesco (Ejemplo)</p>
-            <p>📝 <span className="font-bold text-gray-600">Cédula:</span> V-12.345.678</p>
-            <p>📱 <span className="font-bold text-gray-600">Teléfono:</span> 0414-1234567</p>
-            <p>💵 <span className="font-bold text-gray-600">Monto:</span> 50 Bs (Ejemplo)</p>
+            <p>🏦 <span className="font-bold text-gray-600">Banco:</span> VENEZUELA</p>
+            <p>📝 <span className="font-bold text-gray-600">Cédula:</span> V-16.113.624</p>
+            <p>📱 <span className="font-bold text-gray-600">Teléfono:</span> 0414-4895281</p>
+            <p>💵 <span className="font-bold text-gray-600">Monto:</span> 2050 Bs</p>
           </div>
 
           <a 
