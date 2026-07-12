@@ -3,23 +3,36 @@ import { useState, useEffect } from "react";
 
 export default function Promociones() {
   const [promos, setPromos] = useState<any[]>([]);
+  
+  // === CONFIGURACIÓN DE TUS DATOS ===
   const numeroWhatsApp = "584144895281"; 
-
-  const urlBase = "https://script.google.com/macros/s/AKfycbzF9mUNcMJ_dKpnl2nLfULdMkqa3eY_zQw5hw8lSVjyUjBT6lQj2zGwMZ79gH88alTL/exec";
+  const telegramToken = "8890718589:AAEAv7AhiRh_ZBr_xHmtBwjEQsA57nqCDY0"; // Ej: "123456:ABCdef..."
+  const telegramChatId = "390820193"; // Ej: "987654321"
+  
+  // Enlace de tu base de datos (Google Sheets)
+  const urlBase = "https://script.google.com/macros/s/AKfycbzF9mUNcMJ_dKpnl2nLfULdMkqa3eY_zB6X_VvP9m1Q2Q2rVv0/exec";
 
   useEffect(() => {
-    // TRUCO: Agregamos la hora actual al final del enlace para que el navegador 
-    // crea que es una solicitud nueva y no use el error CORS guardado en memoria.
     fetch(`${urlBase}?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => setPromos(data))
       .catch(err => console.error("Error al cargar promos:", err));
   }, []);
 
-  const comprarCurso = (nombre: string, precio: string) => {
-    alert("¡Felicidades! 🎉 Por comprar desde la aplicación tienes un 20% de descuento. ¡Redirigiendo a tu asesor!");
-    const mensaje = `Hola, quiero comprar el curso: ${nombre}. ¡Vi que tengo un 20% de descuento por la App!`;
-    window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, "_blank");
+  const comprarCurso = async (nombre: string, precio: string) => {
+    // 1. Armar el mensaje de alerta silenciosa para tu Telegram
+    const mensajeTelegram = `🚨 ¡NUEVA INTENCIÓN DE COMPRA!\n\nAlguien hizo clic en la web.\n📘 Material: ${nombre}\n💰 Precio: ${precio}\n\nRevisa tu WhatsApp en unos segundos.`;
+    
+    // 2. Enviar a Telegram en segundo plano (el cliente no nota nada)
+    try {
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&text=${encodeURIComponent(mensajeTelegram)}`);
+    } catch (e) {
+      console.error("Error enviando a Telegram", e);
+    }
+
+    // 3. Redirigir a WhatsApp (Usamos location.href para evitar que el navegador lo bloquee)
+    const mensajeWa = `Hola, quiero comprar el material: ${nombre}. ¡Vi que tengo un 20% de descuento por la App!`;
+    window.location.href = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensajeWa)}`;
   };
 
   return (
