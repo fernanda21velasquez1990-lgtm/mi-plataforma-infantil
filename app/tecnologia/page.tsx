@@ -9,7 +9,7 @@ export default function Tecnologia() {
   const [tiempoRestante, setTiempoRestante] = useState("");
   const router = useRouter();
 
-  const urlBase = "https://script.google.com/macros/s/AKfycbxvVvFUKwHxM6bQUeJs9FH7uVmRUfln_RSvSLy0vAC5q_kh69FYJ0ZO8OQcphU7OHRIbg/exec";
+  const urlBase = "https://script.google.com/macros/s/AKfycbzE9geMXM_ZHfdaHpKbkvbQHJQcEUfdutgeh4NQ6bmjXKTmO8SDigdD3kxAkodVv10v9A/exec";
 
   useEffect(() => {
     // 1. SISTEMA DE SEGURIDAD (El "Guardián")
