@@ -38,16 +38,22 @@ export default function Menu() {
           <button onClick={() => setAbierto(false)} className="self-end text-gray-400 text-2xl mb-4 hover:text-gray-700">✖</button>
 
           <nav className="flex flex-col gap-2 flex-grow">
-            <Link href="/" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">🚀 Mundo Digital JR</Link>
-            <Link href="/biblioteca" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">📚 Mi Biblioteca</Link>
-            <Link href="/comunidad" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">💛 Comunidad</Link>
-            <Link href="/calendario" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">📅 Calendario de Racha</Link>
-            <Link href="/perfil" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">👤 Mi Perfil</Link>
-            <Link href="/tecnologia" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">💻 Tecnología</Link>
-            <Link href="/promociones" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-pink-700 hover:bg-pink-50">🎁 Promociones</Link>
+            {/* CONDICIÓN: Si la ruta NO es la página de inicio ("/"), muestra estos enlaces */}
+            {rutaActual !== "/" && (
+              <>
+                <Link href="/" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">🚀 Mundo Digital JR</Link>
+                <Link href="/biblioteca" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">📚 Mi Biblioteca</Link>
+                <Link href="/comunidad" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">💛 Comunidad</Link>
+                <Link href="/calendario" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">📅 Calendario de Racha</Link>
+                <Link href="/perfil" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">👤 Mi Perfil</Link>
+                <Link href="/tecnologia" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-gray-700 hover:bg-blue-50">💻 Tecnología</Link>
+                <Link href="/promociones" onClick={() => setAbierto(false)} className="p-3 rounded-xl font-bold text-pink-700 hover:bg-pink-50">🎁 Promociones</Link>
+              </>
+            )}
           </nav>
 
           <div className="mt-8">
+            {/* Este botón queda fuera de la condición para que SIEMPRE aparezca */}
             <Link 
               href="/acceso" 
               onClick={() => setAbierto(false)} 
