@@ -17,18 +17,38 @@ export default function Acceso() {
     setCargando(true);
     setMensaje("Buscando en la base de datos...");
 
-    const urlGoogleScript = "https://script.google.com/macros/s/AKfycbwDgV4sr55CI3bO20gJ-o7WlFxSOmYVfqgcFCqXhyxGNAqqv6BzbFyRD-LsYQnb-_Sp/exec"; 
+    // 🔴 RECUERDA CAMBIAR ESTO POR EL NUEVO ENLACE DEL SCRIPT DE "USUARIOS"
+    const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec"; 
     
     try {
-      const respuesta = await fetch(`${urlGoogleScript}?telefono=${telefono}`);
+      // Nota: Cambié ?telefono a ?whatsapp para que coincida con el script que programamos
+      const respuesta = await fetch(`${urlGoogleScript}?whatsapp=${telefono}`);
       const datos = await respuesta.json();
 
-      if (datos.encontrado && datos.estado === "Activo") {
-        setMensaje("✅ ¡Acceso concedido! Abriendo biblioteca...");
-        localStorage.setItem("accesoVIP", "true");
-        setTimeout(() => {
-          router.push("/biblioteca");
-        }, 1500);
+      if (datos.encontrado) {
+        if (datos.estado === "pagado") {
+          setMensaje("✅ ¡Acceso VIP concedido! Abriendo biblioteca...");
+          localStorage.setItem("accesoVIP", "true");
+          setTimeout(() => {
+            router.push("/biblioteca");
+          }, 1500);
+          
+        } else if (datos.estado === "prueba") {
+          // Calculamos si la hora de prueba ya pasó
+          const ahora = new Date().getTime();
+          const limite = datos.inicioPrueba + (60 * 60 * 1000); // 1 hora
+          
+          if (ahora > limite) {
+            setMensaje("⏳ Tu hora de prueba ha finalizado. ¡Realiza tu aporte para continuar!");
+          } else {
+            setMensaje("⏱️ Acceso de prueba validado. Entrando...");
+            // Guardamos el límite de tiempo en el navegador para usarlo en otras páginas
+            localStorage.setItem("limitePrueba", limite.toString()); 
+            setTimeout(() => {
+              router.push("/biblioteca");
+            }, 1500);
+          }
+        }
       } else {
         setMensaje("❌ Número no encontrado. ¿Ya enviaste tu comprobante?");
       }
@@ -47,7 +67,7 @@ export default function Acceso() {
           Desbloquea tu acceso 🔐
         </h1>
         <p className="text-gray-600 mb-6">
-          Si el material te gusto, realiza tu pago y tendrás acceso <b>para siempre</b> a toda la biblioteca 🙌
+          Si el material te gustó, realiza tu pago y tendrás acceso <b>para siempre</b> a toda la biblioteca 🙌
         </p>
         
         <a 
@@ -62,7 +82,7 @@ export default function Acceso() {
         <div className="w-full h-px bg-gray-200 mb-8"></div>
 
         <h2 className="text-xl font-bold text-gray-800 mb-2">
-          ¿Ya hiciste tu aporte?
+          ¿Ya hiciste tu aporte o quieres tu prueba gratis?
         </h2>
         <p className="text-sm text-gray-500 mb-4">
           Entra con tu número de WhatsApp para activar tu cuenta.
@@ -70,7 +90,7 @@ export default function Acceso() {
         
         <input 
           type="tel" 
-          placeholder="Ej: 04141234567" 
+          placeholder="Ej: 584141234567" 
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
           className="w-full p-4 border border-gray-300 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center text-lg"
@@ -85,7 +105,7 @@ export default function Acceso() {
         </button>
 
         {mensaje && (
-          <p className="mt-4 font-bold text-gray-700">
+          <p className={`mt-4 font-bold ${mensaje.includes("❌") || mensaje.includes("⏳") ? "text-red-500" : "text-gray-700"}`}>
             {mensaje}
           </p>
         )}
