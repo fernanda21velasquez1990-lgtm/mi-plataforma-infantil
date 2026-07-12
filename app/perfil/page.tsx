@@ -21,11 +21,15 @@ export default function Perfil() {
   const [fechaCumple, setFechaCumple] = useState("");
   const [fechaAcceso, setFechaAcceso] = useState("");
 
-  // URL DE TU SCRIPT DE PERFIL
+  // 🔴 PEGA AQUÍ TU ENLACE DE GOOGLE SCRIPT (Si cambió al hacer la Nueva Versión)
   const urlScript = "https://script.google.com/macros/s/AKfycbz1eU4HFHQtliJsC0Hm8NidbjHP1W69BAO_mmL0cz7BYLM_0T0Ke6VjmebtyxbqdoN2FQ/exec";
 
   useEffect(() => {
-    setFechaAcceso(localStorage.getItem("diaSesion") || "No registrado");
+    // Calculamos el día de sesión actual o usamos el guardado
+    const fechaActual = new Date().toLocaleDateString("es-ES");
+    const accesoRegistrado = localStorage.getItem("diaSesion") || fechaActual;
+    
+    setFechaAcceso(accesoRegistrado);
     setNombre(localStorage.getItem("nombreUsuario") || "");
     setFechaCumple(localStorage.getItem("cumpleUsuario") || "");
     setAvatar(localStorage.getItem("avatarUsuario") || avatares[0]);
@@ -34,12 +38,14 @@ export default function Perfil() {
   const guardarPerfil = async () => {
     const idUsuario = localStorage.getItem("telefonoUsuario") || "anonimo";
     
+    // 🔴 AHORA ENVIAMOS LA FECHA DE ACCESO A TU EXCEL
     const params = new URLSearchParams({
       accion: "guardar",
       id: idUsuario,
       nombre: nombre,
       fecha: fechaCumple,
-      avatar: avatar
+      avatar: avatar,
+      acceso: fechaAcceso
     });
 
     try {
@@ -71,17 +77,28 @@ export default function Perfil() {
       <div className="bg-white p-6 rounded-3xl shadow-sm space-y-4 border border-gray-100">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Información de cuenta</h2>
         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
-          <strong>Fecha de primer acceso:</strong> {fechaAcceso}
+          <strong>Último acceso a la App:</strong> {fechaAcceso}
         </div>
         
         <div>
-          <label className="block text-sm font-bold text-gray-600 mb-1">Nombre:</label>
-          <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl" placeholder="Escribe tu nombre" />
+          <label className="block text-sm font-bold text-gray-600 mb-1">Nombre y Apellido:</label>
+          <input 
+            type="text" 
+            value={nombre} 
+            onChange={(e) => setNombre(e.target.value)} 
+            className="w-full p-3 border border-gray-200 rounded-xl" 
+            placeholder="Ej: María Pérez" 
+          />
         </div>
 
         <div>
           <label className="block text-sm font-bold text-gray-600 mb-1">Fecha de cumpleaños:</label>
-          <input type="date" value={fechaCumple} onChange={(e) => setFechaCumple(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl" />
+          <input 
+            type="date" 
+            value={fechaCumple} 
+            onChange={(e) => setFechaCumple(e.target.value)} 
+            className="w-full p-3 border border-gray-200 rounded-xl" 
+          />
         </div>
         
         <button onClick={guardarPerfil} className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-xl mt-4 shadow-lg transition-transform hover:-translate-y-1">
