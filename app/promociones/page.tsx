@@ -31,11 +31,18 @@ export default function Promociones() {
       <div className="space-y-6">
         {promos.map((p, i) => (
           <div key={i} className="bg-white p-4 rounded-3xl shadow-sm border border-pink-100 overflow-hidden">
-            <img src={p.Imagen} className="w-full h-48 object-cover rounded-2xl mb-4" alt={p.Nombre} />
-            <h2 className="text-xl font-bold text-gray-800">{p.Nombre}</h2>
-            <p className="text-pink-600 font-black text-lg mb-4">Precio: {p.Precio} - 20% OFF</p>
+            {/* Aquí cambiamos p.Imagen por p.ImagenUrl */}
+            <img src={p.ImagenUrl} className="w-full h-48 object-cover rounded-2xl mb-4" alt={p.NombreCurso} />
+            
+            {/* Aquí cambiamos p.Nombre por p.NombreCurso */}
+            <h2 className="text-xl font-bold text-gray-800">{p.NombreCurso}</h2>
+            
+            {/* Aquí usamos p.PrecioOferta y p.PrecioNormal */}
+            <p className="text-gray-500 line-through text-sm">Antes: {p.PrecioNormal}</p>
+            <p className="text-pink-600 font-black text-lg mb-4">Oferta: {p.PrecioOferta} - ¡Con 20% OFF Extra!</p>
+            
             <button 
-              onClick={() => comprarCurso(p.Nombre, p.Precio)}
+              onClick={() => comprarCurso(p.NombreCurso, p.PrecioOferta)}
               className="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-full shadow-md transition-all hover:scale-105"
             >
               Comprar con Descuento 🛍️
