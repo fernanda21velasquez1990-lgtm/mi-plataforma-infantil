@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 export default function Tecnologia() {
   const [materiales, setMateriales] = useState<any[]>([]);
 
-  // 🔴 ¡IMPORTANTE! PEGA AQUÍ EL ENLACE NUEVO QUE COPIASTE EN EL PASO 3
-  const urlBase = "https://script.google.com/macros/s/AKfycbzQeOoMlSR9IGb3hqmFOsCC3IkzDI3JF2G0jLd_8OA0nw0YY_O9bzXseLdeElGbTeMm9Q/exec";
+  // TU NUEVO ENLACE CON LA FUNCIÓN DE CATEGORÍAS
+  const urlBase = "https://script.google.com/macros/s/AKfycbxvVvFUKwHxM6bQUeJs9FH7uVmRUfln_RSvSLy0vAC5q_kh69FYJ0ZO8OQcphU7OHRIbg/exec";
 
   useEffect(() => {
-    // Truco anticaché
     fetch(`${urlBase}?t=${new Date().getTime()}`)
       .then(res => res.json())
       .then(data => setMateriales(data))
@@ -20,12 +19,20 @@ export default function Tecnologia() {
       <h1 className="text-4xl font-extrabold text-blue-900 mb-8 text-center">💻 Tecnología</h1>
       <div className="space-y-6">
         {materiales.map((m, i) => {
-          // Lógica para saber si está disponible (ignora mayúsculas o espacios extra)
           const estaDisponible = m.Disponible?.toString().toLowerCase().trim() !== "no";
 
           return (
-            <div key={i} className="bg-white p-4 rounded-3xl shadow-sm border border-blue-100 overflow-hidden">
-              <img src={m.ImagenUrl} className="w-full h-48 object-cover rounded-2xl mb-4" alt={m.Nombre} />
+            <div key={i} className="bg-white p-4 rounded-3xl shadow-sm border border-blue-100 overflow-hidden relative">
+              
+              {/* ETIQUETA DE CATEGORÍA FLOTANTE */}
+              {m.Categoria && (
+                <span className="absolute top-6 right-6 bg-yellow-400 text-yellow-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider shadow-sm z-10">
+                  {m.Categoria}
+                </span>
+              )}
+
+              <img src={m.ImagenUrl} className="w-full h-48 object-cover rounded-2xl mb-4 relative" alt={m.Nombre} />
+              
               <h2 className="text-xl font-bold text-gray-800">{m.Nombre}</h2>
               <p className="text-gray-600 my-2 text-sm">{m.Descripcion}</p>
               
