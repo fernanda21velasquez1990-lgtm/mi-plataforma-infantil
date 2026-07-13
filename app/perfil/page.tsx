@@ -28,12 +28,31 @@ type ModoAcceso =
   | "prueba"
   | "visitante";
 
+type PerfilServidor = {
+  nombre?: string;
+  fechaCumpleanos?: string;
+  avatar?: string;
+  ultimoAcceso?: string;
+  tipoExplorador?: string;
+  areaFavorita?: string;
+  metaSemanal?: number;
+  objetivoPersonal?: string;
+};
+
+type RespuestaConsultaPerfil = {
+  status?: string;
+  ok?: boolean;
+  encontrado?: boolean;
+  perfil?: PerfilServidor;
+  error?: string;
+};
+
 /* =====================================================
    CONFIGURACIÓN
 ===================================================== */
 
 const URL_SCRIPT =
-  "https://script.google.com/macros/s/AKfycbx4T_Sd-8lLWFFRnXkr5JS2F6KTlVVajPd40i93AXmNei_IumkLLc8fUTpC7NLF3DX5/exec";
+  "https://script.google.com/macros/s/AKfycbxWt5rMx95rYFzithWJn5pUniASVVkVyFB26G0EHxsDnXsQ2ptI1jq-bt3Ua3lrf8qGcg/exec";
 
 const AVATAR_RESPALDO =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' rx='150' fill='%231e1b4b'/%3E%3Ctext x='50%25' y='48%25' text-anchor='middle' dominant-baseline='middle' font-size='110'%3E🚀%3C/text%3E%3C/svg%3E";
@@ -371,6 +390,8 @@ export default function Perfil() {
   =================================================== */
 
   useEffect(() => {
+    let componenteActivo = true;
+
     const fechaActual =
       new Date().toLocaleDateString(
         "es-ES",
@@ -437,6 +458,43 @@ export default function Perfil() {
         "misLikesComunidad",
       );
 
+    const nombreLocal =
+      localStorage.getItem(
+        "nombreUsuario",
+      ) || "";
+
+    const cumpleLocal =
+      localStorage.getItem(
+        "cumpleUsuario",
+      ) || "";
+
+    const avatarLocal =
+      localStorage.getItem(
+        "avatarUsuario",
+      ) || avatares[0].url;
+
+    const tipoLocal =
+      localStorage.getItem(
+        "tipoExploradorMDI",
+      ) || tiposExplorador[0];
+
+    const areaLocal =
+      localStorage.getItem(
+        "areaFavoritaMDI",
+      ) || areasFavoritas[0];
+
+    const metaLocal =
+      Number(
+        localStorage.getItem(
+          "metaSemanalMDI",
+        ) || "5",
+      );
+
+    const objetivoLocal =
+      localStorage.getItem(
+        "objetivoPersonalMDI",
+      ) || "";
+
     setFechaAcceso(
       accesoRegistrado,
     );
@@ -447,50 +505,23 @@ export default function Perfil() {
 
     setModoAcceso(acceso);
 
-    setNombre(
-      localStorage.getItem(
-        "nombreUsuario",
-      ) || "",
-    );
-
-    setFechaCumple(
-      localStorage.getItem(
-        "cumpleUsuario",
-      ) || "",
-    );
-
-    setAvatar(
-      localStorage.getItem(
-        "avatarUsuario",
-      ) || avatares[0].url,
-    );
-
-    setTipoExplorador(
-      localStorage.getItem(
-        "tipoExploradorMDI",
-      ) ||
-        tiposExplorador[0],
-    );
-
-    setAreaFavorita(
-      localStorage.getItem(
-        "areaFavoritaMDI",
-      ) ||
-        areasFavoritas[0],
-    );
+    setNombre(nombreLocal);
+    setFechaCumple(cumpleLocal);
+    setAvatar(avatarLocal);
+    setTipoExplorador(tipoLocal);
+    setAreaFavorita(areaLocal);
 
     setMetaSemanal(
-      Number(
-        localStorage.getItem(
-          "metaSemanalMDI",
-        ) || "5",
-      ),
+      Number.isFinite(metaLocal)
+        ? Math.min(
+            7,
+            Math.max(1, metaLocal),
+          )
+        : 5,
     );
 
     setObjetivoPersonal(
-      localStorage.getItem(
-        "objetivoPersonalMDI",
-      ) || "",
+      objetivoLocal,
     );
 
     setRacha(
@@ -508,6 +539,220 @@ export default function Perfil() {
     setLikesComunidad(
       likes.length,
     );
+
+    /*
+    Recuperar el perfil desde Google Sheets.
+    Esto permite restaurar el nombre y los
+    demás datos aunque el navegador no tenga
+    la información guardada localmente.
+    */
+
+    const consultarPerfilGuardado =
+      async () => {
+        if (!telefonoGuardado) {
+          return;
+        }
+
+        try {
+          const parametros =
+            new URLSearchParams({
+              accion: "consultar",
+              id: telefonoGuardado,
+            });
+
+          const respuesta =
+            await fetch(
+              `${URL_SCRIPT}?${parametros.toString()}`,
+              {
+                method: "GET",
+                cache: "no-store",
+              },
+            );
+
+          if (!respuesta.ok) {
+            return;
+          }
+
+          const datos =
+            (await respuesta.json()) as RespuestaConsultaPerfil;
+
+          if (
+            !componenteActivo ||
+            datos.encontrado !== true ||
+            !datos.perfil
+          ) {
+            return;
+          }
+
+          const perfil =
+            datos.perfil;
+
+          const nombreRecuperado =
+            String(
+              perfil.nombre ||
+                nombreLocal,
+            ).trim();
+
+          const cumpleRecuperado =
+            String(
+              perfil.fechaCumpleanos ||
+                cumpleLocal,
+            ).trim();
+
+          const avatarRecuperado =
+            String(
+              perfil.avatar ||
+                avatarLocal,
+            ).trim() ||
+            avatares[0].url;
+
+          const tipoRecuperado =
+            String(
+              perfil.tipoExplorador ||
+                tipoLocal,
+            ).trim() ||
+            tiposExplorador[0];
+
+          const areaRecuperada =
+            String(
+              perfil.areaFavorita ||
+                areaLocal,
+            ).trim() ||
+            areasFavoritas[0];
+
+          const metaRecuperada =
+            Number(
+              perfil.metaSemanal ??
+                metaLocal,
+            );
+
+          const objetivoRecuperado =
+            String(
+              perfil.objetivoPersonal ||
+                objetivoLocal,
+            ).trim();
+
+          const accesoRecuperado =
+            String(
+              perfil.ultimoAcceso ||
+                accesoRegistrado,
+            ).trim();
+
+          setNombre(
+            nombreRecuperado,
+          );
+
+          setFechaCumple(
+            cumpleRecuperado,
+          );
+
+          setAvatar(
+            avatarRecuperado,
+          );
+
+          setTipoExplorador(
+            tipoRecuperado,
+          );
+
+          setAreaFavorita(
+            areaRecuperada,
+          );
+
+          setMetaSemanal(
+            Number.isFinite(
+              metaRecuperada,
+            )
+              ? Math.min(
+                  7,
+                  Math.max(
+                    1,
+                    metaRecuperada,
+                  ),
+                )
+              : 5,
+          );
+
+          setObjetivoPersonal(
+            objetivoRecuperado,
+          );
+
+          setFechaAcceso(
+            accesoRecuperado,
+          );
+
+          /*
+          Guardar la información recuperada
+          para que el menú pueda saludar al
+          usuario por su nombre.
+          */
+
+          if (nombreRecuperado) {
+            localStorage.setItem(
+              "nombreUsuario",
+              nombreRecuperado,
+            );
+          }
+
+          localStorage.setItem(
+            "cumpleUsuario",
+            cumpleRecuperado,
+          );
+
+          localStorage.setItem(
+            "avatarUsuario",
+            avatarRecuperado,
+          );
+
+          localStorage.setItem(
+            "tipoExploradorMDI",
+            tipoRecuperado,
+          );
+
+          localStorage.setItem(
+            "areaFavoritaMDI",
+            areaRecuperada,
+          );
+
+          localStorage.setItem(
+            "metaSemanalMDI",
+            String(
+              Number.isFinite(
+                metaRecuperada,
+              )
+                ? Math.min(
+                    7,
+                    Math.max(
+                      1,
+                      metaRecuperada,
+                    ),
+                  )
+                : 5,
+            ),
+          );
+
+          localStorage.setItem(
+            "objetivoPersonalMDI",
+            objetivoRecuperado,
+          );
+
+          window.dispatchEvent(
+            new Event(
+              "perfilActualizadoMDI",
+            ),
+          );
+        } catch (error) {
+          console.warn(
+            "No se pudo recuperar el perfil guardado:",
+            error,
+          );
+        }
+      };
+
+    void consultarPerfilGuardado();
+
+    return () => {
+      componenteActivo = false;
+    };
   }, []);
 
   /* ===================================================
@@ -688,6 +933,18 @@ export default function Perfil() {
         localStorage.setItem(
           "objetivoPersonalMDI",
           objetivoPersonal.trim(),
+        );
+
+        /*
+        Avisar al menú que el nombre y los
+        datos del perfil cambiaron para que
+        actualice el saludo inmediatamente.
+        */
+
+        window.dispatchEvent(
+          new Event(
+            "perfilActualizadoMDI",
+          ),
         );
 
         setEstadoGuardado(
