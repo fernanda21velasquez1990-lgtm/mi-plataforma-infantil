@@ -1,116 +1,942 @@
 "use client";
-import { useState } from "react";
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
 
+/* =====================================================
+   CONFIGURACIÓN GENERAL
+===================================================== */
+
+const URL_GOOGLE_SCRIPT =
+  "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec";
+
+const RUTA_BIBLIOTECA = "/biblioteca";
+
+const NUMERO_WHATSAPP = "584144895281";
+
+const DURACION_PRUEBA =
+  60 * 60 * 1000;
+
+/* =====================================================
+   TIPOS
+===================================================== */
+
+type TipoMensaje =
+  | "neutral"
+  | "cargando"
+  | "exito"
+  | "advertencia"
+  | "error";
+
+type RespuestaGoogle = {
+  encontrado?: boolean;
+  estado?: string;
+  inicioPrueba?: unknown;
+  nombre?: string;
+};
+
+/* =====================================================
+   FUNCIONES AUXILIARES
+===================================================== */
+
+/*
+Elimina espacios, signos, guiones y letras.
+Solamente conserva números.
+*/
+
+function limpiarTelefono(
+  valor: string,
+): string {
+  return valor
+    .replace(/\D/g, "")
+    .slice(0, 15);
+}
+
+/*
+Convierte la fecha de inicio de prueba
+a milisegundos.
+
+Acepta:
+- números
+- texto numérico
+- fechas enviadas como texto
+*/
+
+function convertirFechaAMilisegundos(
+  valor: unknown,
+): number | null {
+  if (
+    valor === null ||
+    valor === undefined ||
+    valor === ""
+  ) {
+    return null;
+  }
+
+  if (typeof valor === "number") {
+    /*
+    Si Google devuelve segundos,
+    los convertimos a milisegundos.
+    */
+
+    if (valor < 100000000000) {
+      return valor * 1000;
+    }
+
+    return valor;
+  }
+
+  const texto = String(valor).trim();
+
+  const numero = Number(texto);
+
+  if (!Number.isNaN(numero)) {
+    if (numero < 100000000000) {
+      return numero * 1000;
+    }
+
+    return numero;
+  }
+
+  const fechaConvertida =
+    new Date(texto).getTime();
+
+  return Number.isNaN(fechaConvertida)
+    ? null
+    : fechaConvertida;
+}
+
+/* =====================================================
+   COMPONENTE PRINCIPAL
+===================================================== */
+
 export default function Acceso() {
-  const [telefono, setTelefono] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [cargando, setCargando] = useState(false);
   const router = useRouter();
 
-  const verificarAcceso = async () => {
-    if (!telefono) {
-      setMensaje("⚠️ Por favor ingresa un número.");
+  const autoVerificacionRealizada =
+    useRef(false);
+
+  const [telefono, setTelefono] =
+    useState("");
+
+  const [mensaje, setMensaje] =
+    useState("");
+
+  const [tipoMensaje, setTipoMensaje] =
+    useState<TipoMensaje>("neutral");
+
+  const [cargando, setCargando] =
+    useState(false);
+
+  /* ===================================================
+     REDIRECCIONAR A LA BIBLIOTECA
+  =================================================== */
+
+  const abrirBiblioteca = useCallback(
+    (
+      tipoAcceso: "vip" | "prueba",
+      limitePrueba?: number,
+    ) => {
+      if (tipoAcceso === "vip") {
+        localStorage.setItem(
+          "accesoVIP",
+          "true",
+        );
+
+        localStorage.removeItem(
+          "limitePrueba",
+        );
+      }
+
+      if (
+        tipoAcceso === "prueba" &&
+        limitePrueba
+      ) {
+        localStorage.removeItem(
+          "accesoVIP",
+        );
+
+        localStorage.setItem(
+          "limitePrueba",
+          limitePrueba.toString(),
+        );
+      }
+
+      setTimeout(() => {
+        router.replace(
+          RUTA_BIBLIOTECA,
+        );
+      }, 1000);
+    },
+    [router],
+  );
+
+  /* ===================================================
+     VERIFICAR EL ACCESO EN GOOGLE SHEETS
+  =================================================== */
+
+  const verificarAcceso = useCallback(
+    async (
+      telefonoRecibido?: string,
+    ) => {
+      const numero =
+        limpiarTelefono(
+          telefonoRecibido ??
+            telefono,
+        );
+
+      setTelefono(numero);
+
+      if (!numero) {
+        setTipoMensaje(
+          "advertencia",
+        );
+
+        setMensaje(
+          "⚠️ Escribe tu número de WhatsApp.",
+        );
+
+        return;
+      }
+
+      if (
+        numero.length < 10 ||
+        numero.length > 15
+      ) {
+        setTipoMensaje(
+          "advertencia",
+        );
+
+        setMensaje(
+          "⚠️ Revisa el número. Debe incluir el código del país y contener entre 10 y 15 dígitos.",
+        );
+
+        return;
+      }
+
+      setCargando(true);
+
+      setTipoMensaje("cargando");
+
+      setMensaje(
+        "🛰️ Buscando tu acceso en la base de datos...",
+      );
+
+      const controlador =
+        new AbortController();
+
+      const limiteConexion =
+        window.setTimeout(() => {
+          controlador.abort();
+        }, 15000);
+
+      try {
+        const urlConsulta =
+          `${URL_GOOGLE_SCRIPT}` +
+          `?whatsapp=${encodeURIComponent(
+            numero,
+          )}`;
+
+        const respuesta =
+          await fetch(urlConsulta, {
+            method: "GET",
+            cache: "no-store",
+            signal:
+              controlador.signal,
+          });
+
+        if (!respuesta.ok) {
+          throw new Error(
+            `La consulta respondió con estado ${respuesta.status}`,
+          );
+        }
+
+        const datos =
+          (await respuesta.json()) as RespuestaGoogle;
+
+        if (!datos.encontrado) {
+          setTipoMensaje("error");
+
+          setMensaje(
+            "❌ Este número todavía no aparece en nuestra base de datos. Verifica que sea el mismo número utilizado para enviar el comprobante.",
+          );
+
+          return;
+        }
+
+        const estado = String(
+          datos.estado ?? "",
+        )
+          .trim()
+          .toLowerCase();
+
+        /*
+        ACCESO VIP
+
+        Aceptamos varias palabras por seguridad,
+        pero puedes utilizar solamente "pagado"
+        en Google Sheets.
+        */
+
+        const esVIP = [
+          "pagado",
+          "vip",
+          "activo",
+          "aprobado",
+        ].includes(estado);
+
+        if (esVIP) {
+          const saludo =
+            datos.nombre
+              ? `, ${datos.nombre}`
+              : "";
+
+          setTipoMensaje("exito");
+
+          setMensaje(
+            `✅ ¡Acceso VIP aprobado${saludo}! Entrando a la biblioteca...`,
+          );
+
+          abrirBiblioteca("vip");
+
+          return;
+        }
+
+        /*
+        ACCESO DE PRUEBA
+        */
+
+        if (estado === "prueba") {
+          const inicioPrueba =
+            convertirFechaAMilisegundos(
+              datos.inicioPrueba,
+            );
+
+          if (!inicioPrueba) {
+            setTipoMensaje("error");
+
+            setMensaje(
+              "⚠️ Encontramos tu prueba, pero no tiene una fecha de inicio válida. Comunícate con soporte.",
+            );
+
+            return;
+          }
+
+          const limite =
+            inicioPrueba +
+            DURACION_PRUEBA;
+
+          const ahora =
+            Date.now();
+
+          if (ahora >= limite) {
+            localStorage.removeItem(
+              "limitePrueba",
+            );
+
+            localStorage.removeItem(
+              "accesoVIP",
+            );
+
+            setTipoMensaje(
+              "advertencia",
+            );
+
+            setMensaje(
+              "⏳ Tu prueba gratuita de 60 minutos ha terminado. Activa el acceso VIP para continuar.",
+            );
+
+            return;
+          }
+
+          const minutosRestantes =
+            Math.max(
+              1,
+              Math.ceil(
+                (limite - ahora) /
+                  60000,
+              ),
+            );
+
+          setTipoMensaje("exito");
+
+          setMensaje(
+            `⏱️ Prueba validada. Te quedan aproximadamente ${minutosRestantes} minutos. Entrando...`,
+          );
+
+          abrirBiblioteca(
+            "prueba",
+            limite,
+          );
+
+          return;
+        }
+
+        /*
+        USUARIO ENCONTRADO,
+        PERO TODAVÍA NO APROBADO
+        */
+
+        if (
+          estado === "pendiente" ||
+          estado === "revision" ||
+          estado === "en revision"
+        ) {
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            "🕐 Recibimos tu información, pero tu pago todavía está en revisión. Inténtalo nuevamente cuando recibas la confirmación.",
+          );
+
+          return;
+        }
+
+        setTipoMensaje(
+          "advertencia",
+        );
+
+        setMensaje(
+          "⚠️ Tu número fue encontrado, pero todavía no tiene un acceso activo. Comunícate con soporte.",
+        );
+      } catch (error) {
+        console.error(
+          "Error al verificar acceso:",
+          error,
+        );
+
+        if (
+          error instanceof Error &&
+          error.name ===
+            "AbortError"
+        ) {
+          setTipoMensaje("error");
+
+          setMensaje(
+            "⚠️ La consulta tardó demasiado. Revisa tu conexión e inténtalo nuevamente.",
+          );
+        } else {
+          setTipoMensaje("error");
+
+          setMensaje(
+            "⚠️ No pudimos conectarnos con la base de datos. Inténtalo nuevamente.",
+          );
+        }
+      } finally {
+        window.clearTimeout(
+          limiteConexion,
+        );
+
+        setCargando(false);
+      }
+    },
+    [telefono, abrirBiblioteca],
+  );
+
+  /* ===================================================
+     ENLACE DE ACCESO AUTOMÁTICO
+
+     Permite enviar un enlace como:
+
+     /acceso?telefono=584141234567&auto=1
+
+     La página toma el número, lo verifica en
+     Google Sheets y entra automáticamente si
+     está aprobado.
+  =================================================== */
+
+  useEffect(() => {
+    if (
+      autoVerificacionRealizada.current
+    ) {
       return;
     }
 
-    setCargando(true);
-    setMensaje("Buscando en la base de datos...");
+    autoVerificacionRealizada.current =
+      true;
 
-    // 🔴 RECUERDA CAMBIAR ESTO POR EL NUEVO ENLACE DEL SCRIPT DE "USUARIOS"
-    const urlGoogleScript = "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec"; 
-    
-    try {
-      // Nota: Cambié ?telefono a ?whatsapp para que coincida con el script que programamos
-      const respuesta = await fetch(`${urlGoogleScript}?whatsapp=${telefono}`);
-      const datos = await respuesta.json();
+    const parametros =
+      new URLSearchParams(
+        window.location.search,
+      );
 
-      if (datos.encontrado) {
-        if (datos.estado === "pagado") {
-          setMensaje("✅ ¡Acceso VIP concedido! Abriendo biblioteca...");
-          localStorage.setItem("accesoVIP", "true");
-          setTimeout(() => {
-            router.push("/biblioteca");
-          }, 1500);
-          
-        } else if (datos.estado === "prueba") {
-          // Calculamos si la hora de prueba ya pasó
-          const ahora = new Date().getTime();
-          const limite = datos.inicioPrueba + (60 * 60 * 1000); // 1 hora
-          
-          if (ahora > limite) {
-            setMensaje("⏳ Tu hora de prueba ha finalizado. ¡Realiza tu aporte para continuar!");
-          } else {
-            setMensaje("⏱️ Acceso de prueba validado. Entrando...");
-            // Guardamos el límite de tiempo en el navegador para usarlo en otras páginas
-            localStorage.setItem("limitePrueba", limite.toString()); 
-            setTimeout(() => {
-              router.push("/biblioteca");
-            }, 1500);
-          }
-        }
-      } else {
-        setMensaje("❌ Número no encontrado. ¿Ya enviaste tu comprobante?");
-      }
-    } catch (error) {
-      setMensaje("⚠️ Hubo un error de conexión. Intenta de nuevo.");
+    const telefonoURL =
+      limpiarTelefono(
+        parametros.get(
+          "telefono",
+        ) ?? "",
+      );
+
+    const accesoAutomatico =
+      parametros.get("auto") ===
+      "1";
+
+    if (telefonoURL) {
+      setTelefono(telefonoURL);
     }
-    
-    setCargando(false);
+
+    if (
+      telefonoURL &&
+      accesoAutomatico
+    ) {
+      void verificarAcceso(
+        telefonoURL,
+      );
+    }
+  }, [verificarAcceso]);
+
+  /* ===================================================
+     ENVÍO DEL FORMULARIO
+  =================================================== */
+
+  const enviarFormulario = (
+    evento: React.FormEvent<HTMLFormElement>,
+  ) => {
+    evento.preventDefault();
+
+    void verificarAcceso();
   };
 
+  /* ===================================================
+     WHATSAPP
+  =================================================== */
+
+  const mensajeWhatsApp =
+    "Hola, ya realicé mi pago para Mundo Digital Infantil. Enviaré mi comprobante para solicitar la activación del acceso VIP.";
+
+  const enlaceWhatsApp =
+    `https://wa.me/${NUMERO_WHATSAPP}` +
+    `?text=${encodeURIComponent(
+      mensajeWhatsApp,
+    )}`;
+
+  /* ===================================================
+     COLORES DEL MENSAJE
+  =================================================== */
+
+  const claseMensaje = {
+    neutral:
+      "border-white/10 bg-white/5 text-blue-100",
+
+    cargando:
+      "border-cyan-300/30 bg-cyan-300/10 text-cyan-100",
+
+    exito:
+      "border-emerald-300/40 bg-emerald-300/10 text-emerald-100",
+
+    advertencia:
+      "border-amber-300/40 bg-amber-300/10 text-amber-100",
+
+    error:
+      "border-rose-300/40 bg-rose-300/10 text-rose-100",
+  }[tipoMensaje];
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
-      <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full text-center border border-gray-100">
-        
-        <h1 className="text-3xl font-extrabold text-gray-800 mb-2">
-          Desbloquea tu acceso 🔐
-        </h1>
-        <p className="text-gray-600 mb-6">
-          Si el material te gustó, realiza tu pago y tendrás acceso <b>para siempre</b> a toda la biblioteca 🙌
-        </p>
-        
-        <a 
-          href="https://wa.me/584144895281?text=Hola,%20quiero%20hacer%20mi%20aporte%20para%20la%20plataforma" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 px-4 rounded-xl mb-8 transition-transform transform hover:scale-105 shadow-md"
-        >
-          <span>📲</span> Enviar mi comprobante
-        </a>
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white">
+      {/* =================================================
+          FONDO DECORATIVO
+      ================================================= */}
 
-        <div className="w-full h-px bg-gray-200 mb-8"></div>
+      <div className="pointer-events-none absolute -left-40 top-20 h-[32rem] w-[32rem] rounded-full bg-blue-600/30 blur-3xl" />
 
-        <h2 className="text-xl font-bold text-gray-800 mb-2">
-          ¿Ya hiciste tu aporte o quieres tu prueba gratis?
-        </h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Entra con tu número de WhatsApp para activar tu cuenta.
-        </p>
-        
-        <input 
-          type="tel" 
-          placeholder="Ej: 584141234567" 
-          value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
-          className="w-full p-4 border border-gray-300 rounded-xl mb-4 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-center text-lg"
-        />
-        
-        <button 
-          onClick={verificarAcceso}
-          disabled={cargando}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 rounded-xl transition-colors shadow-sm disabled:opacity-50"
-        >
-          {cargando ? "Cargando..." : "Activar mi acceso ✅"}
-        </button>
+      <div className="pointer-events-none absolute -right-40 top-0 h-[34rem] w-[34rem] rounded-full bg-fuchsia-600/25 blur-3xl" />
 
-        {mensaje && (
-          <p className={`mt-4 font-bold ${mensaje.includes("❌") || mensaje.includes("⏳") ? "text-red-500" : "text-gray-700"}`}>
-            {mensaje}
-          </p>
-        )}
+      <div className="pointer-events-none absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
 
+      <div className="pointer-events-none absolute left-[8%] top-36 hidden text-5xl lg:block">
+        🚀
       </div>
+
+      <div className="pointer-events-none absolute right-[8%] top-48 hidden text-6xl lg:block">
+        🪐
+      </div>
+
+      {/* =================================================
+          ENCABEZADO
+      ================================================= */}
+
+      <header className="relative z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/")
+            }
+            className="flex items-center gap-3 text-left"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg shadow-orange-500/20">
+              🚀
+            </span>
+
+            <div>
+              <p className="text-sm font-black leading-tight text-yellow-300 sm:text-base">
+                MUNDO DIGITAL
+              </p>
+
+              <p className="text-xs font-bold tracking-[0.2em] text-cyan-300">
+                INFANTIL
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              router.push("/")
+            }
+            className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-blue-100 transition hover:bg-white/10 hover:text-white"
+          >
+            ← Volver al inicio
+          </button>
+        </div>
+      </header>
+
+      {/* =================================================
+          CONTENIDO PRINCIPAL
+      ================================================= */}
+
+      <section className="relative z-10 mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
+        {/* TÍTULO */}
+
+        <div className="mx-auto mb-12 max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-200">
+            🔐 CENTRO DE ACCESO
+          </span>
+
+          <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+            Ingresa a tu universo
+            <span className="block bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
+              de aprendizaje digital
+            </span>
+          </h1>
+
+          <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-blue-100/80">
+            Escribe el mismo número de
+            WhatsApp que utilizaste para
+            registrarte o enviar tu
+            comprobante.
+          </p>
+        </div>
+
+        {/* =================================================
+            OPCIONES DE ACCESO
+        ================================================= */}
+
+        <div className="mb-10 grid gap-6 lg:grid-cols-2">
+          {/* PRUEBA */}
+
+          <article className="relative overflow-hidden rounded-[2rem] border border-yellow-300/25 bg-gradient-to-br from-yellow-300/15 to-orange-500/10 p-7 shadow-2xl backdrop-blur">
+            <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
+              ⏱️
+            </div>
+
+            <div className="relative">
+              <span className="inline-flex rounded-full bg-yellow-300 px-4 py-2 text-sm font-black text-slate-950">
+                PRUEBA GRATUITA
+              </span>
+
+              <h2 className="mt-5 text-3xl font-black text-yellow-200">
+                Explora durante 60 minutos
+              </h2>
+
+              <p className="mt-3 leading-relaxed text-blue-100/80">
+                Conoce la plataforma,
+                visualiza los materiales y
+                descubre sus herramientas.
+              </p>
+
+              <ul className="mt-6 space-y-3 text-sm font-bold text-blue-50">
+                <li className="flex gap-3">
+                  <span>✓</span>
+                  Acceso temporal de una hora
+                </li>
+
+                <li className="flex gap-3">
+                  <span>✓</span>
+                  Visualización de contenidos
+                </li>
+
+                <li className="flex gap-3">
+                  <span>🔒</span>
+                  Descargas bloqueadas
+                </li>
+              </ul>
+            </div>
+          </article>
+
+          {/* VIP */}
+
+          <article className="relative overflow-hidden rounded-[2rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-cyan-500/10 p-7 shadow-2xl backdrop-blur">
+            <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
+              💎
+            </div>
+
+            <div className="relative">
+              <span className="inline-flex rounded-full bg-emerald-300 px-4 py-2 text-sm font-black text-slate-950">
+                ACCESO VIP
+              </span>
+
+              <h2 className="mt-5 text-3xl font-black text-emerald-200">
+                Acceso completo e ilimitado
+              </h2>
+
+              <p className="mt-3 leading-relaxed text-blue-100/80">
+                Disfruta de la biblioteca,
+                descarga materiales y utiliza
+                todas las herramientas
+                disponibles.
+              </p>
+
+              <ul className="mt-6 space-y-3 text-sm font-bold text-blue-50">
+                <li className="flex gap-3">
+                  <span>✓</span>
+                  Acceso sin límite de tiempo
+                </li>
+
+                <li className="flex gap-3">
+                  <span>✓</span>
+                  Descargas habilitadas
+                </li>
+
+                <li className="flex gap-3">
+                  <span>✓</span>
+                  Biblioteca y Laboratorio Tech
+                </li>
+              </ul>
+            </div>
+          </article>
+        </div>
+
+        {/* =================================================
+            VERIFICACIÓN Y PAGO
+        ================================================= */}
+
+        <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+          {/* VERIFICAR ACCESO */}
+
+          <section className="overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
+            <div className="mb-7 flex items-start gap-4">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-3xl shadow-xl">
+                🔐
+              </span>
+
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.18em] text-cyan-300">
+                  Verificación segura
+                </p>
+
+                <h2 className="mt-1 text-2xl font-black sm:text-3xl">
+                  Activa tu entrada
+                </h2>
+
+                <p className="mt-2 leading-relaxed text-blue-100/70">
+                  El sistema consultará tu
+                  número directamente en
+                  Google Sheets.
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={enviarFormulario}
+            >
+              <label
+                htmlFor="telefono"
+                className="mb-2 block text-sm font-black text-blue-100"
+              >
+                Número de WhatsApp
+              </label>
+
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5 text-2xl">
+                  📱
+                </span>
+
+                <input
+                  id="telefono"
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="Ejemplo: 584141234567"
+                  value={telefono}
+                  disabled={cargando}
+                  onChange={(evento) => {
+                    setTelefono(
+                      limpiarTelefono(
+                        evento.target
+                          .value,
+                      ),
+                    );
+
+                    if (mensaje) {
+                      setMensaje("");
+                      setTipoMensaje(
+                        "neutral",
+                      );
+                    }
+                  }}
+                  className="w-full rounded-2xl border-2 border-white/15 bg-slate-950/50 py-4 pl-14 pr-5 text-lg font-bold text-white outline-none transition placeholder:text-blue-200/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-60"
+                />
+              </div>
+
+              <p className="mt-2 text-xs leading-relaxed text-blue-200/60">
+                Incluye el código del país,
+                sin espacios, guiones ni el
+                signo +.
+              </p>
+
+              <button
+                type="submit"
+                disabled={cargando}
+                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:brightness-110 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
+              >
+                {cargando ? (
+                  <>
+                    <span className="inline-block animate-spin">
+                      🚀
+                    </span>
+
+                    Verificando acceso...
+                  </>
+                ) : (
+                  <>
+                    <span>✅</span>
+                    Verificar y entrar
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* MENSAJE */}
+
+            {mensaje && (
+              <div
+                role="status"
+                aria-live="polite"
+                className={`mt-6 rounded-2xl border p-4 text-sm font-bold leading-relaxed ${claseMensaje}`}
+              >
+                {mensaje}
+              </div>
+            )}
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+              <p className="flex items-start gap-3 text-sm leading-relaxed text-blue-100/70">
+                <span className="text-xl">
+                  🛡️
+                </span>
+
+                <span>
+                  El enlace de acceso directo
+                  no evita la validación. El
+                  sistema siempre comprobará
+                  que tu estado esté aprobado
+                  en Google Sheets.
+                </span>
+              </p>
+            </div>
+          </section>
+
+          {/* PAGO Y SOPORTE */}
+
+          <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+            <span className="text-5xl">
+              💎
+            </span>
+
+            <h2 className="mt-5 text-3xl font-black text-emerald-200">
+              ¿Todavía no tienes acceso VIP?
+            </h2>
+
+            <p className="mt-3 leading-relaxed text-blue-100/75">
+              Realiza el pago desde la página
+              principal y envía el comprobante
+              mediante WhatsApp.
+            </p>
+
+            <div className="mt-6 space-y-3">
+              {[
+                "Envía el comprobante",
+                "Espera la confirmación",
+                "Recibe tu enlace directo",
+                "Entra con tu WhatsApp",
+              ].map(
+                (
+                  elemento,
+                  indice,
+                ) => (
+                  <div
+                    key={elemento}
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
+                      {indice + 1}
+                    </span>
+
+                    <span className="font-bold text-blue-50">
+                      {elemento}
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+
+            <a
+              href={enlaceWhatsApp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-7 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-xl transition hover:-translate-y-1 hover:bg-[#1ebe57]"
+            >
+              <span className="text-2xl">
+                📲
+              </span>
+
+              Enviar mi comprobante
+            </a>
+
+            <p className="mt-4 text-center text-xs leading-relaxed text-blue-100/50">
+              Después de aprobar el pago,
+              recibirás un enlace que
+              verificará tu número y abrirá
+              automáticamente la biblioteca.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      {/* =================================================
+          PIE DE PÁGINA
+      ================================================= */}
+
+      <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 px-5 py-8 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">
+              🚀
+            </span>
+
+            <div>
+              <p className="font-black text-yellow-300">
+                MUNDO DIGITAL INFANTIL
+              </p>
+
+              <p className="text-xs text-blue-300/60">
+                Aprender · Jugar · Crear
+              </p>
+            </div>
+          </div>
+
+          <p className="text-sm font-bold text-blue-300/50">
+            CENTRO DE ACCESO © 2026
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
