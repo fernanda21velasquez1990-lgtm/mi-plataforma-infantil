@@ -5,26 +5,24 @@ import {
   useEffect,
   useRef,
   useState,
+  type FormEvent,
 } from "react";
 
 import { useRouter } from "next/navigation";
 
 /* =====================================================
-   CONFIGURACIÓN GENERAL
+   CONFIGURACIÓN
 ===================================================== */
 
 const URL_GOOGLE_SCRIPT =
   "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec";
 
 const RUTA_BIBLIOTECA = "/biblioteca";
-
 const NUMERO_WHATSAPP = "584144895281";
-
-const DURACION_PRUEBA =
-  60 * 60 * 1000;
+const DURACION_PRUEBA = 60 * 60 * 1000;
 
 /* =====================================================
-   TIPOS
+   TIPOS DE DATOS
 ===================================================== */
 
 type TipoMensaje =
@@ -45,28 +43,9 @@ type RespuestaGoogle = {
    FUNCIONES AUXILIARES
 ===================================================== */
 
-/*
-Elimina espacios, signos, guiones y letras.
-Solamente conserva números.
-*/
-
-function limpiarTelefono(
-  valor: string,
-): string {
-  return valor
-    .replace(/\D/g, "")
-    .slice(0, 15);
+function limpiarTelefono(valor: string): string {
+  return valor.replace(/\D/g, "").slice(0, 15);
 }
-
-/*
-Convierte la fecha de inicio de prueba
-a milisegundos.
-
-Acepta:
-- números
-- texto numérico
-- fechas enviadas como texto
-*/
 
 function convertirFechaAMilisegundos(
   valor: unknown,
@@ -80,32 +59,21 @@ function convertirFechaAMilisegundos(
   }
 
   if (typeof valor === "number") {
-    /*
-    Si Google devuelve segundos,
-    los convertimos a milisegundos.
-    */
-
-    if (valor < 100000000000) {
-      return valor * 1000;
-    }
-
-    return valor;
+    return valor < 100000000000
+      ? valor * 1000
+      : valor;
   }
 
   const texto = String(valor).trim();
-
   const numero = Number(texto);
 
   if (!Number.isNaN(numero)) {
-    if (numero < 100000000000) {
-      return numero * 1000;
-    }
-
-    return numero;
+    return numero < 100000000000
+      ? numero * 1000
+      : numero;
   }
 
-  const fechaConvertida =
-    new Date(texto).getTime();
+  const fechaConvertida = new Date(texto).getTime();
 
   return Number.isNaN(fechaConvertida)
     ? null
@@ -135,7 +103,90 @@ export default function Acceso() {
     useState(false);
 
   /* ===================================================
-     REDIRECCIONAR A LA BIBLIOTECA
+     OCULTAR EL BOTÓN AZUL ☰
+
+     Este efecto solamente funciona mientras
+     el usuario está dentro de /acceso.
+  =================================================== */
+
+  useEffect(() => {
+    const ocultarMenuAzul = () => {
+      const botones =
+        document.querySelectorAll<HTMLButtonElement>(
+          "button",
+        );
+
+      botones.forEach((boton) => {
+        const texto =
+          boton.textContent
+            ?.replace(/\s+/g, "")
+            .trim() || "";
+
+        const ariaLabel =
+          boton
+            .getAttribute("aria-label")
+            ?.toLowerCase() || "";
+
+        const titulo =
+          boton
+            .getAttribute("title")
+            ?.toLowerCase() || "";
+
+        const esBotonMenu =
+          texto === "☰" ||
+          ariaLabel.includes("abrir menú") ||
+          ariaLabel.includes("abrir menu") ||
+          titulo.includes("abrir menú") ||
+          titulo.includes("abrir menu");
+
+        if (esBotonMenu) {
+          boton.setAttribute(
+            "data-menu-oculto-en-acceso",
+            "true",
+          );
+
+          boton.style.setProperty(
+            "display",
+            "none",
+            "important",
+          );
+        }
+      });
+    };
+
+    ocultarMenuAzul();
+
+    const observador = new MutationObserver(
+      ocultarMenuAzul,
+    );
+
+    observador.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observador.disconnect();
+
+      const botonesOcultos =
+        document.querySelectorAll<HTMLElement>(
+          '[data-menu-oculto-en-acceso="true"]',
+        );
+
+      botonesOcultos.forEach((elemento) => {
+        elemento.style.removeProperty(
+          "display",
+        );
+
+        elemento.removeAttribute(
+          "data-menu-oculto-en-acceso",
+        );
+      });
+    };
+  }, []);
+
+  /* ===================================================
+     ABRIR LA BIBLIOTECA
   =================================================== */
 
   const abrirBiblioteca = useCallback(
@@ -178,7 +229,7 @@ export default function Acceso() {
   );
 
   /* ===================================================
-     VERIFICAR EL ACCESO EN GOOGLE SHEETS
+     VERIFICAR ACCESO EN GOOGLE SHEETS
   =================================================== */
 
   const verificarAcceso = useCallback(
@@ -214,14 +265,13 @@ export default function Acceso() {
         );
 
         setMensaje(
-          "⚠️ Revisa el número. Debe incluir el código del país y contener entre 10 y 15 dígitos.",
+          "⚠️ Revisa el número. Incluye el código del país y escribe entre 10 y 15 dígitos.",
         );
 
         return;
       }
 
       setCargando(true);
-
       setTipoMensaje("cargando");
 
       setMensaje(
@@ -253,7 +303,7 @@ export default function Acceso() {
 
         if (!respuesta.ok) {
           throw new Error(
-            `La consulta respondió con estado ${respuesta.status}`,
+            `Error ${respuesta.status}`,
           );
         }
 
@@ -264,7 +314,7 @@ export default function Acceso() {
           setTipoMensaje("error");
 
           setMensaje(
-            "❌ Este número todavía no aparece en nuestra base de datos. Verifica que sea el mismo número utilizado para enviar el comprobante.",
+            "❌ Este número no aparece en nuestra base de datos. Verifica que sea el mismo número utilizado para enviar el comprobante.",
           );
 
           return;
@@ -276,20 +326,14 @@ export default function Acceso() {
           .trim()
           .toLowerCase();
 
-        /*
-        ACCESO VIP
-
-        Aceptamos varias palabras por seguridad,
-        pero puedes utilizar solamente "pagado"
-        en Google Sheets.
-        */
-
         const esVIP = [
           "pagado",
           "vip",
           "activo",
           "aprobado",
         ].includes(estado);
+
+        /* ACCESO VIP */
 
         if (esVIP) {
           const saludo =
@@ -308,9 +352,7 @@ export default function Acceso() {
           return;
         }
 
-        /*
-        ACCESO DE PRUEBA
-        */
+        /* ACCESO DE PRUEBA */
 
         if (estado === "prueba") {
           const inicioPrueba =
@@ -322,7 +364,7 @@ export default function Acceso() {
             setTipoMensaje("error");
 
             setMensaje(
-              "⚠️ Encontramos tu prueba, pero no tiene una fecha de inicio válida. Comunícate con soporte.",
+              "⚠️ Encontramos tu prueba, pero la fecha de inicio no es válida. Comunícate con soporte.",
             );
 
             return;
@@ -332,8 +374,7 @@ export default function Acceso() {
             inicioPrueba +
             DURACION_PRUEBA;
 
-          const ahora =
-            Date.now();
+          const ahora = Date.now();
 
           if (ahora >= limite) {
             localStorage.removeItem(
@@ -349,7 +390,7 @@ export default function Acceso() {
             );
 
             setMensaje(
-              "⏳ Tu prueba gratuita de 60 minutos ha terminado. Activa el acceso VIP para continuar.",
+              "⏳ Tu prueba gratuita de 60 minutos ya terminó. Activa el acceso VIP para continuar.",
             );
 
             return;
@@ -378,10 +419,7 @@ export default function Acceso() {
           return;
         }
 
-        /*
-        USUARIO ENCONTRADO,
-        PERO TODAVÍA NO APROBADO
-        */
+        /* PAGO PENDIENTE */
 
         if (
           estado === "pendiente" ||
@@ -393,7 +431,7 @@ export default function Acceso() {
           );
 
           setMensaje(
-            "🕐 Recibimos tu información, pero tu pago todavía está en revisión. Inténtalo nuevamente cuando recibas la confirmación.",
+            "🕐 Tu pago todavía está en revisión. Intenta nuevamente después de recibir la confirmación.",
           );
 
           return;
@@ -404,7 +442,7 @@ export default function Acceso() {
         );
 
         setMensaje(
-          "⚠️ Tu número fue encontrado, pero todavía no tiene un acceso activo. Comunícate con soporte.",
+          "⚠️ El número fue encontrado, pero todavía no tiene un acceso activo.",
         );
       } catch (error) {
         console.error(
@@ -420,13 +458,13 @@ export default function Acceso() {
           setTipoMensaje("error");
 
           setMensaje(
-            "⚠️ La consulta tardó demasiado. Revisa tu conexión e inténtalo nuevamente.",
+            "⚠️ La consulta tardó demasiado. Revisa tu conexión e intenta nuevamente.",
           );
         } else {
           setTipoMensaje("error");
 
           setMensaje(
-            "⚠️ No pudimos conectarnos con la base de datos. Inténtalo nuevamente.",
+            "⚠️ No pudimos conectarnos con Google Sheets. Intenta nuevamente.",
           );
         }
       } finally {
@@ -441,15 +479,10 @@ export default function Acceso() {
   );
 
   /* ===================================================
-     ENLACE DE ACCESO AUTOMÁTICO
+     ENLACE AUTOMÁTICO PARA CLIENTES VIP
 
-     Permite enviar un enlace como:
-
+     Ejemplo:
      /acceso?telefono=584141234567&auto=1
-
-     La página toma el número, lo verifica en
-     Google Sheets y entra automáticamente si
-     está aprobado.
   =================================================== */
 
   useEffect(() => {
@@ -493,11 +526,11 @@ export default function Acceso() {
   }, [verificarAcceso]);
 
   /* ===================================================
-     ENVÍO DEL FORMULARIO
+     FORMULARIO
   =================================================== */
 
   const enviarFormulario = (
-    evento: React.FormEvent<HTMLFormElement>,
+    evento: FormEvent<HTMLFormElement>,
   ) => {
     evento.preventDefault();
 
@@ -518,7 +551,7 @@ export default function Acceso() {
     )}`;
 
   /* ===================================================
-     COLORES DEL MENSAJE
+     COLOR DEL MENSAJE
   =================================================== */
 
   const claseMensaje = {
@@ -540,9 +573,7 @@ export default function Acceso() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 font-sans text-white">
-      {/* =================================================
-          FONDO DECORATIVO
-      ================================================= */}
+      {/* FONDO */}
 
       <div className="pointer-events-none absolute -left-40 top-20 h-[32rem] w-[32rem] rounded-full bg-blue-600/30 blur-3xl" />
 
@@ -550,17 +581,7 @@ export default function Acceso() {
 
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
 
-      <div className="pointer-events-none absolute left-[8%] top-36 hidden text-5xl lg:block">
-        🚀
-      </div>
-
-      <div className="pointer-events-none absolute right-[8%] top-48 hidden text-6xl lg:block">
-        🪐
-      </div>
-
-      {/* =================================================
-          ENCABEZADO
-      ================================================= */}
+      {/* ENCABEZADO */}
 
       <header className="relative z-20 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
@@ -571,7 +592,7 @@ export default function Acceso() {
             }
             className="flex items-center gap-3 text-left"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg shadow-orange-500/20">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg">
               🚀
             </span>
 
@@ -591,48 +612,40 @@ export default function Acceso() {
             onClick={() =>
               router.push("/")
             }
-            className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-blue-100 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-bold text-blue-100 transition hover:bg-white/10"
           >
             ← Volver al inicio
           </button>
         </div>
       </header>
 
-      {/* =================================================
-          CONTENIDO PRINCIPAL
-      ================================================= */}
+      {/* CONTENIDO */}
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
-        {/* TÍTULO */}
-
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-200">
+          <span className="inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-200">
             🔐 CENTRO DE ACCESO
           </span>
 
           <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
             Ingresa a tu universo
+
             <span className="block bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
               de aprendizaje digital
             </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-blue-100/80">
-            Escribe el mismo número de
-            WhatsApp que utilizaste para
-            registrarte o enviar tu
+            Escribe el mismo número de WhatsApp
+            utilizado para registrarte o enviar tu
             comprobante.
           </p>
         </div>
 
-        {/* =================================================
-            OPCIONES DE ACCESO
-        ================================================= */}
+        {/* OPCIONES */}
 
         <div className="mb-10 grid gap-6 lg:grid-cols-2">
-          {/* PRUEBA */}
-
-          <article className="relative overflow-hidden rounded-[2rem] border border-yellow-300/25 bg-gradient-to-br from-yellow-300/15 to-orange-500/10 p-7 shadow-2xl backdrop-blur">
+          <article className="relative overflow-hidden rounded-[2rem] border border-yellow-300/25 bg-gradient-to-br from-yellow-300/15 to-orange-500/10 p-7 shadow-2xl">
             <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
               ⏱️
             </div>
@@ -647,33 +660,20 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Conoce la plataforma,
-                visualiza los materiales y
-                descubre sus herramientas.
+                Conoce la plataforma, visualiza
+                los materiales y descubre sus
+                herramientas.
               </p>
 
-              <ul className="mt-6 space-y-3 text-sm font-bold text-blue-50">
-                <li className="flex gap-3">
-                  <span>✓</span>
-                  Acceso temporal de una hora
-                </li>
-
-                <li className="flex gap-3">
-                  <span>✓</span>
-                  Visualización de contenidos
-                </li>
-
-                <li className="flex gap-3">
-                  <span>🔒</span>
-                  Descargas bloqueadas
-                </li>
+              <ul className="mt-6 space-y-3 text-sm font-bold">
+                <li>✓ Acceso temporal de una hora</li>
+                <li>✓ Visualización de contenidos</li>
+                <li>🔒 Descargas bloqueadas</li>
               </ul>
             </div>
           </article>
 
-          {/* VIP */}
-
-          <article className="relative overflow-hidden rounded-[2rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-cyan-500/10 p-7 shadow-2xl backdrop-blur">
+          <article className="relative overflow-hidden rounded-[2rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-cyan-500/10 p-7 shadow-2xl">
             <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
               💎
             </div>
@@ -688,42 +688,26 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Disfruta de la biblioteca,
-                descarga materiales y utiliza
-                todas las herramientas
-                disponibles.
+                Disfruta de la biblioteca, descarga
+                materiales y utiliza todas las
+                herramientas disponibles.
               </p>
 
-              <ul className="mt-6 space-y-3 text-sm font-bold text-blue-50">
-                <li className="flex gap-3">
-                  <span>✓</span>
-                  Acceso sin límite de tiempo
-                </li>
-
-                <li className="flex gap-3">
-                  <span>✓</span>
-                  Descargas habilitadas
-                </li>
-
-                <li className="flex gap-3">
-                  <span>✓</span>
-                  Biblioteca y Laboratorio Tech
-                </li>
+              <ul className="mt-6 space-y-3 text-sm font-bold">
+                <li>✓ Acceso sin límite de tiempo</li>
+                <li>✓ Descargas habilitadas</li>
+                <li>✓ Biblioteca y Laboratorio Tech</li>
               </ul>
             </div>
           </article>
         </div>
 
-        {/* =================================================
-            VERIFICACIÓN Y PAGO
-        ================================================= */}
+        {/* VERIFICACIÓN Y PAGO */}
 
         <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          {/* VERIFICAR ACCESO */}
-
-          <section className="overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
+          <section className="rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
             <div className="mb-7 flex items-start gap-4">
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-3xl shadow-xl">
+              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-3xl">
                 🔐
               </span>
 
@@ -736,20 +720,17 @@ export default function Acceso() {
                   Activa tu entrada
                 </h2>
 
-                <p className="mt-2 leading-relaxed text-blue-100/70">
-                  El sistema consultará tu
-                  número directamente en
-                  Google Sheets.
+                <p className="mt-2 text-blue-100/70">
+                  El sistema consultará tu número
+                  directamente en Google Sheets.
                 </p>
               </div>
             </div>
 
-            <form
-              onSubmit={enviarFormulario}
-            >
+            <form onSubmit={enviarFormulario}>
               <label
                 htmlFor="telefono"
-                className="mb-2 block text-sm font-black text-blue-100"
+                className="mb-2 block text-sm font-black"
               >
                 Número de WhatsApp
               </label>
@@ -770,8 +751,7 @@ export default function Acceso() {
                   onChange={(evento) => {
                     setTelefono(
                       limpiarTelefono(
-                        evento.target
-                          .value,
+                        evento.target.value,
                       ),
                     );
 
@@ -782,39 +762,25 @@ export default function Acceso() {
                       );
                     }
                   }}
-                  className="w-full rounded-2xl border-2 border-white/15 bg-slate-950/50 py-4 pl-14 pr-5 text-lg font-bold text-white outline-none transition placeholder:text-blue-200/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full rounded-2xl border-2 border-white/15 bg-slate-950/50 py-4 pl-14 pr-5 text-lg font-bold text-white outline-none transition placeholder:text-blue-200/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10"
                 />
               </div>
 
-              <p className="mt-2 text-xs leading-relaxed text-blue-200/60">
-                Incluye el código del país,
-                sin espacios, guiones ni el
-                signo +.
+              <p className="mt-2 text-xs text-blue-200/60">
+                Incluye el código del país, sin
+                espacios, guiones ni el signo +.
               </p>
 
               <button
                 type="submit"
                 disabled={cargando}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:brightness-110 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60"
+                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {cargando ? (
-                  <>
-                    <span className="inline-block animate-spin">
-                      🚀
-                    </span>
-
-                    Verificando acceso...
-                  </>
-                ) : (
-                  <>
-                    <span>✅</span>
-                    Verificar y entrar
-                  </>
-                )}
+                {cargando
+                  ? "🚀 Verificando acceso..."
+                  : "✅ Verificar y entrar"}
               </button>
             </form>
-
-            {/* MENSAJE */}
 
             {mensaje && (
               <div
@@ -825,27 +791,9 @@ export default function Acceso() {
                 {mensaje}
               </div>
             )}
-
-            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
-              <p className="flex items-start gap-3 text-sm leading-relaxed text-blue-100/70">
-                <span className="text-xl">
-                  🛡️
-                </span>
-
-                <span>
-                  El enlace de acceso directo
-                  no evita la validación. El
-                  sistema siempre comprobará
-                  que tu estado esté aprobado
-                  en Google Sheets.
-                </span>
-              </p>
-            </div>
           </section>
 
-          {/* PAGO Y SOPORTE */}
-
-          <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+          <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl sm:p-8">
             <span className="text-5xl">
               💎
             </span>
@@ -866,71 +814,41 @@ export default function Acceso() {
                 "Espera la confirmación",
                 "Recibe tu enlace directo",
                 "Entra con tu WhatsApp",
-              ].map(
-                (
-                  elemento,
-                  indice,
-                ) => (
-                  <div
-                    key={elemento}
-                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
-                      {indice + 1}
-                    </span>
+              ].map((elemento, indice) => (
+                <div
+                  key={elemento}
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
+                    {indice + 1}
+                  </span>
 
-                    <span className="font-bold text-blue-50">
-                      {elemento}
-                    </span>
-                  </div>
-                ),
-              )}
+                  <span className="font-bold">
+                    {elemento}
+                  </span>
+                </div>
+              ))}
             </div>
 
             <a
               href={enlaceWhatsApp}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-7 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-xl transition hover:-translate-y-1 hover:bg-[#1ebe57]"
+              className="mt-7 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-xl transition hover:-translate-y-1"
             >
-              <span className="text-2xl">
-                📲
-              </span>
-
-              Enviar mi comprobante
+              📲 Enviar mi comprobante
             </a>
-
-            <p className="mt-4 text-center text-xs leading-relaxed text-blue-100/50">
-              Después de aprobar el pago,
-              recibirás un enlace que
-              verificará tu número y abrirá
-              automáticamente la biblioteca.
-            </p>
           </aside>
         </div>
       </section>
 
-      {/* =================================================
-          PIE DE PÁGINA
-      ================================================= */}
+      {/* PIE DE PÁGINA */}
 
-      <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 px-5 py-8 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">
-              🚀
-            </span>
-
-            <div>
-              <p className="font-black text-yellow-300">
-                MUNDO DIGITAL INFANTIL
-              </p>
-
-              <p className="text-xs text-blue-300/60">
-                Aprender · Jugar · Crear
-              </p>
-            </div>
-          </div>
+      <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 px-5 py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="font-black text-yellow-300">
+            🚀 MUNDO DIGITAL INFANTIL
+          </p>
 
           <p className="text-sm font-bold text-blue-300/50">
             CENTRO DE ACCESO © 2026
