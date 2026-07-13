@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 /* =====================================================
-   TIPOS DE DATOS
+   TIPOS
 ===================================================== */
 
 type Categoria = {
@@ -32,10 +32,14 @@ type Comentario = {
 type ComentariosPorMaterial = Record<string, Comentario[]>;
 type LikesPorMaterial = Record<string, boolean>;
 
-type ModoAcceso =
-  | "vip"
-  | "prueba"
-  | "sin-acceso";
+type ModoAcceso = "vip" | "prueba" | "sin-acceso";
+
+type AvisoAccion =
+  | {
+      tipo: "exito" | "advertencia" | "error";
+      texto: string;
+    }
+  | null;
 
 /* =====================================================
    CATEGORÍAS
@@ -46,141 +50,121 @@ const categorias: Categoria[] = [
     id: "Todos",
     nombre: "Todos",
     emoji: "🌌",
-    color:
-      "bg-blue-100 text-blue-800 border-blue-300",
+    color: "bg-blue-100 text-blue-800 border-blue-300",
   },
   {
     id: "Juegos",
     nombre: "Juegos",
     emoji: "🎮",
-    color:
-      "bg-red-100 text-red-800 border-red-300",
+    color: "bg-red-100 text-red-800 border-red-300",
   },
   {
     id: "Grafismo",
     nombre: "Grafismo",
     emoji: "✏️",
-    color:
-      "bg-green-100 text-green-800 border-green-300",
+    color: "bg-green-100 text-green-800 border-green-300",
   },
   {
     id: "Fonetico",
     nombre: "Fonético",
     emoji: "🗣️",
-    color:
-      "bg-yellow-100 text-yellow-800 border-yellow-300",
+    color: "bg-yellow-100 text-yellow-800 border-yellow-300",
   },
   {
     id: "Alfabeto",
     nombre: "Alfabeto y lenguaje",
     emoji: "🔤",
-    color:
-      "bg-purple-100 text-purple-800 border-purple-300",
+    color: "bg-purple-100 text-purple-800 border-purple-300",
   },
   {
     id: "TDAH",
     nombre: "TDAH",
     emoji: "🧠",
-    color:
-      "bg-pink-100 text-pink-800 border-pink-300",
+    color: "bg-pink-100 text-pink-800 border-pink-300",
   },
   {
     id: "Caligrafias",
     nombre: "Caligrafías",
     emoji: "✍️",
-    color:
-      "bg-indigo-100 text-indigo-800 border-indigo-300",
+    color: "bg-indigo-100 text-indigo-800 border-indigo-300",
   },
   {
     id: "Cuentos",
     nombre: "Cuentos",
     emoji: "📖",
-    color:
-      "bg-teal-100 text-teal-800 border-teal-300",
+    color: "bg-teal-100 text-teal-800 border-teal-300",
   },
   {
     id: "Guias",
     nombre: "Guías para padres",
     emoji: "👨‍👩‍👧‍👦",
-    color:
-      "bg-orange-100 text-orange-800 border-orange-300",
+    color: "bg-orange-100 text-orange-800 border-orange-300",
   },
   {
     id: "BonoMaestro",
     nombre: "Bono Maestro",
     emoji: "🍎",
-    color:
-      "bg-lime-100 text-lime-800 border-lime-300",
+    color: "bg-lime-100 text-lime-800 border-lime-300",
   },
   {
     id: "BonoRegalo",
     nombre: "Bono de regalo",
     emoji: "🎁",
-    color:
-      "bg-rose-100 text-rose-800 border-rose-300",
+    color: "bg-rose-100 text-rose-800 border-rose-300",
   },
   {
     id: "Tesoro",
     nombre: "Tesoro bíblico",
     emoji: "🕊️",
-    color:
-      "bg-cyan-100 text-cyan-800 border-cyan-300",
+    color: "bg-cyan-100 text-cyan-800 border-cyan-300",
   },
   {
     id: "Lettering",
     nombre: "Lettering",
     emoji: "🖋️",
-    color:
-      "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300",
+    color: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-300",
   },
   {
     id: "MiniPack",
     nombre: "Mini pack adolescentes",
     emoji: "📱",
-    color:
-      "bg-emerald-100 text-emerald-800 border-emerald-300",
+    color: "bg-emerald-100 text-emerald-800 border-emerald-300",
   },
   {
     id: "Preescritura",
     nombre: "Cuadernos preescritura",
     emoji: "📓",
-    color:
-      "bg-amber-100 text-amber-800 border-amber-300",
+    color: "bg-amber-100 text-amber-800 border-amber-300",
   },
   {
     id: "Pictogramas",
     nombre: "Pictogramas",
     emoji: "🖼️",
-    color:
-      "bg-violet-100 text-violet-800 border-violet-300",
+    color: "bg-violet-100 text-violet-800 border-violet-300",
   },
   {
     id: "Matematicas",
     nombre: "Matemáticas",
     emoji: "🔢",
-    color:
-      "bg-sky-100 text-sky-800 border-sky-300",
+    color: "bg-sky-100 text-sky-800 border-sky-300",
   },
   {
     id: "Montessori",
     nombre: "Método Montessori",
     emoji: "🧩",
-    color:
-      "bg-orange-200 text-orange-900 border-orange-400",
+    color: "bg-orange-200 text-orange-900 border-orange-400",
   },
   {
     id: "Motricidad",
     nombre: "Motricidad fina",
     emoji: "🖐️",
-    color:
-      "bg-pink-200 text-pink-900 border-pink-400",
+    color: "bg-pink-200 text-pink-900 border-pink-400",
   },
   {
     id: "Terapia",
     nombre: "Terapia de lenguaje",
     emoji: "👅",
-    color:
-      "bg-blue-200 text-blue-900 border-blue-400",
+    color: "bg-blue-200 text-blue-900 border-blue-400",
   },
 ];
 
@@ -212,7 +196,7 @@ const gradientesCategoria: Record<string, string> = {
 };
 
 /* =====================================================
-   GOOGLE SHEETS DE MATERIALES
+   GOOGLE SHEETS
 ===================================================== */
 
 const URL_MATERIALES =
@@ -223,7 +207,7 @@ const URL_MATERIALES =
 ===================================================== */
 
 const IMAGEN_RESPALDO =
-  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Crect width='100%25' height='100%25' fill='%230f172a'/%3E%3Ctext x='50%25' y='43%25' dominant-baseline='middle' text-anchor='middle' font-size='75'%3E📚%3C/text%3E%3Ctext x='50%25' y='65%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='28' fill='%2367e8f9'%3EVista previa no disponible%3C/text%3E%3C/svg%3E";
+  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='500'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1'%3E%3Cstop stop-color='%230f172a'/%3E%3Cstop offset='1' stop-color='%23312e81'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23g)'/%3E%3Ctext x='50%25' y='43%25' dominant-baseline='middle' text-anchor='middle' font-size='75'%3E📚%3C/text%3E%3Ctext x='50%25' y='65%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='28' fill='%2367e8f9'%3EVista previa no disponible%3C/text%3E%3C/svg%3E";
 
 /* =====================================================
    FUNCIONES AUXILIARES
@@ -237,13 +221,9 @@ function normalizarTexto(valor: unknown): string {
     .trim();
 }
 
-function leerLocalStorage<T>(
-  clave: string,
-  valorInicial: T,
-): T {
+function leerLocalStorage<T>(clave: string, valorInicial: T): T {
   try {
-    const valorGuardado =
-      localStorage.getItem(clave);
+    const valorGuardado = localStorage.getItem(clave);
 
     return valorGuardado
       ? (JSON.parse(valorGuardado) as T)
@@ -253,8 +233,71 @@ function leerLocalStorage<T>(
   }
 }
 
+function escaparHTML(texto: string): string {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/*
+Convierte enlaces comunes de Google Drive
+en enlaces de descarga directa.
+
+Si no reconoce el formato, mantiene
+el enlace original.
+*/
+
+function convertirEnlaceDriveDescarga(enlaceOriginal: string): string {
+  const enlace = enlaceOriginal.trim();
+
+  if (!enlace) {
+    return "";
+  }
+
+  try {
+    const url = new URL(enlace);
+
+    if (!url.hostname.includes("drive.google.com")) {
+      return enlace;
+    }
+
+    const coincidenciaArchivo = url.pathname.match(
+      /\/file\/d\/([^/]+)/,
+    );
+
+    if (coincidenciaArchivo?.[1]) {
+      return `https://drive.google.com/uc?export=download&id=${coincidenciaArchivo[1]}`;
+    }
+
+    const idParametro = url.searchParams.get("id");
+
+    if (idParametro) {
+      return `https://drive.google.com/uc?export=download&id=${idParametro}`;
+    }
+
+    return enlace;
+  } catch {
+    return enlace;
+  }
+}
+
+function abrirEnlace(enlace: string) {
+  const elemento = document.createElement("a");
+
+  elemento.href = enlace;
+  elemento.target = "_blank";
+  elemento.rel = "noopener noreferrer";
+
+  document.body.appendChild(elemento);
+  elemento.click();
+  elemento.remove();
+}
+
 /* =====================================================
-   COMPONENTE PRINCIPAL
+   COMPONENTE
 ===================================================== */
 
 export default function Biblioteca() {
@@ -263,62 +306,43 @@ export default function Biblioteca() {
   const [modoAcceso, setModoAcceso] =
     useState<ModoAcceso>("sin-acceso");
 
-  const [sesionLista, setSesionLista] =
-    useState(false);
+  const [sesionLista, setSesionLista] = useState(false);
 
-  const [busqueda, setBusqueda] =
-    useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [categoriaActiva, setCategoriaActiva] =
+    useState("Todos");
 
-  const [
-    categoriaActiva,
-    setCategoriaActiva,
-  ] = useState("Todos");
+  const [materiales, setMateriales] = useState<Material[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState("");
 
-  const [materiales, setMateriales] =
-    useState<Material[]>([]);
+  const [materialActivo, setMaterialActivo] =
+    useState<Material | null>(null);
 
-  const [cargando, setCargando] =
-    useState(true);
-
-  const [errorCarga, setErrorCarga] =
-    useState("");
-
-  const [
-    materialActivo,
-    setMaterialActivo,
-  ] = useState<Material | null>(null);
-
-  const [nombre, setNombre] =
-    useState("");
-
-  const [
-    nuevoComentario,
-    setNuevoComentario,
-  ] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [nuevoComentario, setNuevoComentario] = useState("");
 
   const [comentarios, setComentarios] =
     useState<ComentariosPorMaterial>({});
 
-  const [likes, setLikes] =
-    useState<LikesPorMaterial>({});
+  const [likes, setLikes] = useState<LikesPorMaterial>({});
+
+  const [avisoAccion, setAvisoAccion] =
+    useState<AvisoAccion>(null);
 
   /* ===================================================
-     COMPROBAR ACCESO VIP O PRUEBA
+     VALIDAR ACCESO
   =================================================== */
 
   useEffect(() => {
     const accesoVIP =
-      localStorage.getItem("accesoVIP") ===
-        "true" ||
-      localStorage.getItem("modoAcceso") ===
-        "vip";
+      localStorage.getItem("accesoVIP") === "true" ||
+      localStorage.getItem("modoAcceso") === "vip";
 
-    const modoGuardado =
-      localStorage.getItem("modoAcceso");
+    const modoGuardado = localStorage.getItem("modoAcceso");
 
     const limitePrueba = Number(
-      localStorage.getItem("limitePrueba") ||
-        "0",
+      localStorage.getItem("limitePrueba") || "0",
     );
 
     if (accesoVIP) {
@@ -340,9 +364,7 @@ export default function Biblioteca() {
     localStorage.removeItem("modoAcceso");
     localStorage.removeItem("limitePrueba");
 
-    router.replace(
-      "/acceso?motivo=acceso-requerido",
-    );
+    router.replace("/acceso?motivo=acceso-requerido");
   }, [router]);
 
   /* ===================================================
@@ -359,8 +381,12 @@ export default function Biblioteca() {
       setErrorCarga("");
 
       try {
+        const parametros = new URLSearchParams({
+          t: Date.now().toString(),
+        });
+
         const respuesta = await fetch(
-          URL_MATERIALES,
+          `${URL_MATERIALES}?${parametros.toString()}`,
           {
             cache: "no-store",
           },
@@ -372,8 +398,7 @@ export default function Biblioteca() {
           );
         }
 
-        const datos: unknown =
-          await respuesta.json();
+        const datos: unknown = await respuesta.json();
 
         if (!Array.isArray(datos)) {
           throw new Error(
@@ -381,19 +406,15 @@ export default function Biblioteca() {
           );
         }
 
-        const listaMateriales =
-          datos as Material[];
+        const listaMateriales = datos as Material[];
 
         /*
-        Durante la prueba eliminamos linkDrive
-        antes de guardar los materiales en el estado.
-
-        En el siguiente paso también lo ocultaremos
-        desde el Apps Script de materiales.
+        En prueba se elimina el enlace Drive
+        antes de guardar la información en React.
         */
 
-        const materialesProcesados =
-          listaMateriales.map((material) => {
+        const materialesProcesados = listaMateriales.map(
+          (material) => {
             if (modoAcceso === "prueba") {
               return {
                 ...material,
@@ -402,11 +423,10 @@ export default function Biblioteca() {
             }
 
             return material;
-          });
-
-        setMateriales(
-          materialesProcesados,
+          },
         );
+
+        setMateriales(materialesProcesados);
       } catch (error) {
         console.error(
           "Error al cargar materiales:",
@@ -431,15 +451,16 @@ export default function Biblioteca() {
     );
 
     setLikes(
-      leerLocalStorage<LikesPorMaterial>(
-        "likesMDI",
-        {},
-      ),
+      leerLocalStorage<LikesPorMaterial>("likesMDI", {}),
+    );
+
+    setNombre(
+      localStorage.getItem("nombreUsuario") || "",
     );
   }, [sesionLista, modoAcceso]);
 
   /* ===================================================
-     CERRAR MODAL CON ESCAPE
+     CONTROL DEL MODAL
   =================================================== */
 
   useEffect(() => {
@@ -447,28 +468,22 @@ export default function Biblioteca() {
       return;
     }
 
-    const cerrarConEscape = (
-      evento: KeyboardEvent,
-    ) => {
+    setAvisoAccion(null);
+
+    const cerrarConEscape = (evento: KeyboardEvent) => {
       if (evento.key === "Escape") {
         setMaterialActivo(null);
       }
     };
 
-    const overflowAnterior =
-      document.body.style.overflow;
+    const overflowAnterior = document.body.style.overflow;
 
-    document.body.style.overflow =
-      "hidden";
+    document.body.style.overflow = "hidden";
 
-    window.addEventListener(
-      "keydown",
-      cerrarConEscape,
-    );
+    window.addEventListener("keydown", cerrarConEscape);
 
     return () => {
-      document.body.style.overflow =
-        overflowAnterior;
+      document.body.style.overflow = overflowAnterior;
 
       window.removeEventListener(
         "keydown",
@@ -478,7 +493,7 @@ export default function Biblioteca() {
   }, [materialActivo]);
 
   /* ===================================================
-     PUBLICAR COMENTARIO
+     COMENTARIOS
   =================================================== */
 
   const publicarComentario = () => {
@@ -490,27 +505,21 @@ export default function Biblioteca() {
       return;
     }
 
-    const idMaterial = String(
-      materialActivo.id,
-    );
+    const idMaterial = String(materialActivo.id);
 
     const comentarioArmado: Comentario = {
       nombre: nombre.trim(),
       texto: nuevoComentario.trim(),
-      fecha: new Date().toLocaleDateString(
-        "es-ES",
-      ),
+      fecha: new Date().toLocaleDateString("es-ES"),
     };
 
-    const nuevosComentarios: ComentariosPorMaterial =
-      {
-        ...comentarios,
-
-        [idMaterial]: [
-          ...(comentarios[idMaterial] || []),
-          comentarioArmado,
-        ],
-      };
+    const nuevosComentarios: ComentariosPorMaterial = {
+      ...comentarios,
+      [idMaterial]: [
+        ...(comentarios[idMaterial] || []),
+        comentarioArmado,
+      ],
+    };
 
     setComentarios(nuevosComentarios);
 
@@ -519,12 +528,21 @@ export default function Biblioteca() {
       JSON.stringify(nuevosComentarios),
     );
 
-    setNombre("");
+    localStorage.setItem(
+      "nombreUsuario",
+      nombre.trim(),
+    );
+
     setNuevoComentario("");
+
+    setAvisoAccion({
+      tipo: "exito",
+      texto: "Tu opinión fue guardada correctamente.",
+    });
   };
 
   /* ===================================================
-     ME GUSTA
+     FAVORITOS
   =================================================== */
 
   const alternarLike = () => {
@@ -532,14 +550,11 @@ export default function Biblioteca() {
       return;
     }
 
-    const idMaterial = String(
-      materialActivo.id,
-    );
+    const idMaterial = String(materialActivo.id);
 
     const nuevosLikes: LikesPorMaterial = {
       ...likes,
-      [idMaterial]:
-        !likes[idMaterial],
+      [idMaterial]: !likes[idMaterial],
     };
 
     setLikes(nuevosLikes);
@@ -548,94 +563,401 @@ export default function Biblioteca() {
       "likesMDI",
       JSON.stringify(nuevosLikes),
     );
+
+    setAvisoAccion({
+      tipo: "exito",
+      texto: nuevosLikes[idMaterial]
+        ? "Material añadido a tus favoritos."
+        : "Material eliminado de tus favoritos.",
+    });
   };
 
   /* ===================================================
-     FILTRAR MATERIALES
+     VER PORTADA COMPLETA
   =================================================== */
 
-  const materialesFiltrados =
-    useMemo(() => {
-      const textoBuscado =
-        normalizarTexto(busqueda);
+  const abrirVistaGrande = () => {
+    if (!materialActivo) {
+      return;
+    }
 
-      return materiales.filter(
-        (item) => {
-          const titulo =
-            normalizarTexto(
-              item.titulo,
+    abrirEnlace(
+      materialActivo.imagen || IMAGEN_RESPALDO,
+    );
+
+    setAvisoAccion({
+      tipo: "exito",
+      texto: "La portada se abrió en una nueva pestaña.",
+    });
+  };
+
+  /* ===================================================
+     SOLICITAR ACCESO VIP
+  =================================================== */
+
+  const solicitarAccesoVIP = () => {
+    setMaterialActivo(null);
+
+    router.push("/acceso?motivo=activar-vip");
+  };
+
+  /* ===================================================
+     IMPRIMIR MATERIAL
+  =================================================== */
+
+  const imprimirMaterial = () => {
+    if (!materialActivo) {
+      return;
+    }
+
+    if (modoAcceso === "prueba") {
+      solicitarAccesoVIP();
+      return;
+    }
+
+    const titulo =
+      materialActivo.titulo || "Material educativo";
+
+    const descripcion = materialActivo.desc || "";
+
+    const imagen =
+      materialActivo.imagen || IMAGEN_RESPALDO;
+
+    const ventanaImpresion = window.open(
+      "",
+      "_blank",
+      "width=1000,height=850",
+    );
+
+    if (!ventanaImpresion) {
+      setAvisoAccion({
+        tipo: "error",
+        texto:
+          "El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes.",
+      });
+
+      return;
+    }
+
+    ventanaImpresion.opener = null;
+
+    ventanaImpresion.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="UTF-8" />
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1"
+          />
+
+          <title>
+            ${escaparHTML(titulo)}
+          </title>
+
+          <style>
+            * {
+              box-sizing: border-box;
+            }
+
+            body {
+              margin: 0;
+              padding: 35px;
+              background: #ffffff;
+              color: #0f172a;
+              font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .contenedor {
+              max-width: 850px;
+              margin: 0 auto;
+              text-align: center;
+            }
+
+            .marca {
+              display: inline-block;
+              margin-bottom: 20px;
+              padding: 10px 18px;
+              border-radius: 999px;
+              background: #e0f2fe;
+              color: #075985;
+              font-size: 12px;
+              font-weight: 900;
+              letter-spacing: 1.5px;
+              text-transform: uppercase;
+            }
+
+            h1 {
+              margin: 0 0 24px;
+              font-size: 32px;
+              line-height: 1.2;
+            }
+
+            img {
+              display: block;
+              width: 100%;
+              max-height: 650px;
+              margin: 0 auto;
+              object-fit: contain;
+              border: 1px solid #e2e8f0;
+              border-radius: 20px;
+            }
+
+            p {
+              margin: 25px auto 0;
+              max-width: 720px;
+              color: #475569;
+              font-size: 16px;
+              line-height: 1.7;
+            }
+
+            footer {
+              margin-top: 30px;
+              padding-top: 18px;
+              border-top: 1px solid #e2e8f0;
+              color: #64748b;
+              font-size: 12px;
+            }
+
+            @media print {
+              body {
+                padding: 10px;
+              }
+            }
+          </style>
+        </head>
+
+        <body>
+          <main class="contenedor">
+            <div class="marca">
+              Mundo Digital Infantil
+            </div>
+
+            <h1>
+              ${escaparHTML(titulo)}
+            </h1>
+
+            <img
+              id="imagen-material"
+              src="${escaparHTML(imagen)}"
+              alt="${escaparHTML(titulo)}"
+            />
+
+            ${
+              descripcion
+                ? `<p>${escaparHTML(descripcion)}</p>`
+                : ""
+            }
+
+            <footer>
+              Biblioteca Estelar · Mundo Digital Infantil
+            </footer>
+          </main>
+
+          <script>
+            const imagen = document.getElementById(
+              "imagen-material"
             );
 
-          const descripcion =
-            normalizarTexto(
-              item.desc,
-            );
+            function imprimir() {
+              setTimeout(function () {
+                window.print();
+              }, 300);
+            }
 
-          const coincideBusqueda =
-            titulo.includes(
-              textoBuscado,
-            ) ||
-            descripcion.includes(
-              textoBuscado,
-            );
+            if (imagen.complete) {
+              imprimir();
+            } else {
+              imagen.addEventListener(
+                "load",
+                imprimir
+              );
+            }
+          </script>
+        </body>
+      </html>
+    `);
 
-          const coincideCategoria =
-            categoriaActiva ===
-              "Todos" ||
-            item.categoria ===
-              categoriaActiva;
+    ventanaImpresion.document.close();
 
-          return (
-            coincideBusqueda &&
-            coincideCategoria
-          );
-        },
-      );
-    }, [
-      busqueda,
-      categoriaActiva,
-      materiales,
-    ]);
+    setAvisoAccion({
+      tipo: "exito",
+      texto: "Se preparó la ficha para imprimir.",
+    });
+  };
+
+  /* ===================================================
+     DESCARGAR DESDE GOOGLE DRIVE
+  =================================================== */
+
+  const descargarDesdeDrive = () => {
+    if (!materialActivo) {
+      return;
+    }
+
+    if (modoAcceso === "prueba") {
+      solicitarAccesoVIP();
+      return;
+    }
+
+    const enlaceOriginal = String(
+      materialActivo.linkDrive || "",
+    ).trim();
+
+    if (!enlaceOriginal) {
+      setAvisoAccion({
+        tipo: "advertencia",
+        texto:
+          "Este material todavía no tiene un enlace de Google Drive disponible.",
+      });
+
+      return;
+    }
+
+    const enlaceDescarga =
+      convertirEnlaceDriveDescarga(enlaceOriginal);
+
+    abrirEnlace(enlaceDescarga);
+
+    setAvisoAccion({
+      tipo: "exito",
+      texto:
+        "La descarga se abrió desde Google Drive.",
+    });
+  };
+
+  /* ===================================================
+     COPIAR ENLACE DRIVE
+  =================================================== */
+
+  const copiarEnlaceDrive = async () => {
+    if (!materialActivo) {
+      return;
+    }
+
+    if (modoAcceso === "prueba") {
+      solicitarAccesoVIP();
+      return;
+    }
+
+    const enlaceDrive = String(
+      materialActivo.linkDrive || "",
+    ).trim();
+
+    if (!enlaceDrive) {
+      setAvisoAccion({
+        tipo: "advertencia",
+        texto:
+          "Este material no tiene un enlace disponible para copiar.",
+      });
+
+      return;
+    }
+
+    try {
+      if (
+        navigator.clipboard &&
+        window.isSecureContext
+      ) {
+        await navigator.clipboard.writeText(
+          enlaceDrive,
+        );
+      } else {
+        const textarea =
+          document.createElement("textarea");
+
+        textarea.value = enlaceDrive;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+
+        textarea.focus();
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+      }
+
+      setAvisoAccion({
+        tipo: "exito",
+        texto:
+          "Enlace de Google Drive copiado.",
+      });
+    } catch {
+      setAvisoAccion({
+        tipo: "error",
+        texto:
+          "No pudimos copiar el enlace.",
+      });
+    }
+  };
+
+  /* ===================================================
+     FILTRAR
+  =================================================== */
+
+  const materialesFiltrados = useMemo(() => {
+    const textoBuscado = normalizarTexto(busqueda);
+
+    return materiales.filter((item) => {
+      const titulo = normalizarTexto(item.titulo);
+      const descripcion = normalizarTexto(item.desc);
+
+      const coincideBusqueda =
+        titulo.includes(textoBuscado) ||
+        descripcion.includes(textoBuscado);
+
+      const coincideCategoria =
+        categoriaActiva === "Todos" ||
+        item.categoria === categoriaActiva;
+
+      return coincideBusqueda && coincideCategoria;
+    });
+  }, [busqueda, categoriaActiva, materiales]);
 
   const limpiarFiltros = () => {
     setBusqueda("");
     setCategoriaActiva("Todos");
   };
 
-  const comentariosActivos =
-    materialActivo
-      ? comentarios[
-          String(materialActivo.id)
-        ] || []
-      : [];
+  const comentariosActivos = materialActivo
+    ? comentarios[String(materialActivo.id)] || []
+    : [];
 
-  const materialTieneLike =
-    materialActivo
-      ? Boolean(
-          likes[
-            String(materialActivo.id)
-          ],
-        )
-      : false;
+  const materialTieneLike = materialActivo
+    ? Boolean(likes[String(materialActivo.id)])
+    : false;
 
-  const esPrueba =
-    modoAcceso === "prueba";
+  const categoriaMaterialActivo = materialActivo
+    ? categorias.find(
+        (categoria) =>
+          categoria.id === materialActivo.categoria,
+      ) || categorias[0]
+    : categorias[0];
+
+  const esPrueba = modoAcceso === "prueba";
 
   /* ===================================================
-     ESPERAR VALIDACIÓN DE SESIÓN
+     VALIDANDO SESIÓN
   =================================================== */
 
   if (!sesionLista) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 px-5 text-white">
         <div className="text-center">
-          <div className="text-6xl">
+          <div className="animate-bounce text-7xl">
             🚀
           </div>
 
           <h1 className="mt-5 text-2xl font-black">
             Verificando tu acceso...
           </h1>
+
+          <p className="mt-2 text-blue-100/50">
+            Preparando la Biblioteca Estelar.
+          </p>
         </div>
       </main>
     );
@@ -647,7 +969,7 @@ export default function Biblioteca() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 pb-24 pt-20 text-white sm:px-6">
-      {/* FONDO ESPACIAL */}
+      {/* FONDO */}
 
       <div className="pointer-events-none absolute -left-40 top-20 h-[34rem] w-[34rem] rounded-full bg-blue-600/25 blur-3xl" />
 
@@ -688,15 +1010,14 @@ export default function Biblioteca() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base font-medium leading-relaxed text-blue-100/75 md:text-lg">
-            Encuentra materiales educativos,
-            cuentos, juegos y actividades para
-            acompañar cada etapa del aprendizaje.
+            Materiales educativos, cuentos, juegos y
+            actividades para aprender, crear y descubrir.
           </p>
 
           {esPrueba && (
-            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-between gap-4 rounded-2xl border border-yellow-300/25 bg-yellow-300/10 p-4 text-left sm:flex-row">
+            <div className="mx-auto mt-6 flex max-w-2xl flex-col items-center justify-between gap-4 rounded-3xl border border-yellow-300/25 bg-yellow-300/10 p-5 text-left backdrop-blur sm:flex-row">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">
+                <span className="text-3xl">
                   🔒
                 </span>
 
@@ -705,21 +1026,17 @@ export default function Biblioteca() {
                     Estás explorando la biblioteca
                   </p>
 
-                  <p className="mt-1 text-sm text-yellow-100/75">
-                    Puedes ver los materiales, pero
-                    descargar, imprimir y abrir archivos
-                    externos requiere acceso VIP.
+                  <p className="mt-1 text-sm text-yellow-100/70">
+                    Puedes revisar las portadas, pero las
+                    descargas e impresiones requieren acceso
+                    VIP.
                   </p>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  router.push(
-                    "/acceso?motivo=activar-vip",
-                  )
-                }
+                onClick={solicitarAccesoVIP}
                 className="w-full shrink-0 rounded-full bg-yellow-300 px-5 py-3 text-sm font-black text-slate-950 transition hover:-translate-y-1 hover:bg-yellow-200 sm:w-auto"
               >
                 💎 Activar VIP
@@ -728,17 +1045,14 @@ export default function Biblioteca() {
           )}
         </header>
 
-        {/* BUSCADOR Y FILTROS */}
+        {/* BUSCADOR */}
 
         <section
           aria-label="Buscador y filtros"
           className="mb-9"
         >
           <div className="relative mx-auto mb-6 max-w-2xl">
-            <span
-              className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5 text-2xl"
-              aria-hidden="true"
-            >
+            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5 text-2xl">
               🔍
             </span>
 
@@ -747,52 +1061,42 @@ export default function Biblioteca() {
               placeholder="¿Qué material estás buscando?"
               value={busqueda}
               onChange={(evento) =>
-                setBusqueda(
-                  evento.target.value,
-                )
+                setBusqueda(evento.target.value)
               }
               className="w-full rounded-full border-2 border-white/15 bg-white/10 py-4 pl-14 pr-5 text-base font-medium text-white shadow-2xl outline-none backdrop-blur-xl transition placeholder:text-blue-200/40 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10 md:text-lg"
               aria-label="Buscar materiales"
             />
           </div>
 
+          {/* CATEGORÍAS */}
+
           <div className="flex gap-3 overflow-x-auto pb-4 md:flex-wrap md:justify-center md:overflow-visible">
-            {categorias.map(
-              (categoria) => {
-                const estaActiva =
-                  categoriaActiva ===
-                  categoria.id;
+            {categorias.map((categoria) => {
+              const estaActiva =
+                categoriaActiva === categoria.id;
 
-                return (
-                  <button
-                    key={categoria.id}
-                    type="button"
-                    onClick={() =>
-                      setCategoriaActiva(
-                        categoria.id,
-                      )
-                    }
-                    aria-pressed={
-                      estaActiva
-                    }
-                    className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border-2 px-5 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 ${
-                      estaActiva
-                        ? `${categoria.color} ring-2 ring-cyan-300 ring-offset-2 ring-offset-slate-950`
-                        : "border-white/10 bg-white/10 text-blue-100 hover:border-white/25 hover:bg-white/15"
-                    }`}
-                  >
-                    <span
-                      className="text-xl"
-                      aria-hidden="true"
-                    >
-                      {categoria.emoji}
-                    </span>
+              return (
+                <button
+                  key={categoria.id}
+                  type="button"
+                  onClick={() =>
+                    setCategoriaActiva(categoria.id)
+                  }
+                  aria-pressed={estaActiva}
+                  className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border-2 px-5 py-3 font-bold shadow-lg transition duration-200 hover:-translate-y-0.5 ${
+                    estaActiva
+                      ? `${categoria.color} ring-2 ring-cyan-300 ring-offset-2 ring-offset-slate-950`
+                      : "border-white/10 bg-white/10 text-blue-100 hover:border-white/25 hover:bg-white/15"
+                  }`}
+                >
+                  <span className="text-xl">
+                    {categoria.emoji}
+                  </span>
 
-                    {categoria.nombre}
-                  </button>
-                );
-              },
-            )}
+                  {categoria.nombre}
+                </button>
+              );
+            })}
           </div>
 
           <div className="mt-2 flex flex-col items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-blue-100/70 shadow-xl backdrop-blur sm:flex-row">
@@ -804,9 +1108,7 @@ export default function Biblioteca() {
               de {materiales.length} materiales
             </p>
 
-            {(busqueda ||
-              categoriaActiva !==
-                "Todos") && (
+            {(busqueda || categoriaActiva !== "Todos") && (
               <button
                 type="button"
                 onClick={limpiarFiltros}
@@ -822,24 +1124,19 @@ export default function Biblioteca() {
 
         {cargando && (
           <div
-            className="mt-10 rounded-3xl border border-white/10 bg-white/10 p-12 text-center shadow-2xl backdrop-blur-xl"
             role="status"
+            className="mt-10 rounded-3xl border border-white/10 bg-white/10 p-12 text-center shadow-2xl backdrop-blur-xl"
           >
-            <div
-              className="mb-4 inline-block animate-bounce text-6xl"
-              aria-hidden="true"
-            >
+            <div className="mb-4 inline-block animate-bounce text-6xl">
               🚀
             </div>
 
             <h2 className="text-2xl font-black text-cyan-200">
-              Buscando materiales en el
-              espacio...
+              Buscando materiales en el espacio...
             </h2>
 
             <p className="mt-2 text-blue-100/65">
-              La biblioteca estará lista en un
-              momento.
+              La biblioteca estará lista en un momento.
             </p>
           </div>
         )}
@@ -848,8 +1145,8 @@ export default function Biblioteca() {
 
         {!cargando && errorCarga && (
           <div
-            className="mt-10 rounded-3xl border border-rose-300/30 bg-rose-400/10 p-8 text-center shadow-2xl backdrop-blur"
             role="alert"
+            className="mt-10 rounded-3xl border border-rose-300/30 bg-rose-400/10 p-8 text-center shadow-2xl backdrop-blur"
           >
             <p className="mb-3 text-5xl">
               🛰️
@@ -865,9 +1162,7 @@ export default function Biblioteca() {
 
             <button
               type="button"
-              onClick={() =>
-                window.location.reload()
-              }
+              onClick={() => window.location.reload()}
               className="mt-5 rounded-full bg-rose-500 px-6 py-3 font-black text-white transition hover:bg-rose-400"
             >
               Intentar nuevamente
@@ -875,173 +1170,138 @@ export default function Biblioteca() {
           </div>
         )}
 
-        {/* TARJETAS */}
+        {/* MATERIALES */}
 
-        {!cargando &&
-          !errorCarga && (
-            <section
-              aria-label="Materiales educativos"
-              className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3"
-            >
-              {materialesFiltrados.map(
-                (item) => {
-                  const categoriaInfo =
-                    categorias.find(
-                      (categoria) =>
-                        categoria.id ===
-                        item.categoria,
-                    ) || categorias[0];
+        {!cargando && !errorCarga && (
+          <section
+            aria-label="Materiales educativos"
+            className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3"
+          >
+            {materialesFiltrados.map((item) => {
+              const categoriaInfo =
+                categorias.find(
+                  (categoria) =>
+                    categoria.id === item.categoria,
+                ) || categorias[0];
 
-                  const gradiente =
-                    gradientesCategoria[
-                      item.categoria ||
-                        "Todos"
-                    ] ||
-                    "from-blue-500 to-violet-500";
+              const gradiente =
+                gradientesCategoria[
+                  item.categoria || "Todos"
+                ] || "from-blue-500 to-violet-500";
 
-                  return (
-                    <article
-                      key={String(item.id)}
-                      className="group relative flex min-h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/75 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:border-white/20"
-                    >
-                      <div
-                        className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${gradiente}`}
-                      />
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setMaterialActivo(
-                            item,
-                          )
-                        }
-                        className="relative mb-5 mt-1 block h-52 w-full overflow-hidden rounded-2xl bg-slate-950 text-left shadow-inner focus:outline-none focus:ring-4 focus:ring-cyan-300/20"
-                        aria-label={`Abrir ${
-                          item.titulo ||
-                          "material"
-                        }`}
-                      >
-                        <img
-                          src={
-                            item.imagen ||
-                            IMAGEN_RESPALDO
-                          }
-                          alt={
-                            item.titulo ||
-                            "Vista previa del material"
-                          }
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                          loading="lazy"
-                          onError={(
-                            evento,
-                          ) => {
-                            evento.currentTarget.onerror =
-                              null;
-
-                            evento.currentTarget.src =
-                              IMAGEN_RESPALDO;
-                          }}
-                        />
-
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
-
-                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
-                          Ver material
-                        </span>
-
-                        {esPrueba && (
-                          <span className="absolute left-3 top-3 rounded-full bg-yellow-300 px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg">
-                            🔒 Solo vista previa
-                          </span>
-                        )}
-                      </button>
-
-                      <div className="flex flex-1 flex-col">
-                        <div
-                          className={`mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-extrabold ${categoriaInfo.color}`}
-                        >
-                          <span aria-hidden="true">
-                            {
-                              categoriaInfo.emoji
-                            }
-                          </span>
-
-                          {
-                            categoriaInfo.nombre
-                          }
-                        </div>
-
-                        <h2 className="mb-2 text-xl font-black leading-tight text-white">
-                          {item.titulo ||
-                            "Material sin título"}
-                        </h2>
-
-                        <p className="mb-6 flex-1 text-sm leading-relaxed text-blue-100/65">
-                          {item.desc ||
-                            "Descubre este recurso educativo y revisa su contenido completo."}
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setMaterialActivo(
-                              item,
-                            )
-                          }
-                          className={`w-full rounded-full bg-gradient-to-r ${gradiente} px-5 py-3 font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110`}
-                        >
-                          {esPrueba
-                            ? "👀 Ver vista previa"
-                            : "Explorar material →"}
-                        </button>
-                      </div>
-                    </article>
-                  );
-                },
-              )}
-
-              {materialesFiltrados.length ===
-                0 && (
-                <div className="col-span-full mt-4 rounded-3xl border border-white/10 bg-white/10 p-12 text-center shadow-2xl backdrop-blur-xl">
-                  <p className="mb-4 text-6xl">
-                    🛸
-                  </p>
-
-                  <h2 className="text-2xl font-black text-cyan-200">
-                    No encontramos coincidencias
-                  </h2>
-
-                  <p className="mx-auto mt-2 max-w-lg text-blue-100/65">
-                    Prueba con otra palabra o
-                    selecciona una categoría
-                    diferente.
-                  </p>
+              return (
+                <article
+                  key={String(item.id)}
+                  className="group relative flex min-h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-slate-900/75 p-5 shadow-2xl shadow-black/20 backdrop-blur-xl transition duration-300 hover:-translate-y-2 hover:border-white/20"
+                >
+                  <div
+                    className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${gradiente}`}
+                  />
 
                   <button
                     type="button"
-                    onClick={limpiarFiltros}
-                    className="mt-5 rounded-full bg-cyan-300 px-6 py-3 font-black text-slate-950 transition hover:bg-cyan-200"
+                    onClick={() => setMaterialActivo(item)}
+                    className="relative mb-5 mt-1 block h-52 w-full overflow-hidden rounded-2xl bg-slate-950 text-left shadow-inner focus:outline-none focus:ring-4 focus:ring-cyan-300/20"
+                    aria-label={`Abrir ${
+                      item.titulo || "material"
+                    }`}
                   >
-                    Ver todos los materiales
+                    <img
+                      src={item.imagen || IMAGEN_RESPALDO}
+                      alt={
+                        item.titulo ||
+                        "Vista previa del material"
+                      }
+                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      onError={(evento) => {
+                        evento.currentTarget.onerror = null;
+                        evento.currentTarget.src =
+                          IMAGEN_RESPALDO;
+                      }}
+                    />
+
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+
+                    <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+                      Abrir experiencia
+                    </span>
+
+                    {esPrueba && (
+                      <span className="absolute left-3 top-3 rounded-full bg-yellow-300 px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg">
+                        🔒 Vista previa
+                      </span>
+                    )}
                   </button>
-                </div>
-              )}
-            </section>
-          )}
+
+                  <div className="flex flex-1 flex-col">
+                    <div
+                      className={`mb-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-extrabold ${categoriaInfo.color}`}
+                    >
+                      <span>{categoriaInfo.emoji}</span>
+                      {categoriaInfo.nombre}
+                    </div>
+
+                    <h2 className="mb-2 text-xl font-black leading-tight text-white">
+                      {item.titulo || "Material sin título"}
+                    </h2>
+
+                    <p className="mb-6 flex-1 text-sm leading-relaxed text-blue-100/65">
+                      {item.desc ||
+                        "Descubre este recurso educativo y revisa su contenido completo."}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => setMaterialActivo(item)}
+                      className={`w-full rounded-full bg-gradient-to-r ${gradiente} px-5 py-3 font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110`}
+                    >
+                      {esPrueba
+                        ? "👀 Explorar vista previa"
+                        : "🚀 Abrir material"}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+
+            {materialesFiltrados.length === 0 && (
+              <div className="col-span-full mt-4 rounded-3xl border border-white/10 bg-white/10 p-12 text-center shadow-2xl backdrop-blur-xl">
+                <p className="mb-4 text-6xl">
+                  🛸
+                </p>
+
+                <h2 className="text-2xl font-black text-cyan-200">
+                  No encontramos coincidencias
+                </h2>
+
+                <p className="mx-auto mt-2 max-w-lg text-blue-100/65">
+                  Prueba con otra palabra o selecciona una
+                  categoría diferente.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={limpiarFiltros}
+                  className="mt-5 rounded-full bg-cyan-300 px-6 py-3 font-black text-slate-950 transition hover:bg-cyan-200"
+                >
+                  Ver todos los materiales
+                </button>
+              </div>
+            )}
+          </section>
+        )}
       </div>
 
       {/* =================================================
-          MODAL
+          EXPERIENCIA PREMIUM DEL MATERIAL
       ================================================= */}
 
       {materialActivo && (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/85 p-4 backdrop-blur-md sm:p-6"
+          className="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-slate-950/90 p-3 backdrop-blur-xl sm:p-6"
           onMouseDown={(evento) => {
-            if (
-              evento.target ===
-              evento.currentTarget
-            ) {
+            if (evento.target === evento.currentTarget) {
               setMaterialActivo(null);
             }
           }}
@@ -1051,284 +1311,437 @@ export default function Biblioteca() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-material-activo"
-            className="relative my-8 w-full max-w-2xl overflow-hidden rounded-[2rem] border border-white/15 bg-slate-900 text-white shadow-2xl"
+            className="relative my-4 w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/15 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 text-white shadow-2xl sm:my-8 sm:rounded-[2.75rem]"
           >
-            <header className="flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/50 p-4 sm:p-5">
-              <h2
-                id="titulo-material-activo"
-                className="text-lg font-black text-white sm:text-xl"
-              >
-                {materialActivo.titulo ||
-                  "Material educativo"}
-              </h2>
+            {/* LUCES */}
+
+            <div className="pointer-events-none absolute -left-32 top-0 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
+
+            <div className="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-fuchsia-600/20 blur-3xl" />
+
+            {/* BARRA SUPERIOR */}
+
+            <header className="relative z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-slate-950/60 px-5 py-4 backdrop-blur-xl sm:px-7">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 via-orange-400 to-pink-400 text-2xl shadow-xl">
+                  {categoriaMaterialActivo.emoji}
+                </span>
+
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-300">
+                    Biblioteca Estelar
+                  </p>
+
+                  <h2
+                    id="titulo-material-activo"
+                    className="truncate text-lg font-black text-white sm:text-xl"
+                  >
+                    {materialActivo.titulo ||
+                      "Material educativo"}
+                  </h2>
+                </div>
+              </div>
 
               <button
                 type="button"
-                onClick={() =>
-                  setMaterialActivo(null)
-                }
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 text-3xl font-light text-blue-100 transition hover:bg-white/20 hover:text-white"
-                aria-label="Cerrar ventana"
+                onClick={() => setMaterialActivo(null)}
+                aria-label="Cerrar material"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-3xl font-light text-blue-100 transition hover:rotate-90 hover:border-rose-300/30 hover:bg-rose-400/15 hover:text-rose-200"
               >
                 ×
               </button>
             </header>
 
-            <div className="relative h-64 w-full bg-gradient-to-br from-slate-950 to-indigo-950 sm:h-80">
-              <img
-                src={
-                  materialActivo.imagen ||
-                  IMAGEN_RESPALDO
-                }
-                alt={
-                  materialActivo.titulo ||
-                  "Material"
-                }
-                className="h-full w-full object-contain"
-                onError={(evento) => {
-                  evento.currentTarget.onerror =
-                    null;
+            {/* CUERPO */}
 
-                  evento.currentTarget.src =
-                    IMAGEN_RESPALDO;
-                }}
-              />
+            <div className="relative z-10 grid lg:grid-cols-[1.05fr_0.95fr]">
+              {/* PORTADA */}
 
-              {esPrueba && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent px-5 pb-5 pt-16 text-center">
-                  <span className="inline-flex rounded-full bg-yellow-300 px-4 py-2 text-xs font-black text-slate-950">
-                    🔒 Vista previa — descarga
-                    bloqueada
-                  </span>
-                </div>
-              )}
-            </div>
+              <div className="relative flex min-h-[360px] items-center justify-center overflow-hidden border-b border-white/10 bg-slate-950/70 p-5 lg:min-h-[620px] lg:border-b-0 lg:border-r">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.24),transparent_68%)]" />
 
-            <div className="p-5 sm:p-7">
-              {materialActivo.desc && (
-                <p className="mb-6 leading-relaxed text-blue-100/70">
-                  {materialActivo.desc}
-                </p>
-              )}
-
-              {/* ACCIONES VIP */}
-
-              {!esPrueba && (
-                <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.open(
-                        materialActivo.imagen ||
-                          IMAGEN_RESPALDO,
-                        "_blank",
-                        "noopener,noreferrer",
-                      )
+                <div className="relative w-full">
+                  <img
+                    src={
+                      materialActivo.imagen ||
+                      IMAGEN_RESPALDO
                     }
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-blue-500 px-3 py-3 font-bold text-white transition hover:bg-blue-400"
-                  >
-                    🔍 Ver en grande
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.print()
+                    alt={
+                      materialActivo.titulo ||
+                      "Portada del material"
                     }
-                    className="flex items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-3 font-bold text-blue-100 transition hover:bg-white/15"
-                  >
-                    🖨️ Imprimir
-                  </button>
+                    className="mx-auto max-h-[570px] w-full rounded-[1.75rem] object-contain shadow-2xl shadow-black/50"
+                    onError={(evento) => {
+                      evento.currentTarget.onerror = null;
 
-                  {materialActivo.linkDrive ? (
-                    <a
-                      href={
-                        materialActivo.linkDrive
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-3 py-3 font-black text-slate-950 transition hover:bg-amber-300"
+                      evento.currentTarget.src =
+                        IMAGEN_RESPALDO;
+                    }}
+                  />
+
+                  <div className="absolute left-3 top-3">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-black shadow-xl backdrop-blur ${
+                        esPrueba
+                          ? "border-yellow-300/30 bg-yellow-300/90 text-yellow-950"
+                          : "border-emerald-300/30 bg-emerald-300/90 text-emerald-950"
+                      }`}
                     >
-                      ⬇️ Descargar
-                    </a>
-                  ) : (
-                    <span className="flex cursor-not-allowed items-center justify-center gap-2 rounded-2xl bg-white/10 px-3 py-3 font-bold text-blue-100/40">
-                      ⬇️ Sin descarga
+                      {esPrueba
+                        ? "🔒 Modo exploración"
+                        : "💎 Descarga habilitada"}
                     </span>
-                  )}
+                  </div>
+                </div>
+              </div>
+
+              {/* INFORMACIÓN */}
+
+              <div className="flex flex-col p-5 sm:p-7 lg:p-8">
+                <div>
+                  <span
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide ${categoriaMaterialActivo.color}`}
+                  >
+                    {categoriaMaterialActivo.emoji}
+                    {categoriaMaterialActivo.nombre}
+                  </span>
+
+                  <h3 className="mt-5 text-3xl font-black leading-tight text-white">
+                    {materialActivo.titulo ||
+                      "Material educativo"}
+                  </h3>
+
+                  <p className="mt-4 leading-relaxed text-blue-100/70">
+                    {materialActivo.desc ||
+                      "Explora este recurso educativo, descubre sus actividades y fortalece el aprendizaje de una forma creativa."}
+                  </p>
+                </div>
+
+                {/* BENEFICIOS */}
+
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-4">
+                    <span className="text-2xl">
+                      🎨
+                    </span>
+
+                    <p className="mt-2 text-xs font-black uppercase tracking-wide text-cyan-200">
+                      Recurso visual
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-pink-300/15 bg-pink-300/10 p-4">
+                    <span className="text-2xl">
+                      🧠
+                    </span>
+
+                    <p className="mt-2 text-xs font-black uppercase tracking-wide text-pink-200">
+                      Aprendizaje creativo
+                    </p>
+                  </div>
+                </div>
+
+                {/* ACCIONES */}
+
+                <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={abrirVistaGrande}
+                    className="group flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 px-4 py-4 font-black text-white shadow-xl transition hover:-translate-y-1 hover:brightness-110"
+                  >
+                    <span className="text-xl transition group-hover:scale-110">
+                      🔍
+                    </span>
+
+                    Ver portada completa
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={imprimirMaterial}
+                    className={`group flex items-center justify-center gap-3 rounded-2xl border px-4 py-4 font-black shadow-xl transition hover:-translate-y-1 ${
+                      esPrueba
+                        ? "border-yellow-300/20 bg-yellow-300/10 text-yellow-200"
+                        : "border-white/15 bg-white/10 text-blue-100 hover:bg-white/15"
+                    }`}
+                  >
+                    <span className="text-xl">
+                      {esPrueba ? "🔒" : "🖨️"}
+                    </span>
+
+                    {esPrueba
+                      ? "Desbloquear impresión"
+                      : "Imprimir ficha"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={descargarDesdeDrive}
+                    disabled={
+                      !esPrueba &&
+                      !materialActivo.linkDrive
+                    }
+                    className={`group flex items-center justify-center gap-3 rounded-2xl px-4 py-4 font-black shadow-xl transition ${
+                      esPrueba
+                        ? "border border-yellow-300/25 bg-yellow-300/10 text-yellow-200 hover:-translate-y-1 hover:bg-yellow-300/15"
+                        : materialActivo.linkDrive
+                          ? "bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 text-slate-950 hover:-translate-y-1 hover:brightness-110"
+                          : "cursor-not-allowed border border-white/10 bg-white/5 text-blue-100/30"
+                    }`}
+                  >
+                    <span className="text-xl transition group-hover:scale-110">
+                      {esPrueba ? "🔒" : "⬇️"}
+                    </span>
+
+                    {esPrueba
+                      ? "Desbloquear descarga"
+                      : materialActivo.linkDrive
+                        ? "Descargar desde Drive"
+                        : "Sin enlace disponible"}
+                  </button>
 
                   <button
                     type="button"
                     onClick={alternarLike}
-                    className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-3 font-bold transition ${
+                    className={`group flex items-center justify-center gap-3 rounded-2xl border px-4 py-4 font-black shadow-xl transition hover:-translate-y-1 ${
                       materialTieneLike
-                        ? "bg-pink-300 text-pink-950"
-                        : "bg-pink-400/15 text-pink-200 hover:bg-pink-400/25"
+                        ? "border-pink-300/40 bg-gradient-to-r from-pink-300 to-fuchsia-300 text-pink-950"
+                        : "border-pink-300/20 bg-pink-300/10 text-pink-200 hover:bg-pink-300/15"
                     }`}
                   >
-                    {materialTieneLike
-                      ? "❤️ Te encantó"
-                      : "💛 Me encanta"}
-                  </button>
-                </div>
-              )}
-
-              {/* ACCIONES BLOQUEADAS EN PRUEBA */}
-
-              {esPrueba && (
-                <div className="mb-8 rounded-3xl border border-yellow-300/30 bg-yellow-300/10 p-5">
-                  <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                    <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-yellow-300 text-3xl">
-                      🔒
+                    <span className="text-xl transition group-hover:scale-125">
+                      {materialTieneLike
+                        ? "❤️"
+                        : "🤍"}
                     </span>
 
-                    <div className="flex-1">
-                      <h3 className="text-xl font-black text-yellow-200">
-                        Funciones bloqueadas durante
-                        la prueba
-                      </h3>
+                    {materialTieneLike
+                      ? "Añadido a favoritos"
+                      : "Me encanta"}
+                  </button>
 
-                      <p className="mt-2 text-sm leading-relaxed text-yellow-100/70">
-                        Descargar, imprimir y abrir
-                        el archivo en una ventana
-                        externa están disponibles
-                        únicamente con acceso VIP.
+                  {!esPrueba &&
+                    materialActivo.linkDrive && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void copiarEnlaceDrive()
+                        }
+                        className="flex items-center justify-center gap-3 rounded-2xl border border-violet-300/20 bg-violet-300/10 px-4 py-4 font-black text-violet-200 shadow-xl transition hover:-translate-y-1 hover:bg-violet-300/15 sm:col-span-2"
+                      >
+                        🔗 Copiar enlace de Google Drive
+                      </button>
+                    )}
+                </div>
+
+                {/* MENSAJE DE ACCIÓN */}
+
+                {avisoAccion && (
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className={`mt-5 rounded-2xl border p-4 text-sm font-bold ${
+                      avisoAccion.tipo === "exito"
+                        ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
+                        : avisoAccion.tipo ===
+                            "advertencia"
+                          ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
+                          : "border-rose-300/30 bg-rose-300/10 text-rose-200"
+                    }`}
+                  >
+                    {avisoAccion.tipo === "exito"
+                      ? "✅ "
+                      : avisoAccion.tipo ===
+                          "advertencia"
+                        ? "⚠️ "
+                        : "❌ "}
+
+                    {avisoAccion.texto}
+                  </div>
+                )}
+
+                {/* AVISO PRUEBA */}
+
+                {esPrueba && (
+                  <div className="mt-5 rounded-3xl border border-yellow-300/25 bg-gradient-to-r from-yellow-300/10 to-orange-300/10 p-5">
+                    <div className="flex items-start gap-4">
+                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-300 text-2xl text-yellow-950">
+                        💎
+                      </span>
+
+                      <div>
+                        <h4 className="font-black text-yellow-200">
+                          Descarga reservada para clientes VIP
+                        </h4>
+
+                        <p className="mt-2 text-sm leading-relaxed text-yellow-100/65">
+                          Puedes explorar la portada durante
+                          la prueba. Activa el acceso VIP para
+                          imprimir y descargar el archivo
+                          completo desde Google Drive.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={solicitarAccesoVIP}
+                      className="mt-5 w-full rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 px-5 py-4 font-black text-slate-950 transition hover:-translate-y-1"
+                    >
+                      💎 Activar acceso VIP
+                    </button>
+                  </div>
+                )}
+
+                {!esPrueba &&
+                  materialActivo.linkDrive && (
+                    <div className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-300/15 bg-emerald-300/10 p-4 text-sm text-emerald-100/70">
+                      <span className="text-2xl">
+                        🛡️
+                      </span>
+
+                      <p>
+                        El botón abre el archivo asociado
+                        directamente desde Google Drive.
                       </p>
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            {/* COMENTARIOS */}
+
+            <section
+              className="relative z-10 border-t border-white/10 bg-slate-950/45 p-5 sm:p-7 lg:p-8"
+              aria-labelledby="titulo-comentarios"
+            >
+              <div className="grid gap-7 lg:grid-cols-[0.85fr_1.15fr]">
+                <div>
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-300 to-violet-400 text-3xl shadow-xl">
+                    💬
+                  </span>
+
+                  <h3
+                    id="titulo-comentarios"
+                    className="mt-4 text-2xl font-black text-white"
+                  >
+                    Bitácora de opiniones
+                  </h3>
+
+                  <p className="mt-3 text-sm leading-relaxed text-blue-100/55">
+                    Comparte tu experiencia con este
+                    recurso. Los comentarios se guardan en
+                    el navegador que estás utilizando.
+                  </p>
+
+                  <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-2xl font-black text-cyan-200">
+                      {comentariosActivos.length}
+                    </p>
+
+                    <p className="mt-1 text-xs uppercase tracking-wide text-blue-100/40">
+                      Opiniones guardadas
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="grid gap-3">
+                    <input
+                      type="text"
+                      placeholder="Escribe tu nombre"
+                      value={nombre}
+                      maxLength={50}
+                      onChange={(evento) =>
+                        setNombre(evento.target.value)
+                      }
+                      className="w-full rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-white outline-none placeholder:text-blue-100/30 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10"
+                    />
+
+                    <textarea
+                      placeholder="¿Qué te pareció este material?"
+                      value={nuevoComentario}
+                      maxLength={500}
+                      onChange={(evento) =>
+                        setNuevoComentario(
+                          evento.target.value,
+                        )
+                      }
+                      rows={4}
+                      className="w-full resize-none rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-white outline-none placeholder:text-blue-100/30 focus:border-pink-300 focus:ring-4 focus:ring-pink-300/10"
+                    />
+
+                    <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                      <p className="text-xs text-blue-100/35">
+                        {nuevoComentario.length}/500
+                        caracteres
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={publicarComentario}
+                        disabled={
+                          !nombre.trim() ||
+                          !nuevoComentario.trim()
+                        }
+                        className="rounded-full bg-gradient-to-r from-pink-400 to-violet-500 px-6 py-3 font-black text-white shadow-xl transition hover:-translate-y-1 hover:brightness-110 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-35"
+                      >
+                        Publicar opinión 🚀
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        "/acceso?motivo=activar-vip",
-                      )
-                    }
-                    className="mt-5 w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 font-black text-slate-950 transition hover:-translate-y-1"
-                  >
-                    💎 Activar acceso VIP
-                  </button>
+                  {/* OPINIONES */}
 
-                  <button
-                    type="button"
-                    onClick={alternarLike}
-                    className={`mt-3 w-full rounded-full px-6 py-3 font-bold transition ${
-                      materialTieneLike
-                        ? "bg-pink-300 text-pink-950"
-                        : "bg-white/10 text-pink-200 hover:bg-white/15"
-                    }`}
-                  >
-                    {materialTieneLike
-                      ? "❤️ Te encantó"
-                      : "💛 Me encanta"}
-                  </button>
-                </div>
-              )}
+                  <div className="mt-6 space-y-3">
+                    {comentariosActivos.map(
+                      (comentario, indice) => (
+                        <article
+                          key={`${comentario.fecha}-${indice}`}
+                          className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-300 to-violet-300 font-black text-slate-950">
+                              {comentario.nombre
+                                .charAt(0)
+                                .toUpperCase()}
+                            </span>
 
-              {/* COMENTARIOS */}
+                            <div>
+                              <strong className="text-white">
+                                {comentario.nombre}
+                              </strong>
 
-              <section
-                className="border-t border-white/10 pt-6"
-                aria-labelledby="titulo-comentarios"
-              >
-                <h3
-                  id="titulo-comentarios"
-                  className="mb-1 flex items-center gap-2 text-lg font-black text-white"
-                >
-                  💬 Comentarios
-                </h3>
+                              <p className="text-xs text-blue-100/35">
+                                {comentario.fecha}
+                              </p>
+                            </div>
+                          </div>
 
-                <p className="mb-4 text-sm text-blue-100/50">
-                  Los comentarios se guardan
-                  únicamente en este navegador.
-                </p>
+                          <p className="mt-3 break-words leading-relaxed text-blue-100/70">
+                            {comentario.texto}
+                          </p>
+                        </article>
+                      ),
+                    )}
 
-                <div className="mb-6 flex flex-col gap-3">
-                  <input
-                    type="text"
-                    placeholder="Tu nombre"
-                    value={nombre}
-                    maxLength={50}
-                    onChange={(evento) =>
-                      setNombre(
-                        evento.target.value,
-                      )
-                    }
-                    className="w-full rounded-xl border border-white/10 bg-slate-950/50 p-4 text-white outline-none placeholder:text-blue-100/35 focus:border-pink-300 focus:ring-4 focus:ring-pink-300/10"
-                  />
+                    {comentariosActivos.length === 0 && (
+                      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-6 text-center">
+                        <span className="text-4xl">
+                          🌟
+                        </span>
 
-                  <textarea
-                    placeholder="Escribe tu comentario..."
-                    value={nuevoComentario}
-                    maxLength={500}
-                    onChange={(evento) =>
-                      setNuevoComentario(
-                        evento.target.value,
-                      )
-                    }
-                    rows={3}
-                    className="w-full resize-none rounded-xl border border-white/10 bg-slate-950/50 p-4 text-white outline-none placeholder:text-blue-100/35 focus:border-pink-300 focus:ring-4 focus:ring-pink-300/10"
-                  />
-
-                  <button
-                    type="button"
-                    onClick={
-                      publicarComentario
-                    }
-                    disabled={
-                      !nombre.trim() ||
-                      !nuevoComentario.trim()
-                    }
-                    className="self-start rounded-full bg-pink-400 px-6 py-3 font-black text-slate-950 transition hover:bg-pink-300 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30"
-                  >
-                    Publicar comentario 💛
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {comentariosActivos.map(
-                    (
-                      comentario,
-                      indice,
-                    ) => (
-                      <article
-                        key={`${comentario.fecha}-${indice}`}
-                        className="rounded-xl border border-white/10 bg-white/5 p-4"
-                      >
-                        <div className="mb-1 flex flex-wrap items-baseline gap-2">
-                          <strong className="text-cyan-200">
-                            {
-                              comentario.nombre
-                            }
-                          </strong>
-
-                          <span className="text-xs text-blue-100/40">
-                            {
-                              comentario.fecha
-                            }
-                          </span>
-                        </div>
-
-                        <p className="break-words text-blue-100/70">
-                          {
-                            comentario.texto
-                          }
+                        <p className="mt-3 text-sm text-blue-100/45">
+                          Todavía no hay opiniones. Sé la
+                          primera persona en comentar este
+                          material.
                         </p>
-                      </article>
-                    ),
-                  )}
-
-                  {comentariosActivos.length ===
-                    0 && (
-                    <p className="text-sm italic text-blue-100/40">
-                      Todavía no hay comentarios
-                      guardados para este
-                      material.
-                    </p>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </section>
-            </div>
+              </div>
+            </section>
           </section>
         </div>
       )}
