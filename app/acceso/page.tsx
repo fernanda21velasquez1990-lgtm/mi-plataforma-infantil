@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -16,7 +15,7 @@ import { useRouter } from "next/navigation";
 ===================================================== */
 
 const URL_GOOGLE_SCRIPT =
-  "https://script.google.com/macros/s/AKfycbyOVBJe4VD3a3q8X8SFfhDfrgiaTJWiOFOkjOQ6LUlq-9-5mlaYIdzYWBUUCxp6HPX7gA/exec";
+  "https://script.google.com/macros/s/AKfycbzGRlD5nQiYaiMd2teKcrJ5VU-BDX919rNzXDuE93njX-1km-viSYoG4VU5ykOCbt3qkw/exec";
 
 const RUTA_BIBLIOTECA = "/biblioteca";
 const NUMERO_WHATSAPP = "584144895281";
@@ -45,6 +44,7 @@ type RespuestaAcceso = {
   motivo?: string;
   mensaje?: string;
   error?: string;
+  version?: string;
 };
 
 /* =====================================================
@@ -68,19 +68,17 @@ function normalizarEstado(valor: unknown): string {
 export default function Acceso() {
   const router = useRouter();
 
-  const cargaInicialRealizada = useRef(false);
+  const lecturaInicialRealizada = useRef(false);
 
   const [telefono, setTelefono] = useState("");
   const [modoPrueba, setModoPrueba] = useState(false);
-
   const [mensaje, setMensaje] = useState("");
   const [tipoMensaje, setTipoMensaje] =
     useState<TipoMensaje>("neutral");
-
   const [cargando, setCargando] = useState(false);
 
   /* ===================================================
-     OCULTAR EL BOTÓN AZUL ☰ EN ESTA PÁGINA
+     OCULTAR EL BOTÓN AZUL ☰ EN /acceso
   =================================================== */
 
   useEffect(() => {
@@ -140,7 +138,9 @@ export default function Acceso() {
           '[data-menu-oculto-acceso="true"]',
         )
         .forEach((elemento) => {
-          elemento.style.removeProperty("display");
+          elemento.style.removeProperty(
+            "display",
+          );
 
           elemento.removeAttribute(
             "data-menu-oculto-acceso",
@@ -150,7 +150,7 @@ export default function Acceso() {
   }, []);
 
   /* ===================================================
-     GUARDAR SESIÓN AUTORIZADA
+     GUARDAR SESIÓN Y ENTRAR
   =================================================== */
 
   const guardarSesionYEntrar = useCallback(
@@ -182,7 +182,7 @@ export default function Acceso() {
 
       if (tipoAcceso === "prueba") {
         let limitePrueba =
-          Number(datos.finPrueba);
+          Number(datos.finPrueba || 0);
 
         if (
           !limitePrueba &&
@@ -281,7 +281,7 @@ export default function Acceso() {
       setMensaje(
         accion === "iniciarPrueba"
           ? "🛰️ Comprobando si puedes utilizar la prueba gratuita..."
-          : "🛰️ Verificando tu acceso VIP...",
+          : "🛰️ Verificando tu acceso...",
       );
 
       const controlador =
@@ -290,7 +290,7 @@ export default function Acceso() {
       const tiempoMaximo =
         window.setTimeout(() => {
           controlador.abort();
-        }, 15000);
+        }, 20000);
 
       try {
         const parametros =
@@ -317,6 +317,11 @@ export default function Acceso() {
 
         const datos =
           (await respuesta.json()) as RespuestaAcceso;
+
+        console.log(
+          "Respuesta de acceso:",
+          datos,
+        );
 
         if (datos.error) {
           setTipoMensaje("error");
@@ -347,7 +352,7 @@ export default function Acceso() {
         =============================================== */
 
         if (
-          datos.permitido &&
+          datos.permitido === true &&
           esVIP
         ) {
           setTipoMensaje("exito");
@@ -366,21 +371,25 @@ export default function Acceso() {
         }
 
         /* ===============================================
-           PRUEBA ACTIVA O RECIÉN CREADA
+           PRUEBA ACTIVA O NUEVA
         =============================================== */
 
         if (
-          datos.permitido &&
+          datos.permitido === true &&
           datos.tipoAcceso === "prueba"
         ) {
+          const tiempoRestante =
+            Number(
+              datos.tiempoRestanteMs ||
+                0,
+            );
+
           const minutosRestantes =
             Math.max(
               1,
               Math.ceil(
-                Number(
-                  datos.tiempoRestanteMs ??
-                    0,
-                ) / 60000,
+                tiempoRestante /
+                  60000,
               ),
             );
 
@@ -402,12 +411,14 @@ export default function Acceso() {
         }
 
         /* ===============================================
-           PRUEBA TERMINADA
+           PRUEBA FINALIZADA
         =============================================== */
 
         if (
           estado ===
             "prueba_finalizada" ||
+          estado ===
+            "pruebafinalizada" ||
           datos.motivo ===
             "prueba_ya_utilizada" ||
           datos.motivo ===
@@ -430,7 +441,7 @@ export default function Acceso() {
           );
 
           setMensaje(
-            "⏳ Este número ya utilizó su prueba gratuita de 60 minutos. Activa el acceso VIP para continuar.",
+            "⏳ Este número ya utilizó su prueba gratuita de 60 minutos. Debes activar el acceso VIP para continuar.",
           );
 
           return;
@@ -449,7 +460,7 @@ export default function Acceso() {
           );
 
           setMensaje(
-            "⛔ Esta conexión ya utilizó una prueba gratuita. Activa el acceso VIP para continuar.",
+            "⛔ Esta conexión ya utilizó una prueba gratuita. Debes activar el acceso VIP para continuar.",
           );
 
           return;
@@ -476,11 +487,11 @@ export default function Acceso() {
         }
 
         /* ===============================================
-           USUARIO NO REGISTRADO EN ACCESO VIP
+           NÚMERO NO REGISTRADO
         =============================================== */
 
         if (
-          !datos.encontrado &&
+          datos.encontrado === false &&
           accion === "verificar"
         ) {
           setTipoMensaje("error");
@@ -538,19 +549,19 @@ export default function Acceso() {
   );
 
   /* ===================================================
-     LEER EL MODO DESDE LA DIRECCIÓN
+     LEER LA DIRECCIÓN DE LA PÁGINA
 
      /acceso?modo=prueba
   =================================================== */
 
   useEffect(() => {
     if (
-      cargaInicialRealizada.current
+      lecturaInicialRealizada.current
     ) {
       return;
     }
 
-    cargaInicialRealizada.current =
+    lecturaInicialRealizada.current =
       true;
 
     const parametros =
@@ -564,12 +575,13 @@ export default function Acceso() {
 
     const telefonoURL =
       limpiarTelefono(
-        parametros.get("telefono") ??
+        parametros.get("telefono") ||
           "",
       );
 
     const accesoAutomatico =
-      parametros.get("auto") === "1";
+      parametros.get("auto") ===
+      "1";
 
     setModoPrueba(esModoPrueba);
 
@@ -591,7 +603,7 @@ export default function Acceso() {
   }, [procesarAcceso]);
 
   /* ===================================================
-     ENVIAR FORMULARIO
+     FORMULARIO
   =================================================== */
 
   const enviarFormulario = (
@@ -616,7 +628,7 @@ export default function Acceso() {
     )}`;
 
   /* ===================================================
-     COLORES DE LOS MENSAJES
+     COLOR DEL MENSAJE
   =================================================== */
 
   const claseMensaje = {
@@ -743,8 +755,7 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Conoce la biblioteca y las
-                herramientas disponibles.
+                Conoce la biblioteca y las herramientas disponibles.
               </p>
 
               <ul className="mt-6 space-y-3 text-sm font-bold">
@@ -776,8 +787,7 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Descarga materiales y utiliza
-                todas las herramientas.
+                Descarga materiales y utiliza todas las herramientas.
               </p>
 
               <ul className="mt-6 space-y-3 text-sm font-bold">
@@ -789,7 +799,7 @@ export default function Acceso() {
           </article>
         </div>
 
-        {/* FORMULARIO Y SOPORTE */}
+        {/* FORMULARIO */}
 
         <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
@@ -816,8 +826,7 @@ export default function Acceso() {
                 </h2>
 
                 <p className="mt-2 text-blue-100/70">
-                  El sistema consultará tu número
-                  directamente en Google Sheets.
+                  El sistema consultará tu número directamente en Google Sheets.
                 </p>
               </div>
             </div>
@@ -862,8 +871,7 @@ export default function Acceso() {
               </div>
 
               <p className="mt-2 text-xs text-blue-200/60">
-                Incluye el código del país, sin espacios,
-                guiones ni el signo +.
+                Incluye el código del país, sin espacios, guiones ni el signo +.
               </p>
 
               <button
@@ -894,7 +902,7 @@ export default function Acceso() {
             )}
           </section>
 
-          {/* SOPORTE */}
+          {/* SOPORTE VIP */}
 
           <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl sm:p-8">
             <span className="text-5xl">
@@ -906,8 +914,7 @@ export default function Acceso() {
             </h2>
 
             <p className="mt-3 leading-relaxed text-blue-100/75">
-              Envía el comprobante y espera la
-              confirmación de tu acceso VIP.
+              Envía el comprobante y espera la confirmación de tu acceso VIP.
             </p>
 
             <div className="mt-6 space-y-3">
