@@ -4,13 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /* =====================================================
-   CONFIGURACIÓN
-
-   La única ruta directa disponible desde esta portada
-   será la prueba gratuita de 60 minutos.
+   RUTAS
 ===================================================== */
 
 const RUTA_PRUEBA = "/tecnologia";
+const RUTA_ACCESO = "/acceso";
 
 /* =====================================================
    DATOS DE PAGO
@@ -47,14 +45,14 @@ const beneficios = [
     emoji: "📱",
     titulo: "Disponible en varios dispositivos",
     descripcion:
-      "La plataforma puede utilizarse desde teléfonos, tabletas y computadoras.",
+      "Utiliza la plataforma desde teléfonos, tabletas y computadoras.",
     color: "from-violet-500 to-fuchsia-400",
   },
   {
     emoji: "⬇️",
     titulo: "Materiales descargables",
     descripcion:
-      "Con el acceso completo podrás descargar los recursos educativos disponibles.",
+      "Con el acceso VIP podrás descargar los recursos educativos disponibles.",
     color: "from-amber-500 to-yellow-400",
   },
   {
@@ -68,7 +66,7 @@ const beneficios = [
     emoji: "🚀",
     titulo: "Contenido en crecimiento",
     descripcion:
-      "La plataforma continúa incorporando materiales y herramientas digitales.",
+      "La plataforma continúa incorporando nuevos materiales y herramientas.",
     color: "from-indigo-500 to-blue-400",
   },
 ];
@@ -81,32 +79,32 @@ const preguntasFrecuentes = [
   {
     pregunta: "¿El pago es mensual?",
     respuesta:
-      "No. El monto mostrado corresponde a un pago único para activar el acceso completo.",
+      "No. El monto corresponde a un pago único para activar el acceso completo.",
   },
   {
     pregunta: "¿Cuánto tiempo dura el acceso?",
     respuesta:
-      "El acceso completo es ilimitado y no requiere pagos mensuales.",
+      "El acceso VIP es ilimitado y no requiere pagos mensuales.",
   },
   {
     pregunta: "¿Puedo descargar los materiales?",
     respuesta:
-      "Sí. Las descargas estarán disponibles después de activar el acceso completo.",
+      "Sí. Las descargas estarán disponibles después de activar el acceso VIP.",
   },
   {
     pregunta: "¿Cómo se activa mi acceso?",
     respuesta:
-      "Realiza el pago móvil, envía el comprobante mediante WhatsApp y espera la confirmación.",
+      "Realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
   },
   {
     pregunta: "¿Puedo utilizar la plataforma desde el teléfono?",
     respuesta:
-      "Sí. La plataforma está diseñada para funcionar en teléfonos, tabletas y computadoras.",
+      "Sí. La plataforma funciona desde teléfonos, tabletas y computadoras.",
   },
   {
     pregunta: "¿Qué incluye la prueba gratuita?",
     respuesta:
-      "La prueba permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas.",
+      "Permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas.",
   },
 ];
 
@@ -123,21 +121,14 @@ export default function InicioLanding() {
     useState<number | null>(null);
 
   /* ===================================================
-     PRUEBA GRATUITA DE 60 MINUTOS
-
-     Este es el único botón que permite entrar
-     temporalmente a la plataforma.
+     INICIAR PRUEBA DE 60 MINUTOS
   =================================================== */
 
   const iniciarPruebaExpress = () => {
-    const ahora = new Date().getTime();
+    const ahora = Date.now();
     const limite = ahora + 60 * 60 * 1000;
 
-    localStorage.setItem(
-      "limitePrueba",
-      limite.toString(),
-    );
-
+    localStorage.setItem("limitePrueba", limite.toString());
     localStorage.removeItem("accesoVIP");
 
     router.push(RUTA_PRUEBA);
@@ -148,14 +139,10 @@ export default function InicioLanding() {
   =================================================== */
 
   const irASeccion = (id: string) => {
-    const seccion = document.getElementById(id);
-
-    if (seccion) {
-      seccion.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
 
     setMenuAbierto(false);
   };
@@ -168,12 +155,10 @@ export default function InicioLanding() {
     setMostrarPago(true);
 
     setTimeout(() => {
-      document
-        .getElementById("acceso-completo")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+      document.getElementById("acceso-completo")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }, 100);
   };
 
@@ -182,7 +167,7 @@ export default function InicioLanding() {
   =================================================== */
 
   const mensajeWhatsApp =
-    "Hola, ya realicé mi pago móvil para Mundo Digital Infantil. Aquí está el comprobante:";
+    "Hola, ya realicé mi pago para Mundo Digital Infantil. Aquí está mi comprobante:";
 
   const enlaceWhatsApp = `https://wa.me/${
     DATOS_PAGO.whatsapp
@@ -196,8 +181,6 @@ export default function InicioLanding() {
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-          {/* LOGO */}
-
           <button
             type="button"
             onClick={() =>
@@ -207,9 +190,8 @@ export default function InicioLanding() {
               })
             }
             className="flex items-center gap-3 text-left"
-            aria-label="Volver al inicio"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg shadow-orange-500/20">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg">
               🚀
             </span>
 
@@ -224,9 +206,7 @@ export default function InicioLanding() {
             </div>
           </button>
 
-          {/* MENÚ DE COMPUTADORA */}
-
-          <nav className="hidden items-center gap-7 text-sm font-bold text-blue-100 lg:flex">
+          <nav className="hidden items-center gap-6 text-sm font-bold text-blue-100 lg:flex">
             <button
               type="button"
               onClick={() => irASeccion("contenido")}
@@ -261,21 +241,26 @@ export default function InicioLanding() {
 
             <button
               type="button"
+              onClick={() => router.push(RUTA_ACCESO)}
+              className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-5 py-2.5 font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950"
+            >
+              🔐 Ya pagué
+            </button>
+
+            <button
+              type="button"
               onClick={abrirPago}
-              className="rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-5 py-2.5 font-black text-slate-950 shadow-lg shadow-green-500/20 transition hover:-translate-y-0.5 hover:brightness-110"
+              className="rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-5 py-2.5 font-black text-slate-950 shadow-lg transition hover:-translate-y-0.5"
             >
               Activar acceso
             </button>
           </nav>
-
-          {/* MENÚ MÓVIL */}
 
           <button
             type="button"
             onClick={() => setMenuAbierto(!menuAbierto)}
             className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-2xl lg:hidden"
             aria-label="Abrir menú"
-            aria-expanded={menuAbierto}
           >
             {menuAbierto ? "×" : "☰"}
           </button>
@@ -287,7 +272,7 @@ export default function InicioLanding() {
               <button
                 type="button"
                 onClick={() => irASeccion("contenido")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold text-blue-100"
+                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
               >
                 🌌 Contenido
               </button>
@@ -295,17 +280,15 @@ export default function InicioLanding() {
               <button
                 type="button"
                 onClick={() => irASeccion("beneficios")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold text-blue-100"
+                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
               >
                 ✨ Beneficios
               </button>
 
               <button
                 type="button"
-                onClick={() =>
-                  irASeccion("como-funciona")
-                }
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold text-blue-100"
+                onClick={() => irASeccion("como-funciona")}
+                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
               >
                 🛸 Cómo funciona
               </button>
@@ -313,9 +296,20 @@ export default function InicioLanding() {
               <button
                 type="button"
                 onClick={() => irASeccion("preguntas")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold text-blue-100"
+                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
               >
                 💬 Preguntas frecuentes
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuAbierto(false);
+                  router.push(RUTA_ACCESO);
+                }}
+                className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-left font-black text-cyan-200"
+              >
+                🔐 Ya pagué, quiero entrar
               </button>
 
               <button
@@ -339,24 +333,12 @@ export default function InicioLanding() {
 
       <section className="relative isolate overflow-hidden">
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-blue-600/30 blur-3xl" />
-
         <div className="pointer-events-none absolute -right-32 top-5 h-96 w-96 rounded-full bg-fuchsia-600/25 blur-3xl" />
-
         <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
 
-        <div className="pointer-events-none absolute left-[8%] top-24 hidden text-5xl lg:block">
-          🚀
-        </div>
-
-        <div className="pointer-events-none absolute right-[10%] top-32 hidden text-6xl lg:block">
-          🪐
-        </div>
-
-        <div className="relative mx-auto grid min-h-[760px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8 lg:py-24">
-          {/* TEXTO */}
-
+        <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8">
           <div className="text-center lg:text-left">
-            <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200 backdrop-blur">
+            <span className="mb-6 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200">
               ✨ APRENDER · JUGAR · CREAR
             </span>
 
@@ -371,48 +353,38 @@ export default function InicioLanding() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg font-medium leading-relaxed text-blue-100/90 lg:mx-0 lg:text-xl">
-              Materiales educativos, actividades
-              infantiles y herramientas digitales
-              reunidas en una plataforma para
-              familias, docentes y creadores.
+              Materiales educativos, actividades infantiles y herramientas
+              digitales para familias, docentes y creadores.
             </p>
-
-            {/* ÚNICO BOTÓN DE ENTRADA */}
 
             <div className="mt-9 flex justify-center lg:justify-start">
               <button
                 type="button"
                 onClick={iniciarPruebaExpress}
-                className="w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl shadow-orange-500/20 transition hover:-translate-y-1 hover:brightness-110 sm:w-auto"
+                className="w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 sm:w-auto"
               >
                 🛸 Probar gratis durante 60 minutos
               </button>
             </div>
 
-            <p className="mx-auto mt-4 max-w-xl text-sm font-medium text-blue-200/70 lg:mx-0">
-              Durante la prueba podrás explorar el
-              contenido, pero las descargas estarán
-              bloqueadas.
+            <p className="mx-auto mt-4 max-w-xl text-sm text-blue-200/70 lg:mx-0">
+              Durante la prueba podrás explorar el contenido, pero las
+              descargas estarán bloqueadas.
             </p>
-
-            {/* INDICADORES */}
 
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
                 ["📚", "Materiales"],
                 ["🎮", "Actividades"],
                 ["🤖", "Tecnología"],
-                ["♾️", "Acceso completo"],
+                ["♾️", "Acceso VIP"],
               ].map(([emoji, texto]) => (
                 <div
                   key={texto}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center backdrop-blur"
+                  className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center"
                 >
-                  <span className="block text-2xl">
-                    {emoji}
-                  </span>
-
-                  <span className="mt-1 block text-xs font-bold text-blue-100">
+                  <span className="block text-2xl">{emoji}</span>
+                  <span className="mt-1 block text-xs font-bold">
                     {texto}
                   </span>
                 </div>
@@ -420,12 +392,10 @@ export default function InicioLanding() {
             </div>
           </div>
 
-          {/* TARJETA INFORMATIVA */}
-
           <div className="relative mx-auto w-full max-w-xl">
             <div className="absolute -inset-6 rounded-[3rem] bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-pink-500/20 blur-2xl" />
 
-            <div className="relative overflow-hidden rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+            <div className="relative rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
               <div className="mb-6 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.2em] text-cyan-300">
@@ -437,27 +407,19 @@ export default function InicioLanding() {
                   </h2>
                 </div>
 
-                <span className="text-5xl">
-                  🛰️
-                </span>
+                <span className="text-5xl">🛰️</span>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* BIBLIOTECA SIN BOTÓN */}
-
-                <article className="rounded-3xl bg-gradient-to-br from-blue-500 to-cyan-400 p-5 text-left shadow-xl">
-                  <span className="text-4xl">
-                    📚
-                  </span>
+                <article className="rounded-3xl bg-gradient-to-br from-blue-500 to-cyan-400 p-5 shadow-xl">
+                  <span className="text-4xl">📚</span>
 
                   <h3 className="mt-5 text-xl font-black">
                     Biblioteca Estelar
                   </h3>
 
                   <p className="mt-2 text-sm leading-relaxed text-blue-50">
-                    Guías, cuentos, juegos,
-                    matemáticas, caligrafía y muchos
-                    materiales educativos.
+                    Guías, cuentos, juegos, matemáticas, caligrafía y más.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -465,21 +427,16 @@ export default function InicioLanding() {
                   </span>
                 </article>
 
-                {/* TECNOLOGÍA SIN BOTÓN */}
-
-                <article className="rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 text-left shadow-xl">
-                  <span className="text-4xl">
-                    🤖
-                  </span>
+                <article className="rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 shadow-xl">
+                  <span className="text-4xl">🤖</span>
 
                   <h3 className="mt-5 text-xl font-black">
                     Laboratorio Tech
                   </h3>
 
                   <p className="mt-2 text-sm leading-relaxed text-violet-50">
-                    Inteligencia artificial,
-                    automatización, marketing y
-                    recursos digitales.
+                    Inteligencia artificial, automatización y recursos
+                    digitales.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -489,23 +446,14 @@ export default function InicioLanding() {
               </div>
 
               <div className="mt-4 rounded-3xl border border-white/10 bg-slate-950/30 p-5">
-                <div className="flex items-center gap-4">
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-300 text-3xl">
-                    💡
-                  </span>
+                <p className="font-black text-yellow-200">
+                  💡 Conoce antes de decidir
+                </p>
 
-                  <div>
-                    <h3 className="font-black text-yellow-200">
-                      Conoce antes de decidir
-                    </h3>
-
-                    <p className="mt-1 text-sm leading-relaxed text-blue-100">
-                      Utiliza la prueba gratuita para
-                      descubrir la plataforma antes de
-                      activar el acceso completo.
-                    </p>
-                  </div>
-                </div>
+                <p className="mt-2 text-sm leading-relaxed text-blue-100">
+                  Utiliza la prueba gratuita para descubrir la plataforma
+                  antes de activar el acceso VIP.
+                </p>
               </div>
             </div>
           </div>
@@ -513,7 +461,45 @@ export default function InicioLanding() {
       </section>
 
       {/* =================================================
-          CONTENIDO DE LA PLATAFORMA
+          CLIENTES QUE YA PAGARON
+      ================================================= */}
+
+      <section className="relative border-y border-white/10 bg-gradient-to-r from-emerald-500/20 via-cyan-500/10 to-blue-500/20 px-5 py-10 lg:px-8">
+        <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-7 rounded-[2rem] border border-emerald-300/25 bg-white/10 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8 lg:flex-row lg:text-left">
+          <div className="flex flex-col items-center gap-5 sm:flex-row">
+            <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-emerald-300 to-cyan-400 text-4xl shadow-xl">
+              🔐
+            </span>
+
+            <div>
+              <span className="inline-flex rounded-full bg-emerald-300/15 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-200">
+                Acceso para clientes
+              </span>
+
+              <h2 className="mt-3 text-2xl font-black sm:text-3xl">
+                ¿Ya realizaste tu pago?
+              </h2>
+
+              <p className="mt-2 max-w-2xl leading-relaxed text-blue-100/75">
+                Ingresa con el mismo número de WhatsApp que utilizaste para
+                enviar tu comprobante. El sistema verificará tu acceso en
+                Google Sheets.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push(RUTA_ACCESO)}
+            className="w-full shrink-0 rounded-full bg-gradient-to-r from-emerald-300 to-cyan-400 px-7 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 lg:w-auto"
+          >
+            ✅ Ya pagué, quiero entrar
+          </button>
+        </div>
+      </section>
+
+      {/* =================================================
+          CONTENIDO
       ================================================= */}
 
       <section
@@ -530,109 +516,87 @@ export default function InicioLanding() {
               Dos espacios llenos de posibilidades
             </h2>
 
-            <p className="mt-4 text-lg leading-relaxed text-blue-100/75">
-              La portada muestra el contenido disponible,
-              pero el ingreso se realiza mediante la
-              prueba gratuita o el acceso completo.
+            <p className="mt-4 text-lg text-blue-100/75">
+              La portada muestra los contenidos, pero el ingreso solamente
+              se realiza mediante la prueba o el acceso VIP.
             </p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* UNIVERSO INFANTIL */}
+            <article className="relative overflow-hidden rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl sm:p-9">
+              <span className="inline-flex rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-blue-950">
+                PARA NIÑOS, FAMILIAS Y DOCENTES
+              </span>
 
-            <article className="relative overflow-hidden rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl backdrop-blur sm:p-9">
-              <div className="absolute -right-12 -top-12 text-[10rem] opacity-10">
-                📚
+              <h3 className="mt-6 text-3xl font-black text-cyan-200 sm:text-4xl">
+                Biblioteca Estelar
+              </h3>
+
+              <p className="mt-4 text-lg leading-relaxed text-blue-100">
+                Recursos para fortalecer diferentes áreas del aprendizaje.
+              </p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {[
+                  "📖 Cuentos y lecturas",
+                  "🔢 Matemáticas",
+                  "✍️ Caligrafía",
+                  "🧠 Recursos para TDAH",
+                  "🧩 Método Montessori",
+                  "🗣️ Terapia de lenguaje",
+                  "🎮 Juegos educativos",
+                  "🖼️ Pictogramas",
+                ].map((elemento) => (
+                  <div
+                    key={elemento}
+                    className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
+                  >
+                    {elemento}
+                  </div>
+                ))}
               </div>
 
-              <div className="relative">
-                <span className="inline-flex rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-blue-950">
-                  PARA NIÑOS, FAMILIAS Y DOCENTES
-                </span>
-
-                <h3 className="mt-6 text-3xl font-black text-cyan-200 sm:text-4xl">
-                  Biblioteca Estelar
-                </h3>
-
-                <p className="mt-4 max-w-xl text-lg leading-relaxed text-blue-100">
-                  Un espacio educativo con recursos para
-                  fortalecer diferentes áreas del
-                  aprendizaje.
-                </p>
-
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                  {[
-                    "📖 Cuentos y lecturas",
-                    "🔢 Matemáticas",
-                    "✍️ Caligrafía",
-                    "🧠 Recursos para TDAH",
-                    "🧩 Método Montessori",
-                    "🗣️ Terapia de lenguaje",
-                    "🎮 Juegos educativos",
-                    "🖼️ Pictogramas",
-                  ].map((elemento) => (
-                    <div
-                      key={elemento}
-                      className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold text-blue-50"
-                    >
-                      {elemento}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
-                  🔒 Disponible con la prueba o el
-                  acceso completo
-                </div>
+              <div className="mt-8 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
+                🔒 Disponible con prueba o acceso VIP
               </div>
             </article>
 
-            {/* ZONA DE ADULTOS */}
+            <article className="relative overflow-hidden rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl sm:p-9">
+              <span className="inline-flex rounded-full bg-fuchsia-300 px-4 py-2 text-sm font-black text-violet-950">
+                PARA ADULTOS Y CREADORES
+              </span>
 
-            <article className="relative overflow-hidden rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl backdrop-blur sm:p-9">
-              <div className="absolute -right-12 -top-12 text-[10rem] opacity-10">
-                🤖
+              <h3 className="mt-6 text-3xl font-black text-fuchsia-200 sm:text-4xl">
+                Laboratorio Tech
+              </h3>
+
+              <p className="mt-4 text-lg leading-relaxed text-violet-100">
+                Herramientas digitales para aprender, crear y mejorar
+                proyectos.
+              </p>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {[
+                  "🤖 Inteligencia artificial",
+                  "⚙️ Automatización",
+                  "📊 Google Sheets",
+                  "📣 Marketing digital",
+                  "🎨 Diseño para redes",
+                  "🗓️ Calendarios de contenido",
+                  "🧠 Productividad",
+                  "📱 Herramientas digitales",
+                ].map((elemento) => (
+                  <div
+                    key={elemento}
+                    className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
+                  >
+                    {elemento}
+                  </div>
+                ))}
               </div>
 
-              <div className="relative">
-                <span className="inline-flex rounded-full bg-fuchsia-300 px-4 py-2 text-sm font-black text-violet-950">
-                  PARA ADULTOS Y CREADORES
-                </span>
-
-                <h3 className="mt-6 text-3xl font-black text-fuchsia-200 sm:text-4xl">
-                  Laboratorio Tech
-                </h3>
-
-                <p className="mt-4 max-w-xl text-lg leading-relaxed text-violet-100">
-                  Herramientas digitales para aprender,
-                  crear contenido y mejorar diferentes
-                  proyectos.
-                </p>
-
-                <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                  {[
-                    "🤖 Inteligencia artificial",
-                    "⚙️ Automatización",
-                    "📊 Google Sheets",
-                    "📣 Marketing digital",
-                    "🎨 Diseño para redes",
-                    "🗓️ Calendarios de contenido",
-                    "🧠 Recursos de productividad",
-                    "📱 Herramientas digitales",
-                  ].map((elemento) => (
-                    <div
-                      key={elemento}
-                      className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold text-violet-50"
-                    >
-                      {elemento}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
-                  🔒 Disponible con la prueba o el
-                  acceso completo
-                </div>
+              <div className="mt-8 inline-flex rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
+                🔒 Disponible con prueba o acceso VIP
               </div>
             </article>
           </div>
@@ -653,32 +617,26 @@ export default function InicioLanding() {
               TODO EN UN MISMO LUGAR
             </span>
 
-            <h2 className="mt-5 text-4xl font-black text-slate-900 sm:text-5xl">
-              Una plataforma creada para facilitar el
-              aprendizaje
+            <h2 className="mt-5 text-4xl font-black sm:text-5xl">
+              Una plataforma para facilitar el aprendizaje
             </h2>
-
-            <p className="mt-4 text-lg leading-relaxed text-slate-600">
-              Recursos organizados, prácticos y fáciles
-              de utilizar desde cualquier dispositivo.
-            </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {beneficios.map((beneficio) => (
               <article
                 key={beneficio.titulo}
-                className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-900/5 transition hover:-translate-y-2 hover:shadow-2xl"
+                className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl"
               >
                 <div
                   className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${beneficio.color}`}
                 />
 
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl transition group-hover:scale-110">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
                   {beneficio.emoji}
                 </div>
 
-                <h3 className="mt-5 text-xl font-black text-slate-900">
+                <h3 className="mt-5 text-xl font-black">
                   {beneficio.titulo}
                 </h3>
 
@@ -701,19 +659,13 @@ export default function InicioLanding() {
       >
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto mb-14 max-w-3xl text-center">
-            <span className="inline-flex rounded-full border border-yellow-300/20 bg-yellow-300/10 px-4 py-2 text-sm font-black text-yellow-200">
+            <span className="inline-flex rounded-full bg-yellow-300/10 px-4 py-2 text-sm font-black text-yellow-200">
               COMENZAR ES MUY FÁCIL
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
               Elige cómo quieres comenzar
             </h2>
-
-            <p className="mt-4 text-lg leading-relaxed text-blue-100/75">
-              Puedes conocer la plataforma durante 60
-              minutos o activar directamente el acceso
-              completo.
-            </p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -723,32 +675,32 @@ export default function InicioLanding() {
                 emoji: "🔍",
                 titulo: "Conoce la propuesta",
                 descripcion:
-                  "Revisa todo el contenido y los beneficios presentados en esta página.",
+                  "Revisa todos los contenidos y beneficios de la plataforma.",
               },
               {
                 numero: "02",
                 emoji: "🛸",
                 titulo: "Utiliza la prueba",
                 descripcion:
-                  "Explora la plataforma durante 60 minutos con las descargas bloqueadas.",
+                  "Explora durante 60 minutos con las descargas bloqueadas.",
               },
               {
                 numero: "03",
                 emoji: "💎",
                 titulo: "Activa el acceso",
                 descripcion:
-                  "Realiza el pago y envía el comprobante para habilitar todas las funciones.",
+                  "Realiza el pago y envía el comprobante para habilitar todo.",
               },
             ].map((paso) => (
               <article
                 key={paso.numero}
-                className="relative rounded-[2rem] border border-white/10 bg-white/10 p-7 shadow-xl backdrop-blur"
+                className="relative rounded-[2rem] border border-white/10 bg-white/10 p-7 shadow-xl"
               >
                 <span className="absolute right-6 top-5 text-5xl font-black text-white/5">
                   {paso.numero}
                 </span>
 
-                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-400 text-3xl shadow-xl">
+                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-400 text-3xl">
                   {paso.emoji}
                 </span>
 
@@ -762,16 +714,6 @@ export default function InicioLanding() {
               </article>
             ))}
           </div>
-
-          <div className="mt-10 flex justify-center">
-            <button
-              type="button"
-              onClick={iniciarPruebaExpress}
-              className="w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110 sm:w-auto"
-            >
-              🛸 Iniciar prueba de 60 minutos
-            </button>
-          </div>
         </div>
       </section>
 
@@ -784,11 +726,9 @@ export default function InicioLanding() {
         className="scroll-mt-24 bg-slate-50 px-5 py-20 text-slate-900 lg:px-8"
       >
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
-          {/* INFORMACIÓN */}
-
           <div>
             <span className="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
-              ACCESO COMPLETO
+              ACCESO VIP
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
@@ -796,25 +736,23 @@ export default function InicioLanding() {
             </h2>
 
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              Obtén acceso ilimitado a la biblioteca
-              educativa y al laboratorio de herramientas
-              digitales.
+              Acceso ilimitado a la biblioteca y al laboratorio digital.
             </p>
 
             <ul className="mt-8 space-y-4">
               {[
-                "Acceso ilimitado a la plataforma",
+                "Acceso ilimitado",
                 "Biblioteca educativa completa",
                 "Descargas habilitadas",
-                "Acceso al Laboratorio Tech",
-                "Uso desde teléfono y computadora",
-                "Sin pagos mensuales",
+                "Laboratorio Tech",
+                "Uso desde cualquier dispositivo",
+                "Sin mensualidades",
               ].map((elemento) => (
                 <li
                   key={elemento}
                   className="flex items-center gap-3 font-bold text-slate-700"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-sm text-emerald-700">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                     ✓
                   </span>
 
@@ -824,24 +762,18 @@ export default function InicioLanding() {
             </ul>
           </div>
 
-          {/* TARJETA DE PAGO */}
-
           <div className="relative">
-            <div className="absolute -inset-5 rounded-[3rem] bg-gradient-to-r from-emerald-300/30 to-cyan-300/30 blur-2xl" />
-
-            <div className="relative overflow-hidden rounded-[2.5rem] border-4 border-emerald-300 bg-white p-7 shadow-2xl sm:p-9">
+            <div className="relative rounded-[2.5rem] border-4 border-emerald-300 bg-white p-7 shadow-2xl sm:p-9">
               {!mostrarPago ? (
                 <div className="text-center">
-                  <span className="text-5xl">
-                    💎
-                  </span>
+                  <span className="text-5xl">💎</span>
 
                   <p className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-emerald-600">
                     Pago único
                   </p>
 
                   <div className="mt-3 flex items-end justify-center gap-2">
-                    <span className="text-5xl font-black text-slate-900 sm:text-6xl">
+                    <span className="text-5xl font-black sm:text-6xl">
                       2500
                     </span>
 
@@ -857,92 +789,64 @@ export default function InicioLanding() {
                   <button
                     type="button"
                     onClick={() => setMostrarPago(true)}
-                    className="mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-6 py-5 text-xl font-black text-slate-950 shadow-xl shadow-green-500/20 transition hover:-translate-y-1 hover:brightness-105"
+                    className="mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-6 py-5 text-xl font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
                   >
                     💎 Mostrar datos de pago
                   </button>
-
-                  <p className="mt-4 text-sm leading-relaxed text-slate-500">
-                    Después del pago deberás enviar el
-                    comprobante por WhatsApp.
-                  </p>
                 </div>
               ) : (
                 <div>
                   <div className="text-center">
-                    <span className="text-5xl">
-                      📲
-                    </span>
+                    <span className="text-5xl">📲</span>
 
                     <h3 className="mt-4 text-3xl font-black text-emerald-600">
                       Taquilla VIP
                     </h3>
-
-                    <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                      Realiza el pago móvil y envía el
-                      comprobante para activar tu acceso.
-                    </p>
                   </div>
 
                   <div className="mt-7 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <div className="flex flex-col justify-between gap-1 border-b border-slate-200 pb-3 sm:flex-row">
-                      <span className="font-bold text-slate-500">
-                        🏦 Banco
-                      </span>
-
-                      <span className="font-black text-blue-700">
+                    <p>
+                      🏦 Banco:{" "}
+                      <strong className="text-blue-700">
                         {DATOS_PAGO.banco}
-                      </span>
-                    </div>
+                      </strong>
+                    </p>
 
-                    <div className="flex flex-col justify-between gap-1 border-b border-slate-200 pb-3 sm:flex-row">
-                      <span className="font-bold text-slate-500">
-                        📝 Cédula
-                      </span>
-
-                      <span className="font-black text-blue-700">
+                    <p>
+                      📝 Cédula:{" "}
+                      <strong className="text-blue-700">
                         {DATOS_PAGO.cedula}
-                      </span>
-                    </div>
+                      </strong>
+                    </p>
 
-                    <div className="flex flex-col justify-between gap-1 border-b border-slate-200 pb-3 sm:flex-row">
-                      <span className="font-bold text-slate-500">
-                        📱 Teléfono
-                      </span>
-
-                      <span className="font-black text-blue-700">
+                    <p>
+                      📱 Teléfono:{" "}
+                      <strong className="text-blue-700">
                         {DATOS_PAGO.telefono}
-                      </span>
-                    </div>
+                      </strong>
+                    </p>
 
-                    <div className="flex flex-col justify-between gap-1 sm:flex-row">
-                      <span className="font-bold text-slate-500">
-                        💵 Monto
-                      </span>
-
-                      <span className="font-black text-emerald-600">
+                    <p>
+                      💵 Monto:{" "}
+                      <strong className="text-emerald-600">
                         {DATOS_PAGO.monto}
-                      </span>
-                    </div>
+                      </strong>
+                    </p>
                   </div>
 
                   <a
                     href={enlaceWhatsApp}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:-translate-y-1 hover:bg-[#1ebe57]"
+                    className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
                   >
-                    <span className="text-2xl">
-                      📲
-                    </span>
-
-                    Enviar comprobante
+                    📲 Enviar comprobante
                   </a>
 
                   <button
                     type="button"
                     onClick={() => setMostrarPago(false)}
-                    className="mt-4 w-full py-2 font-bold text-slate-400 underline underline-offset-4 transition hover:text-slate-700"
+                    className="mt-4 w-full font-bold text-slate-400 underline"
                   >
                     Ocultar datos de pago
                   </button>
@@ -957,29 +861,23 @@ export default function InicioLanding() {
           PRUEBA GRATUITA
       ================================================= */}
 
-      <section className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 px-5 py-16 text-slate-950 lg:px-8">
+      <section className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 px-5 py-16 text-slate-950">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left">
           <div>
-            <span className="inline-flex rounded-full bg-slate-950/10 px-4 py-2 text-sm font-black">
-              PRUEBA GRATUITA
-            </span>
-
-            <h2 className="mt-4 text-3xl font-black sm:text-4xl">
-              ¿Quieres explorar antes de activar tu
-              acceso?
+            <h2 className="text-3xl font-black sm:text-4xl">
+              ¿Quieres explorar antes de pagar?
             </h2>
 
-            <p className="mt-3 max-w-2xl text-lg font-semibold leading-relaxed text-slate-800">
-              Disfruta de 60 minutos para conocer la
-              plataforma. Podrás visualizar el contenido,
-              pero las descargas permanecerán bloqueadas.
+            <p className="mt-3 max-w-2xl text-lg font-semibold">
+              Disfruta de 60 minutos para conocer la plataforma con las
+              descargas bloqueadas.
             </p>
           </div>
 
           <button
             type="button"
             onClick={iniciarPruebaExpress}
-            className="w-full shrink-0 rounded-full bg-slate-950 px-8 py-5 text-lg font-black text-yellow-300 shadow-2xl transition hover:-translate-y-1 hover:bg-indigo-950 lg:w-auto"
+            className="w-full rounded-full bg-slate-950 px-8 py-5 text-lg font-black text-yellow-300 shadow-2xl lg:w-auto"
           >
             🛸 Iniciar prueba de 60 minutos
           </button>
@@ -987,66 +885,48 @@ export default function InicioLanding() {
       </section>
 
       {/* =================================================
-          PREGUNTAS FRECUENTES
+          PREGUNTAS
       ================================================= */}
 
       <section
         id="preguntas"
-        className="scroll-mt-24 bg-slate-950 px-5 py-20 lg:px-8"
+        className="scroll-mt-24 bg-slate-950 px-5 py-20"
       >
         <div className="mx-auto max-w-4xl">
           <div className="mb-12 text-center">
-            <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-black text-cyan-200">
-              RESOLVEMOS TUS DUDAS
-            </span>
-
-            <h2 className="mt-5 text-4xl font-black sm:text-5xl">
+            <h2 className="text-4xl font-black sm:text-5xl">
               Preguntas frecuentes
             </h2>
-
-            <p className="mt-4 text-lg text-blue-100/70">
-              Consulta la información más importante
-              antes de comenzar.
-            </p>
           </div>
 
           <div className="space-y-4">
-            {preguntasFrecuentes.map(
-              (elemento, indice) => {
-                const abierta =
-                  preguntaAbierta === indice;
+            {preguntasFrecuentes.map((elemento, indice) => {
+              const abierta = preguntaAbierta === indice;
 
-                return (
-                  <article
-                    key={elemento.pregunta}
-                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+              return (
+                <article
+                  key={elemento.pregunta}
+                  className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPreguntaAbierta(abierta ? null : indice)
+                    }
+                    className="flex w-full items-center justify-between gap-5 px-5 py-5 text-left font-black"
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPreguntaAbierta(
-                          abierta ? null : indice,
-                        )
-                      }
-                      className="flex w-full items-center justify-between gap-5 px-5 py-5 text-left font-black text-white sm:px-6"
-                      aria-expanded={abierta}
-                    >
-                      <span>{elemento.pregunta}</span>
+                    <span>{elemento.pregunta}</span>
+                    <span>{abierta ? "−" : "+"}</span>
+                  </button>
 
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl text-cyan-300">
-                        {abierta ? "−" : "+"}
-                      </span>
-                    </button>
-
-                    {abierta && (
-                      <div className="border-t border-white/10 px-5 py-5 leading-relaxed text-blue-100/75 sm:px-6">
-                        {elemento.respuesta}
-                      </div>
-                    )}
-                  </article>
-                );
-              },
-            )}
+                  {abierta && (
+                    <div className="border-t border-white/10 px-5 py-5 text-blue-100/75">
+                      {elemento.respuesta}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1055,37 +935,37 @@ export default function InicioLanding() {
           LLAMADO FINAL
       ================================================= */}
 
-      <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center lg:px-8">
+      <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center">
         <div className="mx-auto max-w-3xl">
-          <span className="text-6xl">
-            🌟
-          </span>
+          <span className="text-6xl">🌟</span>
 
           <h2 className="mt-5 text-3xl font-black sm:text-4xl">
             El conocimiento está listo para despegar
           </h2>
 
-          <p className="mt-4 text-lg leading-relaxed text-blue-100/75">
-            Conoce la plataforma mediante la prueba
-            gratuita o activa el acceso completo para
-            disfrutar de todos los recursos.
-          </p>
-
           <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
             <button
               type="button"
               onClick={iniciarPruebaExpress}
-              className="rounded-full bg-yellow-300 px-7 py-4 font-black text-slate-950 transition hover:-translate-y-1 hover:bg-yellow-200"
+              className="rounded-full bg-yellow-300 px-7 py-4 font-black text-slate-950"
             >
-              🛸 Probar gratis 60 minutos
+              🛸 Probar gratis
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push(RUTA_ACCESO)}
+              className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-7 py-4 font-black text-cyan-200"
+            >
+              🔐 Ya pagué, quiero entrar
             </button>
 
             <button
               type="button"
               onClick={abrirPago}
-              className="rounded-full border-2 border-emerald-300 bg-emerald-300/10 px-7 py-4 font-black text-emerald-200 transition hover:-translate-y-1 hover:bg-emerald-300 hover:text-slate-950"
+              className="rounded-full border-2 border-emerald-300 bg-emerald-300/10 px-7 py-4 font-black text-emerald-200"
             >
-              💎 Activar acceso completo
+              💎 Activar acceso
             </button>
           </div>
         </div>
@@ -1095,29 +975,15 @@ export default function InicioLanding() {
           PIE DE PÁGINA
       ================================================= */}
 
-      <footer className="border-t border-white/10 bg-slate-950 px-5 py-8 text-center">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">
-                🚀
-              </span>
+      <footer className="border-t border-white/10 bg-slate-950 px-5 py-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="font-black text-yellow-300">
+            🚀 MUNDO DIGITAL INFANTIL
+          </p>
 
-              <div className="text-left">
-                <p className="font-black text-yellow-300">
-                  MUNDO DIGITAL INFANTIL
-                </p>
-
-                <p className="text-xs text-blue-300/60">
-                  Aprender · Jugar · Crear
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm font-bold text-blue-300/50">
-              MUNDO DIGITAL INFANTIL © 2026
-            </p>
-          </div>
+          <p className="text-sm font-bold text-blue-300/50">
+            MUNDO DIGITAL INFANTIL © 2026
+          </p>
         </div>
       </footer>
     </main>
