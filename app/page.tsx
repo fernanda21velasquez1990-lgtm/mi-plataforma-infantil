@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
    RUTAS
 ===================================================== */
 
-const RUTA_PRUEBA = "/tecnologia";
 const RUTA_ACCESO = "/acceso";
 
 /* =====================================================
@@ -104,7 +103,7 @@ const preguntasFrecuentes = [
   {
     pregunta: "¿Qué incluye la prueba gratuita?",
     respuesta:
-      "Permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas.",
+      "Permite explorar la plataforma durante 60 minutos. Las descargas de la biblioteca permanecen bloqueadas.",
   },
 ];
 
@@ -116,22 +115,27 @@ export default function InicioLanding() {
   const router = useRouter();
 
   const [mostrarPago, setMostrarPago] = useState(false);
-  const [menuAbierto, setMenuAbierto] = useState(false);
+
   const [preguntaAbierta, setPreguntaAbierta] =
     useState<number | null>(null);
 
   /* ===================================================
-     INICIAR PRUEBA DE 60 MINUTOS
+     ENVIAR A LA PÁGINA DE ACCESO EN MODO PRUEBA
+
+     Ya no se crea la prueba desde esta página.
+     La validación se realizará en /acceso.
   =================================================== */
 
-  const iniciarPruebaExpress = () => {
-    const ahora = Date.now();
-    const limite = ahora + 60 * 60 * 1000;
+  const solicitarPruebaGratis = () => {
+    router.push("/acceso?modo=prueba");
+  };
 
-    localStorage.setItem("limitePrueba", limite.toString());
-    localStorage.removeItem("accesoVIP");
+  /* ===================================================
+     CLIENTE QUE YA PAGÓ
+  =================================================== */
 
-    router.push(RUTA_PRUEBA);
+  const entrarComoCliente = () => {
+    router.push(RUTA_ACCESO);
   };
 
   /* ===================================================
@@ -143,8 +147,6 @@ export default function InicioLanding() {
       behavior: "smooth",
       block: "start",
     });
-
-    setMenuAbierto(false);
   };
 
   /* ===================================================
@@ -155,19 +157,21 @@ export default function InicioLanding() {
     setMostrarPago(true);
 
     setTimeout(() => {
-      document.getElementById("acceso-completo")?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      document
+        .getElementById("acceso-completo")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
     }, 100);
   };
 
   /* ===================================================
-     WHATSAPP
+     ENLACE DE WHATSAPP
   =================================================== */
 
   const mensajeWhatsApp =
-    "Hola, ya realicé mi pago para Mundo Digital Infantil. Aquí está mi comprobante:";
+    "Hola, quiero activar mi acceso VIP a Mundo Digital Infantil. Enviaré mi comprobante de pago:";
 
   const enlaceWhatsApp = `https://wa.me/${
     DATOS_PAGO.whatsapp
@@ -176,11 +180,13 @@ export default function InicioLanding() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 font-sans text-white">
       {/* =================================================
-          MENÚ SUPERIOR
+          MENÚ SUPERIOR SIN BOTÓN HAMBURGUESA
       ================================================= */}
 
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+          {/* LOGO */}
+
           <button
             type="button"
             onClick={() =>
@@ -189,22 +195,25 @@ export default function InicioLanding() {
                 behavior: "smooth",
               })
             }
-            className="flex items-center gap-3 text-left"
+            className="flex min-w-0 items-center gap-3 text-left"
+            aria-label="Volver al inicio"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-500 text-2xl shadow-lg">
               🚀
             </span>
 
-            <div>
-              <p className="text-sm font-black leading-tight text-yellow-300 sm:text-base">
+            <div className="min-w-0">
+              <p className="truncate text-xs font-black leading-tight text-yellow-300 sm:text-base">
                 MUNDO DIGITAL
               </p>
 
-              <p className="text-xs font-bold tracking-[0.2em] text-cyan-300">
+              <p className="text-[10px] font-bold tracking-[0.16em] text-cyan-300 sm:text-xs">
                 INFANTIL
               </p>
             </div>
           </button>
+
+          {/* MENÚ PARA COMPUTADOR */}
 
           <nav className="hidden items-center gap-6 text-sm font-bold text-blue-100 lg:flex">
             <button
@@ -238,11 +247,15 @@ export default function InicioLanding() {
             >
               Preguntas
             </button>
+          </nav>
 
+          {/* BOTONES VISIBLES EN TELÉFONO Y COMPUTADOR */}
+
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => router.push(RUTA_ACCESO)}
-              className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-5 py-2.5 font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950"
+              onClick={entrarComoCliente}
+              className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950 sm:px-5 sm:py-2.5 sm:text-sm"
             >
               🔐 Ya pagué
             </button>
@@ -250,81 +263,12 @@ export default function InicioLanding() {
             <button
               type="button"
               onClick={abrirPago}
-              className="rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-5 py-2.5 font-black text-slate-950 shadow-lg transition hover:-translate-y-0.5"
+              className="hidden rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-5 py-2.5 text-sm font-black text-slate-950 shadow-lg transition hover:-translate-y-0.5 sm:block"
             >
               Activar acceso
             </button>
-          </nav>
-
-          <button
-            type="button"
-            onClick={() => setMenuAbierto(!menuAbierto)}
-            className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-2xl lg:hidden"
-            aria-label="Abrir menú"
-          >
-            {menuAbierto ? "×" : "☰"}
-          </button>
+          </div>
         </div>
-
-        {menuAbierto && (
-          <nav className="border-t border-white/10 bg-slate-950 px-5 py-5 lg:hidden">
-            <div className="mx-auto flex max-w-7xl flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => irASeccion("contenido")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
-              >
-                🌌 Contenido
-              </button>
-
-              <button
-                type="button"
-                onClick={() => irASeccion("beneficios")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
-              >
-                ✨ Beneficios
-              </button>
-
-              <button
-                type="button"
-                onClick={() => irASeccion("como-funciona")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
-              >
-                🛸 Cómo funciona
-              </button>
-
-              <button
-                type="button"
-                onClick={() => irASeccion("preguntas")}
-                className="rounded-xl bg-white/5 px-4 py-3 text-left font-bold"
-              >
-                💬 Preguntas frecuentes
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuAbierto(false);
-                  router.push(RUTA_ACCESO);
-                }}
-                className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-left font-black text-cyan-200"
-              >
-                🔐 Ya pagué, quiero entrar
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuAbierto(false);
-                  abrirPago();
-                }}
-                className="rounded-xl bg-gradient-to-r from-emerald-400 to-green-500 px-4 py-3 text-left font-black text-slate-950"
-              >
-                💎 Activar acceso completo
-              </button>
-            </div>
-          </nav>
-        )}
       </header>
 
       {/* =================================================
@@ -333,10 +277,14 @@ export default function InicioLanding() {
 
       <section className="relative isolate overflow-hidden">
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-blue-600/30 blur-3xl" />
+
         <div className="pointer-events-none absolute -right-32 top-5 h-96 w-96 rounded-full bg-fuchsia-600/25 blur-3xl" />
+
         <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
 
         <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8">
+          {/* TEXTO PRINCIPAL */}
+
           <div className="text-center lg:text-left">
             <span className="mb-6 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200">
               ✨ APRENDER · JUGAR · CREAR
@@ -353,24 +301,38 @@ export default function InicioLanding() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg font-medium leading-relaxed text-blue-100/90 lg:mx-0 lg:text-xl">
-              Materiales educativos, actividades infantiles y herramientas
-              digitales para familias, docentes y creadores.
+              Materiales educativos, actividades infantiles
+              y herramientas digitales para familias,
+              docentes y creadores.
             </p>
 
-            <div className="mt-9 flex justify-center lg:justify-start">
+            {/* BOTONES PRINCIPALES */}
+
+            <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
               <button
                 type="button"
-                onClick={iniciarPruebaExpress}
-                className="w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 sm:w-auto"
+                onClick={solicitarPruebaGratis}
+                className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
               >
-                🛸 Probar gratis durante 60 minutos
+                🛸 Solicitar prueba de 60 minutos
+              </button>
+
+              <button
+                type="button"
+                onClick={entrarComoCliente}
+                className="rounded-full border-2 border-cyan-300/40 bg-white/10 px-8 py-4 text-lg font-black text-white shadow-xl transition hover:-translate-y-1 hover:border-cyan-300 hover:bg-cyan-300/15"
+              >
+                🔐 Ya pagué, quiero entrar
               </button>
             </div>
 
             <p className="mx-auto mt-4 max-w-xl text-sm text-blue-200/70 lg:mx-0">
-              Durante la prueba podrás explorar el contenido, pero las
-              descargas estarán bloqueadas.
+              La prueba debe validarse con tu número de
+              WhatsApp. Las descargas de la biblioteca
+              permanecerán bloqueadas.
             </p>
+
+            {/* INDICADORES */}
 
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
@@ -383,7 +345,10 @@ export default function InicioLanding() {
                   key={texto}
                   className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center"
                 >
-                  <span className="block text-2xl">{emoji}</span>
+                  <span className="block text-2xl">
+                    {emoji}
+                  </span>
+
                   <span className="mt-1 block text-xs font-bold">
                     {texto}
                   </span>
@@ -391,6 +356,8 @@ export default function InicioLanding() {
               ))}
             </div>
           </div>
+
+          {/* PRESENTACIÓN DEL CONTENIDO */}
 
           <div className="relative mx-auto w-full max-w-xl">
             <div className="absolute -inset-6 rounded-[3rem] bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-pink-500/20 blur-2xl" />
@@ -407,19 +374,24 @@ export default function InicioLanding() {
                   </h2>
                 </div>
 
-                <span className="text-5xl">🛰️</span>
+                <span className="text-5xl">
+                  🛰️
+                </span>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <article className="rounded-3xl bg-gradient-to-br from-blue-500 to-cyan-400 p-5 shadow-xl">
-                  <span className="text-4xl">📚</span>
+                  <span className="text-4xl">
+                    📚
+                  </span>
 
                   <h3 className="mt-5 text-xl font-black">
                     Biblioteca Estelar
                   </h3>
 
                   <p className="mt-2 text-sm leading-relaxed text-blue-50">
-                    Guías, cuentos, juegos, matemáticas, caligrafía y más.
+                    Guías, cuentos, juegos, matemáticas,
+                    caligrafía y más.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -428,15 +400,17 @@ export default function InicioLanding() {
                 </article>
 
                 <article className="rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-5 shadow-xl">
-                  <span className="text-4xl">🤖</span>
+                  <span className="text-4xl">
+                    🤖
+                  </span>
 
                   <h3 className="mt-5 text-xl font-black">
                     Laboratorio Tech
                   </h3>
 
                   <p className="mt-2 text-sm leading-relaxed text-violet-50">
-                    Inteligencia artificial, automatización y recursos
-                    digitales.
+                    Inteligencia artificial, automatización
+                    y recursos digitales.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -451,8 +425,9 @@ export default function InicioLanding() {
                 </p>
 
                 <p className="mt-2 text-sm leading-relaxed text-blue-100">
-                  Utiliza la prueba gratuita para descubrir la plataforma
-                  antes de activar el acceso VIP.
+                  Solicita la prueba gratuita para descubrir
+                  la plataforma antes de activar el acceso
+                  VIP.
                 </p>
               </div>
             </div>
@@ -481,16 +456,15 @@ export default function InicioLanding() {
               </h2>
 
               <p className="mt-2 max-w-2xl leading-relaxed text-blue-100/75">
-                Ingresa con el mismo número de WhatsApp que utilizaste para
-                enviar tu comprobante. El sistema verificará tu acceso en
-                Google Sheets.
+                Ingresa con el mismo número de WhatsApp
+                utilizado para enviar tu comprobante.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={() => router.push(RUTA_ACCESO)}
+            onClick={entrarComoCliente}
             className="w-full shrink-0 rounded-full bg-gradient-to-r from-emerald-300 to-cyan-400 px-7 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 lg:w-auto"
           >
             ✅ Ya pagué, quiero entrar
@@ -515,15 +489,10 @@ export default function InicioLanding() {
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
               Dos espacios llenos de posibilidades
             </h2>
-
-            <p className="mt-4 text-lg text-blue-100/75">
-              La portada muestra los contenidos, pero el ingreso solamente
-              se realiza mediante la prueba o el acceso VIP.
-            </p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-2">
-            <article className="relative overflow-hidden rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl sm:p-9">
+            <article className="rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-blue-950">
                 PARA NIÑOS, FAMILIAS Y DOCENTES
               </span>
@@ -533,7 +502,8 @@ export default function InicioLanding() {
               </h3>
 
               <p className="mt-4 text-lg leading-relaxed text-blue-100">
-                Recursos para fortalecer diferentes áreas del aprendizaje.
+                Recursos para fortalecer diferentes áreas
+                del aprendizaje.
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -561,7 +531,7 @@ export default function InicioLanding() {
               </div>
             </article>
 
-            <article className="relative overflow-hidden rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl sm:p-9">
+            <article className="rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-fuchsia-300 px-4 py-2 text-sm font-black text-violet-950">
                 PARA ADULTOS Y CREADORES
               </span>
@@ -571,8 +541,8 @@ export default function InicioLanding() {
               </h3>
 
               <p className="mt-4 text-lg leading-relaxed text-violet-100">
-                Herramientas digitales para aprender, crear y mejorar
-                proyectos.
+                Herramientas digitales para aprender,
+                crear y mejorar proyectos.
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -675,14 +645,14 @@ export default function InicioLanding() {
                 emoji: "🔍",
                 titulo: "Conoce la propuesta",
                 descripcion:
-                  "Revisa todos los contenidos y beneficios de la plataforma.",
+                  "Revisa los contenidos y beneficios de la plataforma.",
               },
               {
                 numero: "02",
                 emoji: "🛸",
-                titulo: "Utiliza la prueba",
+                titulo: "Solicita la prueba",
                 descripcion:
-                  "Explora durante 60 minutos con las descargas bloqueadas.",
+                  "Registra tu teléfono y explora durante 60 minutos.",
               },
               {
                 numero: "03",
@@ -714,6 +684,16 @@ export default function InicioLanding() {
               </article>
             ))}
           </div>
+
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={solicitarPruebaGratis}
+              className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
+            >
+              🛸 Solicitar prueba de 60 minutos
+            </button>
+          </div>
         </div>
       </section>
 
@@ -736,7 +716,8 @@ export default function InicioLanding() {
             </h2>
 
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              Acceso ilimitado a la biblioteca y al laboratorio digital.
+              Acceso ilimitado a la biblioteca y al
+              laboratorio digital.
             </p>
 
             <ul className="mt-8 space-y-4">
@@ -762,97 +743,99 @@ export default function InicioLanding() {
             </ul>
           </div>
 
-          <div className="relative">
-            <div className="relative rounded-[2.5rem] border-4 border-emerald-300 bg-white p-7 shadow-2xl sm:p-9">
-              {!mostrarPago ? (
+          <div className="relative rounded-[2.5rem] border-4 border-emerald-300 bg-white p-7 shadow-2xl sm:p-9">
+            {!mostrarPago ? (
+              <div className="text-center">
+                <span className="text-5xl">
+                  💎
+                </span>
+
+                <p className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-emerald-600">
+                  Pago único
+                </p>
+
+                <div className="mt-3 flex items-end justify-center gap-2">
+                  <span className="text-5xl font-black sm:text-6xl">
+                    2500
+                  </span>
+
+                  <span className="pb-2 text-xl font-black text-slate-500">
+                    Bs
+                  </span>
+                </div>
+
+                <p className="mt-3 font-bold text-slate-500">
+                  Sin mensualidades
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setMostrarPago(true)}
+                  className="mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-6 py-5 text-xl font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
+                >
+                  💎 Mostrar datos de pago
+                </button>
+              </div>
+            ) : (
+              <div>
                 <div className="text-center">
-                  <span className="text-5xl">💎</span>
+                  <span className="text-5xl">
+                    📲
+                  </span>
 
-                  <p className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-emerald-600">
-                    Pago único
+                  <h3 className="mt-4 text-3xl font-black text-emerald-600">
+                    Taquilla VIP
+                  </h3>
+                </div>
+
+                <div className="mt-7 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p>
+                    🏦 Banco:{" "}
+                    <strong className="text-blue-700">
+                      {DATOS_PAGO.banco}
+                    </strong>
                   </p>
 
-                  <div className="mt-3 flex items-end justify-center gap-2">
-                    <span className="text-5xl font-black sm:text-6xl">
-                      2500
-                    </span>
-
-                    <span className="pb-2 text-xl font-black text-slate-500">
-                      Bs
-                    </span>
-                  </div>
-
-                  <p className="mt-3 font-bold text-slate-500">
-                    Sin mensualidades
+                  <p>
+                    📝 Cédula:{" "}
+                    <strong className="text-blue-700">
+                      {DATOS_PAGO.cedula}
+                    </strong>
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={() => setMostrarPago(true)}
-                    className="mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-6 py-5 text-xl font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
-                  >
-                    💎 Mostrar datos de pago
-                  </button>
+                  <p>
+                    📱 Teléfono:{" "}
+                    <strong className="text-blue-700">
+                      {DATOS_PAGO.telefono}
+                    </strong>
+                  </p>
+
+                  <p>
+                    💵 Monto:{" "}
+                    <strong className="text-emerald-600">
+                      {DATOS_PAGO.monto}
+                    </strong>
+                  </p>
                 </div>
-              ) : (
-                <div>
-                  <div className="text-center">
-                    <span className="text-5xl">📲</span>
 
-                    <h3 className="mt-4 text-3xl font-black text-emerald-600">
-                      Taquilla VIP
-                    </h3>
-                  </div>
+                <a
+                  href={enlaceWhatsApp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
+                >
+                  📲 Enviar comprobante
+                </a>
 
-                  <div className="mt-7 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p>
-                      🏦 Banco:{" "}
-                      <strong className="text-blue-700">
-                        {DATOS_PAGO.banco}
-                      </strong>
-                    </p>
-
-                    <p>
-                      📝 Cédula:{" "}
-                      <strong className="text-blue-700">
-                        {DATOS_PAGO.cedula}
-                      </strong>
-                    </p>
-
-                    <p>
-                      📱 Teléfono:{" "}
-                      <strong className="text-blue-700">
-                        {DATOS_PAGO.telefono}
-                      </strong>
-                    </p>
-
-                    <p>
-                      💵 Monto:{" "}
-                      <strong className="text-emerald-600">
-                        {DATOS_PAGO.monto}
-                      </strong>
-                    </p>
-                  </div>
-
-                  <a
-                    href={enlaceWhatsApp}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
-                  >
-                    📲 Enviar comprobante
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => setMostrarPago(false)}
-                    className="mt-4 w-full font-bold text-slate-400 underline"
-                  >
-                    Ocultar datos de pago
-                  </button>
-                </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarPago(false)}
+                  className="mt-4 w-full font-bold text-slate-400 underline"
+                >
+                  Ocultar datos de pago
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -869,23 +852,23 @@ export default function InicioLanding() {
             </h2>
 
             <p className="mt-3 max-w-2xl text-lg font-semibold">
-              Disfruta de 60 minutos para conocer la plataforma con las
-              descargas bloqueadas.
+              Registra tu número y disfruta de 60 minutos
+              para conocer la plataforma.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={iniciarPruebaExpress}
+            onClick={solicitarPruebaGratis}
             className="w-full rounded-full bg-slate-950 px-8 py-5 text-lg font-black text-yellow-300 shadow-2xl lg:w-auto"
           >
-            🛸 Iniciar prueba de 60 minutos
+            🛸 Solicitar prueba de 60 minutos
           </button>
         </div>
       </section>
 
       {/* =================================================
-          PREGUNTAS
+          PREGUNTAS FRECUENTES
       ================================================= */}
 
       <section
@@ -911,12 +894,19 @@ export default function InicioLanding() {
                   <button
                     type="button"
                     onClick={() =>
-                      setPreguntaAbierta(abierta ? null : indice)
+                      setPreguntaAbierta(
+                        abierta ? null : indice,
+                      )
                     }
                     className="flex w-full items-center justify-between gap-5 px-5 py-5 text-left font-black"
                   >
-                    <span>{elemento.pregunta}</span>
-                    <span>{abierta ? "−" : "+"}</span>
+                    <span>
+                      {elemento.pregunta}
+                    </span>
+
+                    <span>
+                      {abierta ? "−" : "+"}
+                    </span>
                   </button>
 
                   {abierta && (
@@ -937,7 +927,9 @@ export default function InicioLanding() {
 
       <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center">
         <div className="mx-auto max-w-3xl">
-          <span className="text-6xl">🌟</span>
+          <span className="text-6xl">
+            🌟
+          </span>
 
           <h2 className="mt-5 text-3xl font-black sm:text-4xl">
             El conocimiento está listo para despegar
@@ -946,15 +938,15 @@ export default function InicioLanding() {
           <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
             <button
               type="button"
-              onClick={iniciarPruebaExpress}
+              onClick={solicitarPruebaGratis}
               className="rounded-full bg-yellow-300 px-7 py-4 font-black text-slate-950"
             >
-              🛸 Probar gratis
+              🛸 Solicitar prueba
             </button>
 
             <button
               type="button"
-              onClick={() => router.push(RUTA_ACCESO)}
+              onClick={entrarComoCliente}
               className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-7 py-4 font-black text-cyan-200"
             >
               🔐 Ya pagué, quiero entrar
