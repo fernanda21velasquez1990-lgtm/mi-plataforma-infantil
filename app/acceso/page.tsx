@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -19,10 +20,9 @@ const URL_GOOGLE_SCRIPT =
 
 const RUTA_BIBLIOTECA = "/biblioteca";
 const NUMERO_WHATSAPP = "584144895281";
-const DURACION_PRUEBA = 60 * 60 * 1000;
 
 /* =====================================================
-   TIPOS DE DATOS
+   TIPOS
 ===================================================== */
 
 type TipoMensaje =
@@ -32,11 +32,19 @@ type TipoMensaje =
   | "advertencia"
   | "error";
 
-type RespuestaGoogle = {
+type RespuestaAcceso = {
+  ok?: boolean;
   encontrado?: boolean;
+  permitido?: boolean;
   estado?: string;
-  inicioPrueba?: unknown;
-  nombre?: string;
+  tipoAcceso?: "vip" | "prueba";
+  nuevaPrueba?: boolean;
+  inicioPrueba?: number;
+  finPrueba?: number;
+  tiempoRestanteMs?: number;
+  motivo?: string;
+  mensaje?: string;
+  error?: string;
 };
 
 /* =====================================================
@@ -47,37 +55,10 @@ function limpiarTelefono(valor: string): string {
   return valor.replace(/\D/g, "").slice(0, 15);
 }
 
-function convertirFechaAMilisegundos(
-  valor: unknown,
-): number | null {
-  if (
-    valor === null ||
-    valor === undefined ||
-    valor === ""
-  ) {
-    return null;
-  }
-
-  if (typeof valor === "number") {
-    return valor < 100000000000
-      ? valor * 1000
-      : valor;
-  }
-
-  const texto = String(valor).trim();
-  const numero = Number(texto);
-
-  if (!Number.isNaN(numero)) {
-    return numero < 100000000000
-      ? numero * 1000
-      : numero;
-  }
-
-  const fechaConvertida = new Date(texto).getTime();
-
-  return Number.isNaN(fechaConvertida)
-    ? null
-    : fechaConvertida;
+function normalizarEstado(valor: unknown): string {
+  return String(valor ?? "")
+    .trim()
+    .toLowerCase();
 }
 
 /* =====================================================
@@ -87,26 +68,19 @@ function convertirFechaAMilisegundos(
 export default function Acceso() {
   const router = useRouter();
 
-  const autoVerificacionRealizada =
-    useRef(false);
+  const cargaInicialRealizada = useRef(false);
 
-  const [telefono, setTelefono] =
-    useState("");
+  const [telefono, setTelefono] = useState("");
+  const [modoPrueba, setModoPrueba] = useState(false);
 
-  const [mensaje, setMensaje] =
-    useState("");
-
+  const [mensaje, setMensaje] = useState("");
   const [tipoMensaje, setTipoMensaje] =
     useState<TipoMensaje>("neutral");
 
-  const [cargando, setCargando] =
-    useState(false);
+  const [cargando, setCargando] = useState(false);
 
   /* ===================================================
-     OCULTAR EL BOTÓN AZUL ☰
-
-     Este efecto solamente funciona mientras
-     el usuario está dentro de /acceso.
+     OCULTAR EL BOTÓN AZUL ☰ EN ESTA PÁGINA
   =================================================== */
 
   useEffect(() => {
@@ -127,21 +101,14 @@ export default function Acceso() {
             .getAttribute("aria-label")
             ?.toLowerCase() || "";
 
-        const titulo =
-          boton
-            .getAttribute("title")
-            ?.toLowerCase() || "";
-
-        const esBotonMenu =
+        const esMenu =
           texto === "☰" ||
           ariaLabel.includes("abrir menú") ||
-          ariaLabel.includes("abrir menu") ||
-          titulo.includes("abrir menú") ||
-          titulo.includes("abrir menu");
+          ariaLabel.includes("abrir menu");
 
-        if (esBotonMenu) {
+        if (esMenu) {
           boton.setAttribute(
-            "data-menu-oculto-en-acceso",
+            "data-menu-oculto-acceso",
             "true",
           );
 
@@ -168,36 +135,44 @@ export default function Acceso() {
     return () => {
       observador.disconnect();
 
-      const botonesOcultos =
-        document.querySelectorAll<HTMLElement>(
-          '[data-menu-oculto-en-acceso="true"]',
-        );
+      document
+        .querySelectorAll<HTMLElement>(
+          '[data-menu-oculto-acceso="true"]',
+        )
+        .forEach((elemento) => {
+          elemento.style.removeProperty("display");
 
-      botonesOcultos.forEach((elemento) => {
-        elemento.style.removeProperty(
-          "display",
-        );
-
-        elemento.removeAttribute(
-          "data-menu-oculto-en-acceso",
-        );
-      });
+          elemento.removeAttribute(
+            "data-menu-oculto-acceso",
+          );
+        });
     };
   }, []);
 
   /* ===================================================
-     ABRIR LA BIBLIOTECA
+     GUARDAR SESIÓN AUTORIZADA
   =================================================== */
 
-  const abrirBiblioteca = useCallback(
+  const guardarSesionYEntrar = useCallback(
     (
       tipoAcceso: "vip" | "prueba",
-      limitePrueba?: number,
+      numero: string,
+      datos: RespuestaAcceso,
     ) => {
+      localStorage.setItem(
+        "telefonoAcceso",
+        numero,
+      );
+
       if (tipoAcceso === "vip") {
         localStorage.setItem(
           "accesoVIP",
           "true",
+        );
+
+        localStorage.setItem(
+          "modoAcceso",
+          "vip",
         );
 
         localStorage.removeItem(
@@ -205,12 +180,38 @@ export default function Acceso() {
         );
       }
 
-      if (
-        tipoAcceso === "prueba" &&
-        limitePrueba
-      ) {
+      if (tipoAcceso === "prueba") {
+        let limitePrueba =
+          Number(datos.finPrueba);
+
+        if (
+          !limitePrueba &&
+          datos.tiempoRestanteMs
+        ) {
+          limitePrueba =
+            Date.now() +
+            Number(
+              datos.tiempoRestanteMs,
+            );
+        }
+
+        if (!limitePrueba) {
+          setTipoMensaje("error");
+
+          setMensaje(
+            "⚠️ La prueba fue aprobada, pero no recibimos una hora de finalización válida.",
+          );
+
+          return;
+        }
+
         localStorage.removeItem(
           "accesoVIP",
+        );
+
+        localStorage.setItem(
+          "modoAcceso",
+          "prueba",
         );
 
         localStorage.setItem(
@@ -219,35 +220,34 @@ export default function Acceso() {
         );
       }
 
-      setTimeout(() => {
+      window.setTimeout(() => {
         router.replace(
           RUTA_BIBLIOTECA,
         );
-      }, 1000);
+      }, 1200);
     },
     [router],
   );
 
   /* ===================================================
-     VERIFICAR ACCESO EN GOOGLE SHEETS
+     CONSULTAR GOOGLE SHEETS
   =================================================== */
 
-  const verificarAcceso = useCallback(
+  const procesarAcceso = useCallback(
     async (
       telefonoRecibido?: string,
+      accionForzada?:
+        | "verificar"
+        | "iniciarPrueba",
     ) => {
-      const numero =
-        limpiarTelefono(
-          telefonoRecibido ??
-            telefono,
-        );
+      const numero = limpiarTelefono(
+        telefonoRecibido ?? telefono,
+      );
 
       setTelefono(numero);
 
       if (!numero) {
-        setTipoMensaje(
-          "advertencia",
-        );
+        setTipoMensaje("advertencia");
 
         setMensaje(
           "⚠️ Escribe tu número de WhatsApp.",
@@ -260,46 +260,54 @@ export default function Acceso() {
         numero.length < 10 ||
         numero.length > 15
       ) {
-        setTipoMensaje(
-          "advertencia",
-        );
+        setTipoMensaje("advertencia");
 
         setMensaje(
-          "⚠️ Revisa el número. Incluye el código del país y escribe entre 10 y 15 dígitos.",
+          "⚠️ Incluye el código del país y escribe entre 10 y 15 números.",
         );
 
         return;
       }
 
+      const accion =
+        accionForzada ??
+        (modoPrueba
+          ? "iniciarPrueba"
+          : "verificar");
+
       setCargando(true);
       setTipoMensaje("cargando");
 
       setMensaje(
-        "🛰️ Buscando tu acceso en la base de datos...",
+        accion === "iniciarPrueba"
+          ? "🛰️ Comprobando si puedes utilizar la prueba gratuita..."
+          : "🛰️ Verificando tu acceso VIP...",
       );
 
       const controlador =
         new AbortController();
 
-      const limiteConexion =
+      const tiempoMaximo =
         window.setTimeout(() => {
           controlador.abort();
         }, 15000);
 
       try {
-        const urlConsulta =
-          `${URL_GOOGLE_SCRIPT}` +
-          `?whatsapp=${encodeURIComponent(
-            numero,
-          )}`;
+        const parametros =
+          new URLSearchParams({
+            accion,
+            whatsapp: numero,
+          });
 
-        const respuesta =
-          await fetch(urlConsulta, {
+        const respuesta = await fetch(
+          `${URL_GOOGLE_SCRIPT}?${parametros.toString()}`,
+          {
             method: "GET",
             cache: "no-store",
             signal:
               controlador.signal,
-          });
+          },
+        );
 
         if (!respuesta.ok) {
           throw new Error(
@@ -308,130 +316,177 @@ export default function Acceso() {
         }
 
         const datos =
-          (await respuesta.json()) as RespuestaGoogle;
+          (await respuesta.json()) as RespuestaAcceso;
 
-        if (!datos.encontrado) {
+        if (datos.error) {
           setTipoMensaje("error");
 
           setMensaje(
-            "❌ Este número no aparece en nuestra base de datos. Verifica que sea el mismo número utilizado para enviar el comprobante.",
+            `⚠️ ${datos.error}`,
           );
 
           return;
         }
 
-        const estado = String(
-          datos.estado ?? "",
-        )
-          .trim()
-          .toLowerCase();
+        const estado =
+          normalizarEstado(
+            datos.estado,
+          );
 
-        const esVIP = [
-          "pagado",
-          "vip",
-          "activo",
-          "aprobado",
-        ].includes(estado);
+        const esVIP =
+          datos.tipoAcceso === "vip" ||
+          [
+            "pagado",
+            "vip",
+            "activo",
+            "aprobado",
+          ].includes(estado);
 
-        /* ACCESO VIP */
+        /* ===============================================
+           ACCESO VIP
+        =============================================== */
 
-        if (esVIP) {
-          const saludo =
-            datos.nombre
-              ? `, ${datos.nombre}`
-              : "";
-
+        if (
+          datos.permitido &&
+          esVIP
+        ) {
           setTipoMensaje("exito");
 
           setMensaje(
-            `✅ ¡Acceso VIP aprobado${saludo}! Entrando a la biblioteca...`,
+            "✅ ¡Acceso VIP aprobado! Entrando a la biblioteca...",
           );
 
-          abrirBiblioteca("vip");
+          guardarSesionYEntrar(
+            "vip",
+            numero,
+            datos,
+          );
 
           return;
         }
 
-        /* ACCESO DE PRUEBA */
+        /* ===============================================
+           PRUEBA ACTIVA O RECIÉN CREADA
+        =============================================== */
 
-        if (estado === "prueba") {
-          const inicioPrueba =
-            convertirFechaAMilisegundos(
-              datos.inicioPrueba,
-            );
-
-          if (!inicioPrueba) {
-            setTipoMensaje("error");
-
-            setMensaje(
-              "⚠️ Encontramos tu prueba, pero la fecha de inicio no es válida. Comunícate con soporte.",
-            );
-
-            return;
-          }
-
-          const limite =
-            inicioPrueba +
-            DURACION_PRUEBA;
-
-          const ahora = Date.now();
-
-          if (ahora >= limite) {
-            localStorage.removeItem(
-              "limitePrueba",
-            );
-
-            localStorage.removeItem(
-              "accesoVIP",
-            );
-
-            setTipoMensaje(
-              "advertencia",
-            );
-
-            setMensaje(
-              "⏳ Tu prueba gratuita de 60 minutos ya terminó. Activa el acceso VIP para continuar.",
-            );
-
-            return;
-          }
-
+        if (
+          datos.permitido &&
+          datos.tipoAcceso === "prueba"
+        ) {
           const minutosRestantes =
             Math.max(
               1,
               Math.ceil(
-                (limite - ahora) /
-                  60000,
+                Number(
+                  datos.tiempoRestanteMs ??
+                    0,
+                ) / 60000,
               ),
             );
 
           setTipoMensaje("exito");
 
           setMensaje(
-            `⏱️ Prueba validada. Te quedan aproximadamente ${minutosRestantes} minutos. Entrando...`,
+            datos.nuevaPrueba
+              ? "⏱️ Tu prueba gratuita comenzó. Tienes 60 minutos para explorar la plataforma."
+              : `⏱️ Tu prueba sigue activa. Te quedan aproximadamente ${minutosRestantes} minutos.`,
           );
 
-          abrirBiblioteca(
+          guardarSesionYEntrar(
             "prueba",
-            limite,
+            numero,
+            datos,
           );
 
           return;
         }
 
-        /* PAGO PENDIENTE */
+        /* ===============================================
+           PRUEBA TERMINADA
+        =============================================== */
 
         if (
-          estado === "pendiente" ||
-          estado === "revision" ||
-          estado === "en revision"
+          estado ===
+            "prueba_finalizada" ||
+          datos.motivo ===
+            "prueba_ya_utilizada" ||
+          datos.motivo ===
+            "tiempo_finalizado"
+        ) {
+          localStorage.removeItem(
+            "accesoVIP",
+          );
+
+          localStorage.removeItem(
+            "modoAcceso",
+          );
+
+          localStorage.removeItem(
+            "limitePrueba",
+          );
+
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            "⏳ Este número ya utilizó su prueba gratuita de 60 minutos. Activa el acceso VIP para continuar.",
+          );
+
+          return;
+        }
+
+        /* ===============================================
+           IP YA UTILIZADA
+        =============================================== */
+
+        if (
+          datos.motivo ===
+          "ip_ya_utilizada"
         ) {
           setTipoMensaje(
             "advertencia",
           );
 
           setMensaje(
-            "🕐 Tu pago todavía está en revisión. Intenta nuevamente después de recibir la confirmación.",
+            "⛔ Esta conexión ya utilizó una prueba gratuita. Activa el acceso VIP para continuar.",
+          );
+
+          return;
+        }
+
+        /* ===============================================
+           PAGO PENDIENTE
+        =============================================== */
+
+        if (
+          estado === "pendiente" ||
+          datos.motivo ===
+            "pago_pendiente"
+        ) {
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            "🕐 Tu pago todavía está pendiente de confirmación. Inténtalo nuevamente cuando recibas la aprobación.",
+          );
+
+          return;
+        }
+
+        /* ===============================================
+           USUARIO NO REGISTRADO EN ACCESO VIP
+        =============================================== */
+
+        if (
+          !datos.encontrado &&
+          accion === "verificar"
+        ) {
+          setTipoMensaje("error");
+
+          setMensaje(
+            "❌ Este número no aparece como cliente aprobado. Verifica que sea el mismo número utilizado para enviar el comprobante.",
           );
 
           return;
@@ -442,57 +497,60 @@ export default function Acceso() {
         );
 
         setMensaje(
-          "⚠️ El número fue encontrado, pero todavía no tiene un acceso activo.",
+          datos.mensaje ||
+            "⚠️ No tienes un acceso activo en este momento.",
         );
       } catch (error) {
         console.error(
-          "Error al verificar acceso:",
+          "Error de acceso:",
           error,
         );
 
         if (
           error instanceof Error &&
-          error.name ===
-            "AbortError"
+          error.name === "AbortError"
         ) {
           setTipoMensaje("error");
 
           setMensaje(
-            "⚠️ La consulta tardó demasiado. Revisa tu conexión e intenta nuevamente.",
+            "⚠️ La consulta tardó demasiado. Revisa tu conexión e inténtalo nuevamente.",
           );
         } else {
           setTipoMensaje("error");
 
           setMensaje(
-            "⚠️ No pudimos conectarnos con Google Sheets. Intenta nuevamente.",
+            "⚠️ No pudimos conectarnos con Google Sheets. Inténtalo nuevamente.",
           );
         }
       } finally {
         window.clearTimeout(
-          limiteConexion,
+          tiempoMaximo,
         );
 
         setCargando(false);
       }
     },
-    [telefono, abrirBiblioteca],
+    [
+      telefono,
+      modoPrueba,
+      guardarSesionYEntrar,
+    ],
   );
 
   /* ===================================================
-     ENLACE AUTOMÁTICO PARA CLIENTES VIP
+     LEER EL MODO DESDE LA DIRECCIÓN
 
-     Ejemplo:
-     /acceso?telefono=584141234567&auto=1
+     /acceso?modo=prueba
   =================================================== */
 
   useEffect(() => {
     if (
-      autoVerificacionRealizada.current
+      cargaInicialRealizada.current
     ) {
       return;
     }
 
-    autoVerificacionRealizada.current =
+    cargaInicialRealizada.current =
       true;
 
     const parametros =
@@ -500,16 +558,20 @@ export default function Acceso() {
         window.location.search,
       );
 
+    const esModoPrueba =
+      parametros.get("modo") ===
+      "prueba";
+
     const telefonoURL =
       limpiarTelefono(
-        parametros.get(
-          "telefono",
-        ) ?? "",
+        parametros.get("telefono") ??
+          "",
       );
 
     const accesoAutomatico =
-      parametros.get("auto") ===
-      "1";
+      parametros.get("auto") === "1";
+
+    setModoPrueba(esModoPrueba);
 
     if (telefonoURL) {
       setTelefono(telefonoURL);
@@ -519,14 +581,17 @@ export default function Acceso() {
       telefonoURL &&
       accesoAutomatico
     ) {
-      void verificarAcceso(
+      void procesarAcceso(
         telefonoURL,
+        esModoPrueba
+          ? "iniciarPrueba"
+          : "verificar",
       );
     }
-  }, [verificarAcceso]);
+  }, [procesarAcceso]);
 
   /* ===================================================
-     FORMULARIO
+     ENVIAR FORMULARIO
   =================================================== */
 
   const enviarFormulario = (
@@ -534,7 +599,7 @@ export default function Acceso() {
   ) => {
     evento.preventDefault();
 
-    void verificarAcceso();
+    void procesarAcceso();
   };
 
   /* ===================================================
@@ -542,7 +607,7 @@ export default function Acceso() {
   =================================================== */
 
   const mensajeWhatsApp =
-    "Hola, ya realicé mi pago para Mundo Digital Infantil. Enviaré mi comprobante para solicitar la activación del acceso VIP.";
+    "Hola, quiero activar mi acceso VIP a Mundo Digital Infantil. Enviaré mi comprobante de pago:";
 
   const enlaceWhatsApp =
     `https://wa.me/${NUMERO_WHATSAPP}` +
@@ -551,7 +616,7 @@ export default function Acceso() {
     )}`;
 
   /* ===================================================
-     COLOR DEL MENSAJE
+     COLORES DE LOS MENSAJES
   =================================================== */
 
   const claseMensaje = {
@@ -623,29 +688,47 @@ export default function Acceso() {
 
       <section className="relative z-10 mx-auto max-w-7xl px-5 py-14 lg:px-8 lg:py-20">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <span className="inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-black text-cyan-200">
-            🔐 CENTRO DE ACCESO
+          <span
+            className={`inline-flex rounded-full border px-4 py-2 text-sm font-black ${
+              modoPrueba
+                ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
+                : "border-cyan-300/25 bg-cyan-300/10 text-cyan-200"
+            }`}
+          >
+            {modoPrueba
+              ? "⏱️ ACTIVAR PRUEBA GRATUITA"
+              : "🔐 CENTRO DE ACCESO VIP"}
           </span>
 
           <h1 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-            Ingresa a tu universo
+            {modoPrueba
+              ? "Comienza tu prueba de"
+              : "Ingresa a tu universo"}
 
             <span className="block bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
-              de aprendizaje digital
+              {modoPrueba
+                ? "60 minutos"
+                : "de aprendizaje digital"}
             </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-blue-100/80">
-            Escribe el mismo número de WhatsApp
-            utilizado para registrarte o enviar tu
-            comprobante.
+            {modoPrueba
+              ? "Escribe tu número de WhatsApp. Si nunca utilizaste la prueba, tu hora comenzará inmediatamente."
+              : "Escribe el mismo número de WhatsApp que utilizaste para enviar tu comprobante."}
           </p>
         </div>
 
         {/* OPCIONES */}
 
         <div className="mb-10 grid gap-6 lg:grid-cols-2">
-          <article className="relative overflow-hidden rounded-[2rem] border border-yellow-300/25 bg-gradient-to-br from-yellow-300/15 to-orange-500/10 p-7 shadow-2xl">
+          <article
+            className={`relative overflow-hidden rounded-[2rem] border p-7 shadow-2xl ${
+              modoPrueba
+                ? "border-yellow-300/60 bg-gradient-to-br from-yellow-300/25 to-orange-500/15 ring-2 ring-yellow-300/20"
+                : "border-yellow-300/20 bg-gradient-to-br from-yellow-300/10 to-orange-500/5"
+            }`}
+          >
             <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
               ⏱️
             </div>
@@ -660,20 +743,25 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Conoce la plataforma, visualiza
-                los materiales y descubre sus
-                herramientas.
+                Conoce la biblioteca y las
+                herramientas disponibles.
               </p>
 
               <ul className="mt-6 space-y-3 text-sm font-bold">
-                <li>✓ Acceso temporal de una hora</li>
-                <li>✓ Visualización de contenidos</li>
-                <li>🔒 Descargas bloqueadas</li>
+                <li>✓ Una sola prueba por número</li>
+                <li>✓ Visualización de materiales</li>
+                <li>🔒 Descargas de biblioteca bloqueadas</li>
               </ul>
             </div>
           </article>
 
-          <article className="relative overflow-hidden rounded-[2rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-cyan-500/10 p-7 shadow-2xl">
+          <article
+            className={`relative overflow-hidden rounded-[2rem] border p-7 shadow-2xl ${
+              !modoPrueba
+                ? "border-emerald-300/60 bg-gradient-to-br from-emerald-400/25 to-cyan-500/15 ring-2 ring-emerald-300/20"
+                : "border-emerald-300/20 bg-gradient-to-br from-emerald-400/10 to-cyan-500/5"
+            }`}
+          >
             <div className="absolute -right-10 -top-10 text-[9rem] opacity-10">
               💎
             </div>
@@ -688,9 +776,8 @@ export default function Acceso() {
               </h2>
 
               <p className="mt-3 leading-relaxed text-blue-100/80">
-                Disfruta de la biblioteca, descarga
-                materiales y utiliza todas las
-                herramientas disponibles.
+                Descarga materiales y utiliza
+                todas las herramientas.
               </p>
 
               <ul className="mt-6 space-y-3 text-sm font-bold">
@@ -702,13 +789,19 @@ export default function Acceso() {
           </article>
         </div>
 
-        {/* VERIFICACIÓN Y PAGO */}
+        {/* FORMULARIO Y SOPORTE */}
 
         <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
             <div className="mb-7 flex items-start gap-4">
-              <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 text-3xl">
-                🔐
+              <span
+                className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl shadow-xl ${
+                  modoPrueba
+                    ? "bg-gradient-to-br from-yellow-300 to-orange-400"
+                    : "bg-gradient-to-br from-blue-500 to-cyan-400"
+                }`}
+              >
+                {modoPrueba ? "⏱️" : "🔐"}
               </span>
 
               <div>
@@ -717,7 +810,9 @@ export default function Acceso() {
                 </p>
 
                 <h2 className="mt-1 text-2xl font-black sm:text-3xl">
-                  Activa tu entrada
+                  {modoPrueba
+                    ? "Activa tu hora gratuita"
+                    : "Activa tu entrada VIP"}
                 </h2>
 
                 <p className="mt-2 text-blue-100/70">
@@ -762,23 +857,29 @@ export default function Acceso() {
                       );
                     }
                   }}
-                  className="w-full rounded-2xl border-2 border-white/15 bg-slate-950/50 py-4 pl-14 pr-5 text-lg font-bold text-white outline-none transition placeholder:text-blue-200/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10"
+                  className="w-full rounded-2xl border-2 border-white/15 bg-slate-950/50 py-4 pl-14 pr-5 text-lg font-bold text-white outline-none transition placeholder:text-blue-200/35 focus:border-cyan-300 focus:ring-4 focus:ring-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
               <p className="mt-2 text-xs text-blue-200/60">
-                Incluye el código del país, sin
-                espacios, guiones ni el signo +.
+                Incluye el código del país, sin espacios,
+                guiones ni el signo +.
               </p>
 
               <button
                 type="submit"
                 disabled={cargando}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`mt-6 flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60 ${
+                  modoPrueba
+                    ? "bg-gradient-to-r from-yellow-300 to-orange-400"
+                    : "bg-gradient-to-r from-emerald-300 to-cyan-400"
+                }`}
               >
                 {cargando
-                  ? "🚀 Verificando acceso..."
-                  : "✅ Verificar y entrar"}
+                  ? "🚀 Verificando..."
+                  : modoPrueba
+                    ? "⏱️ Comenzar mi prueba gratuita"
+                    : "✅ Verificar y entrar"}
               </button>
             </form>
 
@@ -793,33 +894,34 @@ export default function Acceso() {
             )}
           </section>
 
+          {/* SOPORTE */}
+
           <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl sm:p-8">
             <span className="text-5xl">
               💎
             </span>
 
             <h2 className="mt-5 text-3xl font-black text-emerald-200">
-              ¿Todavía no tienes acceso VIP?
+              ¿Quieres acceso completo?
             </h2>
 
             <p className="mt-3 leading-relaxed text-blue-100/75">
-              Realiza el pago desde la página
-              principal y envía el comprobante
-              mediante WhatsApp.
+              Envía el comprobante y espera la
+              confirmación de tu acceso VIP.
             </p>
 
             <div className="mt-6 space-y-3">
               {[
+                "Realiza el pago",
                 "Envía el comprobante",
                 "Espera la confirmación",
-                "Recibe tu enlace directo",
                 "Entra con tu WhatsApp",
               ].map((elemento, indice) => (
                 <div
                   key={elemento}
                   className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
                     {indice + 1}
                   </span>
 
