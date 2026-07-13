@@ -17,6 +17,16 @@ type Promocion = {
   ImagenUrl?: string;
   PrecioNormal?: string | number;
   PrecioOferta?: string | number;
+
+  /*
+  Nuevos campos para explicar
+  qué contiene cada promoción.
+  */
+
+  TipoContenido?: string;
+  Extension?: string;
+  Incluye?: string;
+
   DescuentoExtra?: string | number;
   Etiqueta?: string;
   Disponible?: string | boolean;
@@ -69,9 +79,8 @@ function convertirABooleano(
     return valor;
   }
 
-  const texto = normalizarTexto(
-    valor,
-  );
+  const texto =
+    normalizarTexto(valor);
 
   return ![
     "no",
@@ -84,7 +93,10 @@ function convertirABooleano(
 }
 
 function mostrarPrecio(
-  valor: string | number | undefined,
+  valor:
+    | string
+    | number
+    | undefined,
 ): string {
   if (
     valor === undefined ||
@@ -101,7 +113,8 @@ function obtenerDescuento(
   promocion: Promocion,
 ): string {
   const descuento = String(
-    promocion.DescuentoExtra ?? "",
+    promocion.DescuentoExtra ??
+      "",
   ).trim();
 
   if (!descuento) {
@@ -120,16 +133,129 @@ function obtenerDescuento(
   return `${descuento}% OFF EXTRA`;
 }
 
+function obtenerIconoTipo(
+  tipoContenido: string,
+): string {
+  const tipo =
+    normalizarTexto(
+      tipoContenido,
+    );
+
+  if (
+    tipo.includes("pdf") &&
+    tipo.includes("video")
+  ) {
+    return "🎬📘";
+  }
+
+  if (
+    tipo.includes("video") ||
+    tipo.includes("curso")
+  ) {
+    return "🎬";
+  }
+
+  if (
+    tipo.includes("pdf") ||
+    tipo.includes("guia") ||
+    tipo.includes("manual")
+  ) {
+    return "📘";
+  }
+
+  if (
+    tipo.includes("audio")
+  ) {
+    return "🎧";
+  }
+
+  if (
+    tipo.includes("plantilla")
+  ) {
+    return "📝";
+  }
+
+  return "✨";
+}
+
+function obtenerIncluye(
+  promocion: Promocion,
+): string[] {
+  const contenidoGuardado =
+    String(
+      promocion.Incluye || "",
+    ).trim();
+
+  /*
+  Los elementos de Google Sheets
+  pueden separarse con:
+  | ; o salto de línea.
+  */
+
+  if (contenidoGuardado) {
+    return contenidoGuardado
+      .split(/\||;|\n/)
+      .map((elemento) =>
+        elemento.trim(),
+      )
+      .filter(Boolean)
+      .slice(0, 6);
+  }
+
+  /*
+  Contenido predeterminado cuando
+  la columna Incluye está vacía.
+  */
+
+  const tipo =
+    normalizarTexto(
+      promocion.TipoContenido,
+    );
+
+  if (
+    tipo.includes("pdf") &&
+    tipo.includes("video")
+  ) {
+    return [
+      "Guía digital descargable",
+      "Clases explicativas en video",
+      "Actividades paso a paso",
+      "Acceso desde celular o computadora",
+    ];
+  }
+
+  if (
+    tipo.includes("video") ||
+    tipo.includes("curso")
+  ) {
+    return [
+      "Clases grabadas",
+      "Explicación paso a paso",
+      "Acceso desde cualquier dispositivo",
+    ];
+  }
+
+  return [
+    "Material digital descargable",
+    "Contenido explicado paso a paso",
+    "Acceso desde celular o computadora",
+  ];
+}
+
 /* =====================================================
    COMPONENTE
 ===================================================== */
 
 export default function Promociones() {
-  const [promociones, setPromociones] =
-    useState<Promocion[]>([]);
+  const [
+    promociones,
+    setPromociones,
+  ] = useState<Promocion[]>([]);
 
-  const [categoriaActiva, setCategoriaActiva] =
-    useState("Todas");
+  const [
+    categoriaActiva,
+    setCategoriaActiva,
+  ] = useState("Todas");
 
   const [busqueda, setBusqueda] =
     useState("");
@@ -137,8 +263,10 @@ export default function Promociones() {
   const [cargando, setCargando] =
     useState(true);
 
-  const [errorCarga, setErrorCarga] =
-    useState("");
+  const [
+    errorCarga,
+    setErrorCarga,
+  ] = useState("");
 
   /* ===================================================
      CARGAR PROMOCIONES
@@ -160,6 +288,7 @@ export default function Promociones() {
             await fetch(
               `${URL_PROMOCIONES}?${parametros.toString()}`,
               {
+                method: "GET",
                 cache: "no-store",
               },
             );
@@ -203,23 +332,25 @@ export default function Promociones() {
      CATEGORÍAS DINÁMICAS
   =================================================== */
 
-  const categorias = useMemo(() => {
-    const encontradas =
-      promociones
-        .map((promocion) =>
-          String(
-            promocion.Categoria || "",
-          ).trim(),
-        )
-        .filter(Boolean);
+  const categorias =
+    useMemo(() => {
+      const encontradas =
+        promociones
+          .map((promocion) =>
+            String(
+              promocion.Categoria ||
+                "",
+            ).trim(),
+          )
+          .filter(Boolean);
 
-    return [
-      "Todas",
-      ...Array.from(
-        new Set(encontradas),
-      ),
-    ];
-  }, [promociones]);
+      return [
+        "Todas",
+        ...Array.from(
+          new Set(encontradas),
+        ),
+      ];
+    }, [promociones]);
 
   /* ===================================================
      FILTRAR PROMOCIONES
@@ -247,6 +378,21 @@ export default function Promociones() {
               promocion.Categoria,
             );
 
+          const tipoContenido =
+            normalizarTexto(
+              promocion.TipoContenido,
+            );
+
+          const extension =
+            normalizarTexto(
+              promocion.Extension,
+            );
+
+          const incluye =
+            normalizarTexto(
+              promocion.Incluye,
+            );
+
           const coincideBusqueda =
             !textoBuscado ||
             nombre.includes(
@@ -256,6 +402,15 @@ export default function Promociones() {
               textoBuscado,
             ) ||
             categoria.includes(
+              textoBuscado,
+            ) ||
+            tipoContenido.includes(
+              textoBuscado,
+            ) ||
+            extension.includes(
+              textoBuscado,
+            ) ||
+            incluye.includes(
               textoBuscado,
             );
 
@@ -280,6 +435,10 @@ export default function Promociones() {
       categoriaActiva,
     ]);
 
+  /* ===================================================
+     ESTADÍSTICAS
+  =================================================== */
+
   const cantidadDisponibles =
     useMemo(() => {
       return promociones.filter(
@@ -287,6 +446,16 @@ export default function Promociones() {
           convertirABooleano(
             promocion.Disponible,
           ),
+      ).length;
+    }, [promociones]);
+
+  const cantidadVideos =
+    useMemo(() => {
+      return promociones.filter(
+        (promocion) =>
+          normalizarTexto(
+            promocion.TipoContenido,
+          ).includes("video"),
       ).length;
     }, [promociones]);
 
@@ -306,10 +475,33 @@ export default function Promociones() {
         promocion.PrecioOferta,
       );
 
+    const tipoContenido =
+      promocion.TipoContenido ||
+      "Material digital";
+
+    const extension =
+      promocion.Extension ||
+      "Contenido completo";
+
+    const contenidoIncluido =
+      obtenerIncluye(promocion);
+
+    const detalleIncluido =
+      contenidoIncluido
+        .map(
+          (contenido) =>
+            `✓ ${contenido}`,
+        )
+        .join("\n");
+
     const mensaje =
-      `Hola, quiero comprar la promoción: ${nombre}. ` +
-      `El precio de oferta mostrado es ${precio}. ` +
-      `Vi esta promoción en Mundo Digital Infantil.`;
+      `Hola, quiero comprar esta promoción de Mundo Digital Infantil:\n\n` +
+      `🎁 ${nombre}\n` +
+      `📦 Formato: ${tipoContenido}\n` +
+      `📚 Extensión: ${extension}\n\n` +
+      `Incluye:\n${detalleIncluido}\n\n` +
+      `💰 Precio de oferta: ${precio}\n\n` +
+      `¿Me puedes indicar cómo realizar el pago?`;
 
     const enlace =
       `https://wa.me/${NUMERO_WHATSAPP}` +
@@ -330,7 +522,7 @@ export default function Promociones() {
   =================================================== */
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 pb-24 pt-20 text-white sm:px-6">
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 pb-24 pt-24 text-white sm:px-6">
       {/* FONDO ESPACIAL */}
 
       <div className="pointer-events-none absolute -left-44 top-10 h-[36rem] w-[36rem] rounded-full bg-blue-600/25 blur-3xl" />
@@ -360,7 +552,7 @@ export default function Promociones() {
 
         <header className="mx-auto mb-10 max-w-4xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-pink-300/30 bg-pink-300/10 px-4 py-2 text-sm font-black tracking-wide text-pink-200 backdrop-blur">
-            🎁 OFERTAS ESPECIALES
+            🎁 CURSOS Y RECURSOS ESPECIALES
           </span>
 
           <h1 className="mt-5 bg-gradient-to-r from-yellow-300 via-pink-300 to-violet-300 bg-clip-text text-4xl font-black leading-tight text-transparent drop-shadow-lg md:text-6xl">
@@ -368,9 +560,10 @@ export default function Promociones() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base font-medium leading-relaxed text-blue-100/75 md:text-lg">
-            Descubre cursos, materiales y
-            recursos educativos con precios
-            especiales para seguir aprendiendo.
+            Revisa el formato, conoce lo que
+            incluye cada curso y elige la
+            promoción ideal para seguir
+            aprendiendo.
           </p>
 
           {/* RESUMEN */}
@@ -406,15 +599,15 @@ export default function Promociones() {
 
             <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-xl">
               <span className="text-3xl">
-                ⚡
+                🎬
               </span>
 
               <p className="mt-2 text-2xl font-black text-pink-300">
-                20%
+                {cantidadVideos}
               </p>
 
               <p className="text-xs font-bold uppercase tracking-wide text-blue-100/55">
-                Descuento extra
+                Con videos
               </p>
             </div>
           </div>
@@ -436,7 +629,7 @@ export default function Promociones() {
                   evento.target.value,
                 )
               }
-              placeholder="Buscar curso o promoción..."
+              placeholder="Buscar curso, PDF, video o promoción..."
               className="w-full rounded-full border-2 border-white/15 bg-white/10 py-4 pl-14 pr-5 text-base font-medium text-white shadow-2xl outline-none backdrop-blur-xl transition placeholder:text-blue-100/40 focus:border-pink-300 focus:ring-4 focus:ring-pink-300/10 md:text-lg"
               aria-label="Buscar promociones"
             />
@@ -559,7 +752,7 @@ export default function Promociones() {
         {/* TARJETAS */}
 
         {!cargando && !errorCarga && (
-          <section className="grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3">
+          <section className="grid grid-cols-1 gap-7 md:grid-cols-2 xl:grid-cols-3">
             {promocionesFiltradas.map(
               (promocion, indice) => {
                 const disponible =
@@ -592,6 +785,23 @@ export default function Promociones() {
                     promocion,
                   );
 
+                const tipoContenido =
+                  String(
+                    promocion.TipoContenido ||
+                      "Material digital",
+                  ).trim();
+
+                const extension =
+                  String(
+                    promocion.Extension ||
+                      "Contenido completo",
+                  ).trim();
+
+                const contenidoIncluido =
+                  obtenerIncluye(
+                    promocion,
+                  );
+
                 return (
                   <article
                     key={`${nombre}-${indice}`}
@@ -603,11 +813,7 @@ export default function Promociones() {
                   >
                     <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-yellow-300 via-pink-400 to-violet-500" />
 
-                    {destacada && (
-                      <span className="absolute left-8 top-8 z-20 rounded-full bg-yellow-300 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-slate-950 shadow-xl">
-                        ⭐ Destacada
-                      </span>
-                    )}
+                    {/* IMAGEN */}
 
                     <div className="relative mb-5 mt-1 h-56 overflow-hidden rounded-2xl bg-slate-950">
                       <img
@@ -627,23 +833,41 @@ export default function Promociones() {
                         }}
                       />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/10 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-slate-950/20" />
+
+                      {/* FORMATO */}
+
+                      <span className="absolute left-3 top-3 max-w-[70%] rounded-full border border-white/15 bg-slate-950/85 px-3 py-2 text-xs font-black text-white shadow-xl backdrop-blur">
+                        {obtenerIconoTipo(
+                          tipoContenido,
+                        )}{" "}
+                        {tipoContenido}
+                      </span>
+
+                      {destacada && (
+                        <span className="absolute right-3 top-3 rounded-full bg-yellow-300 px-3 py-2 text-xs font-black text-slate-950 shadow-xl">
+                          ⭐ Destacada
+                        </span>
+                      )}
 
                       <span className="absolute bottom-3 left-3 rounded-full bg-pink-300 px-3 py-1.5 text-xs font-black text-pink-950 shadow-xl">
                         ⚡ {descuento}
                       </span>
 
                       {promocion.Etiqueta && (
-                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/80 px-3 py-1.5 text-xs font-black text-white backdrop-blur">
+                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-950/85 px-3 py-1.5 text-xs font-black text-white backdrop-blur">
                           {promocion.Etiqueta}
                         </span>
                       )}
                     </div>
 
+                    {/* INFORMACIÓN */}
+
                     <div className="flex flex-1 flex-col">
                       {promocion.Categoria && (
                         <span className="mb-3 inline-flex w-fit rounded-full border border-violet-300/20 bg-violet-300/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-violet-200">
-                          🎁 {
+                          🎁{" "}
+                          {
                             promocion.Categoria
                           }
                         </span>
@@ -653,10 +877,71 @@ export default function Promociones() {
                         {nombre}
                       </h2>
 
-                      <p className="mt-3 flex-1 text-sm leading-relaxed text-blue-100/65">
+                      {/* DESCRIPCIÓN CORTA */}
+
+                      <p className="mt-3 text-sm leading-relaxed text-blue-100/65">
                         {promocion.Descripcion ||
-                          "Aprovecha esta promoción especial y accede a nuevos recursos educativos."}
+                          "Descubre este curso práctico con recursos digitales y explicaciones paso a paso."}
                       </p>
+
+                      {/* FORMATO Y EXTENSIÓN */}
+
+                      <div className="mt-5 grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.08] p-4">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-300">
+                            Formato
+                          </p>
+
+                          <p className="mt-2 text-sm font-black text-white">
+                            {obtenerIconoTipo(
+                              tipoContenido,
+                            )}{" "}
+                            {tipoContenido}
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-pink-300/15 bg-pink-300/[0.08] p-4">
+                          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-pink-300">
+                            Contenido
+                          </p>
+
+                          <p className="mt-2 text-sm font-black text-white">
+                            📚 {extension}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* QUÉ INCLUYE */}
+
+                      <div className="mt-4 flex-1 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
+                        <h3 className="flex items-center gap-2 font-black text-yellow-200">
+                          📦 ¿Qué recibirás?
+                        </h3>
+
+                        <ul className="mt-3 space-y-2">
+                          {contenidoIncluido.map(
+                            (
+                              contenido,
+                              contenidoIndice,
+                            ) => (
+                              <li
+                                key={`${contenido}-${contenidoIndice}`}
+                                className="flex items-start gap-2 text-sm leading-relaxed text-blue-100/65"
+                              >
+                                <span className="mt-0.5 shrink-0 text-emerald-300">
+                                  ✓
+                                </span>
+
+                                <span>
+                                  {contenido}
+                                </span>
+                              </li>
+                            ),
+                          )}
+                        </ul>
+                      </div>
+
+                      {/* PRECIO */}
 
                       <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
                         {precioNormal !==
@@ -673,7 +958,7 @@ export default function Promociones() {
                               Precio de oferta
                             </p>
 
-                            <p className="text-2xl font-black text-yellow-300">
+                            <p className="text-3xl font-black text-yellow-300">
                               {precioOferta}
                             </p>
                           </div>
@@ -683,6 +968,8 @@ export default function Promociones() {
                           </span>
                         </div>
                       </div>
+
+                      {/* BOTÓN */}
 
                       <div className="mt-5">
                         {!disponible ? (
@@ -699,7 +986,7 @@ export default function Promociones() {
                             }
                             className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-orange-400 px-5 py-4 font-black text-white shadow-xl shadow-pink-950/20 transition hover:-translate-y-1 hover:brightness-110"
                           >
-                            Comprar con descuento
+                            Comprar este curso
                             🛍️
                           </button>
                         )}
