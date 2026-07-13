@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 /* =====================================================
@@ -39,9 +34,10 @@ type PerfilServidor = {
   objetivoPersonal?: string;
 };
 
-type RespuestaConsultaPerfil = {
+type RespuestaPerfil = {
   status?: string;
   ok?: boolean;
+  exito?: boolean;
   encontrado?: boolean;
   perfil?: PerfilServidor;
   error?: string;
@@ -141,7 +137,7 @@ const avatares: Avatar[] = [
 ];
 
 /* =====================================================
-   OPCIONES DEL PERFIL
+   OPCIONES
 ===================================================== */
 
 const tiposExplorador = [
@@ -165,19 +161,15 @@ const areasFavoritas = [
    FUNCIONES AUXILIARES
 ===================================================== */
 
-function leerArreglo(
-  clave: string,
-): string[] {
+function leerArreglo(clave: string): string[] {
   try {
-    const guardado =
-      localStorage.getItem(clave);
+    const guardado = localStorage.getItem(clave);
 
     if (!guardado) {
       return [];
     }
 
-    const datos: unknown =
-      JSON.parse(guardado);
+    const datos: unknown = JSON.parse(guardado);
 
     return Array.isArray(datos)
       ? datos.map(String)
@@ -187,9 +179,7 @@ function leerArreglo(
   }
 }
 
-function mascararTelefono(
-  telefono: string,
-): string {
+function mascararTelefono(telefono: string): string {
   if (!telefono) {
     return "No registrado";
   }
@@ -198,15 +188,20 @@ function mascararTelefono(
     return telefono;
   }
 
-  return `${telefono.slice(
-    0,
-    3,
-  )}••••${telefono.slice(-3)}`;
+  return `${telefono.slice(0, 3)}••••${telefono.slice(-3)}`;
 }
 
-function obtenerNivel(
-  racha: number,
-) {
+function limitarMeta(valor: unknown): number {
+  const numero = Number(valor);
+
+  if (!Number.isFinite(numero)) {
+    return 5;
+  }
+
+  return Math.min(7, Math.max(1, Math.round(numero)));
+}
+
+function obtenerNivel(racha: number) {
   if (racha >= 30) {
     return {
       nombre: "Leyenda del Universo",
@@ -253,18 +248,14 @@ function diasHastaCumpleanos(
     return null;
   }
 
-  const partes =
-    fecha.split("-");
+  const partes = fecha.split("-");
 
   if (partes.length !== 3) {
     return null;
   }
 
-  const mes =
-    Number(partes[1]) - 1;
-
-  const dia =
-    Number(partes[2]);
+  const mes = Number(partes[1]) - 1;
+  const dia = Number(partes[2]);
 
   if (
     Number.isNaN(mes) ||
@@ -275,26 +266,25 @@ function diasHastaCumpleanos(
 
   const hoy = new Date();
 
-  let proximo = new Date(
+  const inicioHoy = new Date(
+    hoy.getFullYear(),
+    hoy.getMonth(),
+    hoy.getDate(),
+  );
+
+  let proximoCumple = new Date(
     hoy.getFullYear(),
     mes,
     dia,
   );
 
-  proximo.setHours(0, 0, 0, 0);
-
-  const inicioHoy =
-    new Date(
-      hoy.getFullYear(),
-      hoy.getMonth(),
-      hoy.getDate(),
-    );
+  proximoCumple.setHours(0, 0, 0, 0);
 
   if (
-    proximo.getTime() <
+    proximoCumple.getTime() <
     inicioHoy.getTime()
   ) {
-    proximo = new Date(
+    proximoCumple = new Date(
       hoy.getFullYear() + 1,
       mes,
       dia,
@@ -302,9 +292,65 @@ function diasHastaCumpleanos(
   }
 
   return Math.ceil(
-    (proximo.getTime() -
+    (proximoCumple.getTime() -
       inicioHoy.getTime()) /
       86400000,
+  );
+}
+
+function guardarPerfilLocal(
+  perfil: {
+    nombre: string;
+    fechaCumple: string;
+    avatar: string;
+    tipoExplorador: string;
+    areaFavorita: string;
+    metaSemanal: number;
+    objetivoPersonal: string;
+  },
+) {
+  localStorage.setItem(
+    "nombreUsuario",
+    perfil.nombre,
+  );
+
+  localStorage.setItem(
+    "cumpleUsuario",
+    perfil.fechaCumple,
+  );
+
+  localStorage.setItem(
+    "avatarUsuario",
+    perfil.avatar,
+  );
+
+  localStorage.setItem(
+    "tipoExploradorMDI",
+    perfil.tipoExplorador,
+  );
+
+  localStorage.setItem(
+    "areaFavoritaMDI",
+    perfil.areaFavorita,
+  );
+
+  localStorage.setItem(
+    "metaSemanalMDI",
+    perfil.metaSemanal.toString(),
+  );
+
+  localStorage.setItem(
+    "objetivoPersonalMDI",
+    perfil.objetivoPersonal,
+  );
+
+  /*
+  Este evento avisa al componente Menu
+  para que cambie inmediatamente el saludo.
+  */
+
+  window.dispatchEvent(
+    new Event("perfilActualizadoMDI"),
   );
 }
 
@@ -319,47 +365,35 @@ export default function Perfil() {
   const [nombre, setNombre] =
     useState("");
 
-  const [
-    fechaCumple,
-    setFechaCumple,
-  ] = useState("");
+  const [fechaCumple, setFechaCumple] =
+    useState("");
 
   const [
     tipoExplorador,
     setTipoExplorador,
-  ] = useState(
-    tiposExplorador[0],
-  );
+  ] = useState(tiposExplorador[0]);
 
   const [
     areaFavorita,
     setAreaFavorita,
-  ] = useState(
-    areasFavoritas[0],
-  );
+  ] = useState(areasFavoritas[0]);
 
-  const [
-    metaSemanal,
-    setMetaSemanal,
-  ] = useState(5);
+  const [metaSemanal, setMetaSemanal] =
+    useState(5);
 
   const [
     objetivoPersonal,
     setObjetivoPersonal,
   ] = useState("");
 
-  const [
-    fechaAcceso,
-    setFechaAcceso,
-  ] = useState("");
+  const [fechaAcceso, setFechaAcceso] =
+    useState("");
 
   const [telefono, setTelefono] =
     useState("");
 
   const [modoAcceso, setModoAcceso] =
-    useState<ModoAcceso>(
-      "visitante",
-    );
+    useState<ModoAcceso>("visitante");
 
   const [racha, setRacha] =
     useState(0);
@@ -377,378 +411,265 @@ export default function Perfil() {
   const [
     estadoGuardado,
     setEstadoGuardado,
-  ] =
-    useState<EstadoGuardado>(
-      "neutral",
-    );
+  ] = useState<EstadoGuardado>("neutral");
 
   const [aviso, setAviso] =
     useState("");
 
+  const [
+    consultandoPerfil,
+    setConsultandoPerfil,
+  ] = useState(true);
+
   /* ===================================================
-     CARGAR PERFIL
+     CARGAR DATOS LOCALES Y GOOGLE SHEETS
   =================================================== */
 
   useEffect(() => {
     let componenteActivo = true;
 
-    const fechaActual =
-      new Date().toLocaleDateString(
-        "es-ES",
-      );
+    const cargarPerfil = async () => {
+      const fechaActual =
+        new Date().toLocaleDateString(
+          "es-ES",
+        );
 
-    const accesoRegistrado =
-      localStorage.getItem(
-        "diaSesion",
-      ) || fechaActual;
+      const accesoRegistrado =
+        localStorage.getItem(
+          "diaSesion",
+        ) || fechaActual;
 
-    const telefonoGuardado =
-      localStorage.getItem(
-        "telefonoAcceso",
-      ) ||
-      localStorage.getItem(
-        "telefonoUsuario",
-      ) ||
-      "";
+      const telefonoGuardado =
+        localStorage.getItem(
+          "telefonoAcceso",
+        ) ||
+        localStorage.getItem(
+          "telefonoUsuario",
+        ) ||
+        "";
 
-    const modoGuardado =
-      localStorage.getItem(
-        "modoAcceso",
-      );
+      const modoGuardado =
+        localStorage.getItem(
+          "modoAcceso",
+        );
 
-    const esVIP =
-      localStorage.getItem(
-        "accesoVIP",
-      ) === "true" ||
-      modoGuardado === "vip";
+      const accesoVIP =
+        localStorage.getItem(
+          "accesoVIP",
+        ) === "true" ||
+        modoGuardado === "vip";
 
-    const limitePrueba =
-      Number(
+      const limitePrueba = Number(
         localStorage.getItem(
           "limitePrueba",
         ) || "0",
       );
 
-    let acceso: ModoAcceso =
-      "visitante";
+      let acceso: ModoAcceso =
+        "visitante";
 
-    if (esVIP) {
-      acceso = "vip";
-    } else if (
-      modoGuardado === "prueba" &&
-      limitePrueba > Date.now()
-    ) {
-      acceso = "prueba";
-    }
+      if (accesoVIP) {
+        acceso = "vip";
+      } else if (
+        modoGuardado === "prueba" &&
+        limitePrueba > Date.now()
+      ) {
+        acceso = "prueba";
+      }
 
-    const rachaGuardada =
-      Number(
+      const rachaGuardada = Number(
         localStorage.getItem(
           "rachaMDI",
         ) || "0",
       );
 
-    const dias =
-      leerArreglo(
+      const dias = leerArreglo(
         "diasPracticaMDI",
       );
 
-    const likes =
-      leerArreglo(
+      const likes = leerArreglo(
         "misLikesComunidad",
       );
 
-    const nombreLocal =
-      localStorage.getItem(
-        "nombreUsuario",
-      ) || "";
+      const nombreLocal =
+        localStorage.getItem(
+          "nombreUsuario",
+        ) || "";
 
-    const cumpleLocal =
-      localStorage.getItem(
-        "cumpleUsuario",
-      ) || "";
+      const cumpleLocal =
+        localStorage.getItem(
+          "cumpleUsuario",
+        ) || "";
 
-    const avatarLocal =
-      localStorage.getItem(
-        "avatarUsuario",
-      ) || avatares[0].url;
+      const avatarLocal =
+        localStorage.getItem(
+          "avatarUsuario",
+        ) || avatares[0].url;
 
-    const tipoLocal =
-      localStorage.getItem(
-        "tipoExploradorMDI",
-      ) || tiposExplorador[0];
+      const tipoLocal =
+        localStorage.getItem(
+          "tipoExploradorMDI",
+        ) || tiposExplorador[0];
 
-    const areaLocal =
-      localStorage.getItem(
-        "areaFavoritaMDI",
-      ) || areasFavoritas[0];
+      const areaLocal =
+        localStorage.getItem(
+          "areaFavoritaMDI",
+        ) || areasFavoritas[0];
 
-    const metaLocal =
-      Number(
+      const metaLocal = limitarMeta(
         localStorage.getItem(
           "metaSemanalMDI",
         ) || "5",
       );
 
-    const objetivoLocal =
-      localStorage.getItem(
-        "objetivoPersonalMDI",
-      ) || "";
+      const objetivoLocal =
+        localStorage.getItem(
+          "objetivoPersonalMDI",
+        ) || "";
 
-    setFechaAcceso(
-      accesoRegistrado,
-    );
+      setFechaAcceso(accesoRegistrado);
+      setTelefono(telefonoGuardado);
+      setModoAcceso(acceso);
 
-    setTelefono(
-      telefonoGuardado,
-    );
+      setNombre(nombreLocal);
+      setFechaCumple(cumpleLocal);
+      setAvatar(avatarLocal);
+      setTipoExplorador(tipoLocal);
+      setAreaFavorita(areaLocal);
+      setMetaSemanal(metaLocal);
+      setObjetivoPersonal(objetivoLocal);
 
-    setModoAcceso(acceso);
+      setRacha(
+        Number.isFinite(rachaGuardada)
+          ? rachaGuardada
+          : 0,
+      );
 
-    setNombre(nombreLocal);
-    setFechaCumple(cumpleLocal);
-    setAvatar(avatarLocal);
-    setTipoExplorador(tipoLocal);
-    setAreaFavorita(areaLocal);
+      setDiasCompletados(dias.length);
+      setLikesComunidad(likes.length);
 
-    setMetaSemanal(
-      Number.isFinite(metaLocal)
-        ? Math.min(
-            7,
-            Math.max(1, metaLocal),
-          )
-        : 5,
-    );
+      /*
+      Si existe número de teléfono, se consulta
+      el perfil guardado en Google Sheets.
+      */
 
-    setObjetivoPersonal(
-      objetivoLocal,
-    );
+      if (!telefonoGuardado) {
+        setConsultandoPerfil(false);
+        return;
+      }
 
-    setRacha(
-      Number.isFinite(
-        rachaGuardada,
-      )
-        ? rachaGuardada
-        : 0,
-    );
+      try {
+        const parametros =
+          new URLSearchParams({
+            accion: "consultar",
+            id: telefonoGuardado,
+          });
 
-    setDiasCompletados(
-      dias.length,
-    );
+        const respuesta = await fetch(
+          `${URL_SCRIPT}?${parametros.toString()}`,
+          {
+            method: "GET",
+            cache: "no-store",
+          },
+        );
 
-    setLikesComunidad(
-      likes.length,
-    );
+        if (!respuesta.ok) {
+          throw new Error(
+            `Error ${respuesta.status}`,
+          );
+        }
 
-    /*
-    Recuperar el perfil desde Google Sheets.
-    Esto permite restaurar el nombre y los
-    demás datos aunque el navegador no tenga
-    la información guardada localmente.
-    */
+        const datos =
+          (await respuesta.json()) as RespuestaPerfil;
 
-    const consultarPerfilGuardado =
-      async () => {
-        if (!telefonoGuardado) {
+        if (
+          !componenteActivo ||
+          datos.encontrado !== true ||
+          !datos.perfil
+        ) {
           return;
         }
 
-        try {
-          const parametros =
-            new URLSearchParams({
-              accion: "consultar",
-              id: telefonoGuardado,
-            });
+        const perfil = datos.perfil;
 
-          const respuesta =
-            await fetch(
-              `${URL_SCRIPT}?${parametros.toString()}`,
-              {
-                method: "GET",
-                cache: "no-store",
-              },
-            );
+        const nombreRecuperado = String(
+          perfil.nombre || nombreLocal,
+        ).trim();
 
-          if (!respuesta.ok) {
-            return;
-          }
+        const cumpleRecuperado = String(
+          perfil.fechaCumpleanos ||
+            cumpleLocal,
+        ).trim();
 
-          const datos =
-            (await respuesta.json()) as RespuestaConsultaPerfil;
+        const avatarRecuperado =
+          String(
+            perfil.avatar || avatarLocal,
+          ).trim() || avatares[0].url;
 
-          if (
-            !componenteActivo ||
-            datos.encontrado !== true ||
-            !datos.perfil
-          ) {
-            return;
-          }
+        const tipoRecuperado =
+          String(
+            perfil.tipoExplorador ||
+              tipoLocal,
+          ).trim() || tiposExplorador[0];
 
-          const perfil =
-            datos.perfil;
+        const areaRecuperada =
+          String(
+            perfil.areaFavorita ||
+              areaLocal,
+          ).trim() || areasFavoritas[0];
 
-          const nombreRecuperado =
-            String(
-              perfil.nombre ||
-                nombreLocal,
-            ).trim();
-
-          const cumpleRecuperado =
-            String(
-              perfil.fechaCumpleanos ||
-                cumpleLocal,
-            ).trim();
-
-          const avatarRecuperado =
-            String(
-              perfil.avatar ||
-                avatarLocal,
-            ).trim() ||
-            avatares[0].url;
-
-          const tipoRecuperado =
-            String(
-              perfil.tipoExplorador ||
-                tipoLocal,
-            ).trim() ||
-            tiposExplorador[0];
-
-          const areaRecuperada =
-            String(
-              perfil.areaFavorita ||
-                areaLocal,
-            ).trim() ||
-            areasFavoritas[0];
-
-          const metaRecuperada =
-            Number(
-              perfil.metaSemanal ??
-                metaLocal,
-            );
-
-          const objetivoRecuperado =
-            String(
-              perfil.objetivoPersonal ||
-                objetivoLocal,
-            ).trim();
-
-          const accesoRecuperado =
-            String(
-              perfil.ultimoAcceso ||
-                accesoRegistrado,
-            ).trim();
-
-          setNombre(
-            nombreRecuperado,
+        const metaRecuperada =
+          limitarMeta(
+            perfil.metaSemanal ??
+              metaLocal,
           );
 
-          setFechaCumple(
-            cumpleRecuperado,
-          );
+        const objetivoRecuperado =
+          String(
+            perfil.objetivoPersonal ||
+              objetivoLocal,
+          ).trim();
 
-          setAvatar(
-            avatarRecuperado,
-          );
+        const accesoRecuperado =
+          String(
+            perfil.ultimoAcceso ||
+              accesoRegistrado,
+          ).trim();
 
-          setTipoExplorador(
-            tipoRecuperado,
-          );
+        setNombre(nombreRecuperado);
+        setFechaCumple(cumpleRecuperado);
+        setAvatar(avatarRecuperado);
+        setTipoExplorador(tipoRecuperado);
+        setAreaFavorita(areaRecuperada);
+        setMetaSemanal(metaRecuperada);
+        setObjetivoPersonal(
+          objetivoRecuperado,
+        );
+        setFechaAcceso(accesoRecuperado);
 
-          setAreaFavorita(
-            areaRecuperada,
-          );
-
-          setMetaSemanal(
-            Number.isFinite(
-              metaRecuperada,
-            )
-              ? Math.min(
-                  7,
-                  Math.max(
-                    1,
-                    metaRecuperada,
-                  ),
-                )
-              : 5,
-          );
-
-          setObjetivoPersonal(
+        guardarPerfilLocal({
+          nombre: nombreRecuperado,
+          fechaCumple: cumpleRecuperado,
+          avatar: avatarRecuperado,
+          tipoExplorador: tipoRecuperado,
+          areaFavorita: areaRecuperada,
+          metaSemanal: metaRecuperada,
+          objetivoPersonal:
             objetivoRecuperado,
-          );
-
-          setFechaAcceso(
-            accesoRecuperado,
-          );
-
-          /*
-          Guardar la información recuperada
-          para que el menú pueda saludar al
-          usuario por su nombre.
-          */
-
-          if (nombreRecuperado) {
-            localStorage.setItem(
-              "nombreUsuario",
-              nombreRecuperado,
-            );
-          }
-
-          localStorage.setItem(
-            "cumpleUsuario",
-            cumpleRecuperado,
-          );
-
-          localStorage.setItem(
-            "avatarUsuario",
-            avatarRecuperado,
-          );
-
-          localStorage.setItem(
-            "tipoExploradorMDI",
-            tipoRecuperado,
-          );
-
-          localStorage.setItem(
-            "areaFavoritaMDI",
-            areaRecuperada,
-          );
-
-          localStorage.setItem(
-            "metaSemanalMDI",
-            String(
-              Number.isFinite(
-                metaRecuperada,
-              )
-                ? Math.min(
-                    7,
-                    Math.max(
-                      1,
-                      metaRecuperada,
-                    ),
-                  )
-                : 5,
-            ),
-          );
-
-          localStorage.setItem(
-            "objetivoPersonalMDI",
-            objetivoRecuperado,
-          );
-
-          window.dispatchEvent(
-            new Event(
-              "perfilActualizadoMDI",
-            ),
-          );
-        } catch (error) {
-          console.warn(
-            "No se pudo recuperar el perfil guardado:",
-            error,
-          );
+        });
+      } catch (error) {
+        console.warn(
+          "No se pudo recuperar el perfil:",
+          error,
+        );
+      } finally {
+        if (componenteActivo) {
+          setConsultandoPerfil(false);
         }
-      };
+      }
+    };
 
-    void consultarPerfilGuardado();
+    void cargarPerfil();
 
     return () => {
       componenteActivo = false;
@@ -764,20 +685,15 @@ export default function Perfil() {
     [racha],
   );
 
-  const progresoNivel =
-    Math.min(
-      100,
-      Math.round(
-        (racha /
-          nivel.siguiente) *
-          100,
-      ),
-    );
+  const progresoNivel = Math.min(
+    100,
+    Math.round(
+      (racha / nivel.siguiente) * 100,
+    ),
+  );
 
   const diasCumple =
-    diasHastaCumpleanos(
-      fechaCumple,
-    );
+    diasHastaCumpleanos(fechaCumple);
 
   const perfilCompletado =
     useMemo(() => {
@@ -794,8 +710,7 @@ export default function Perfil() {
         campos.filter(Boolean).length;
 
       return Math.round(
-        (completos /
-          campos.length) *
+        (completos / campos.length) *
           100,
       );
     }, [
@@ -809,168 +724,131 @@ export default function Perfil() {
 
   const avatarSeleccionado =
     avatares.find(
-      (item) =>
-        item.url === avatar,
+      (item) => item.url === avatar,
     );
 
   /* ===================================================
      GUARDAR PERFIL
   =================================================== */
 
-  const guardarPerfil =
-    async () => {
-      const nombreLimpio =
-        nombre.trim();
+  const guardarPerfil = async () => {
+    const nombreLimpio =
+      nombre.trim();
 
-      if (!nombreLimpio) {
-        setEstadoGuardado(
-          "error",
-        );
-
-        setAviso(
-          "Escribe tu nombre antes de guardar el perfil.",
-        );
-
-        return;
-      }
-
-      setEstadoGuardado(
-        "guardando",
-      );
+    if (!nombreLimpio) {
+      setEstadoGuardado("error");
 
       setAviso(
-        "Guardando tu pasaporte digital...",
+        "Escribe tu nombre antes de guardar el perfil.",
       );
 
-      const idUsuario =
-        telefono ||
-        localStorage.getItem(
-          "telefonoAcceso",
-        ) ||
-        "anonimo";
+      return;
+    }
 
-      const parametros =
-        new URLSearchParams({
-          accion: "guardar",
-          id: idUsuario,
-          nombre: nombreLimpio,
-          fecha: fechaCumple,
-          avatar,
-          acceso: fechaAcceso,
-          tipo: tipoExplorador,
-          area: areaFavorita,
-          meta: metaSemanal.toString(),
-          objetivo:
-            objetivoPersonal.trim(),
-        });
+    const idUsuario =
+      telefono ||
+      localStorage.getItem(
+        "telefonoAcceso",
+      ) ||
+      localStorage.getItem(
+        "telefonoUsuario",
+      ) ||
+      "";
 
-      try {
-        const respuesta =
-          await fetch(
-            `${URL_SCRIPT}?${parametros.toString()}`,
-            {
-              method: "GET",
-              cache: "no-store",
-            },
-          );
+    if (!idUsuario) {
+      setEstadoGuardado("error");
 
-        if (!respuesta.ok) {
-          throw new Error(
-            `Error ${respuesta.status}`,
-          );
-        }
+      setAviso(
+        "No encontramos el número de WhatsApp asociado al acceso. Vuelve a ingresar desde la página de acceso.",
+      );
 
-        const datos =
-          (await respuesta.json()) as {
-            status?: string;
-            ok?: boolean;
-            exito?: boolean;
-            error?: string;
-          };
+      return;
+    }
 
-        const guardadoCorrecto =
-          datos.status === "ok" ||
-          datos.ok === true ||
-          datos.exito === true;
+    setEstadoGuardado("guardando");
 
-        if (!guardadoCorrecto) {
-          throw new Error(
-            datos.error ||
-              "Google no confirmó el guardado.",
-          );
-        }
+    setAviso(
+      "Guardando tu pasaporte digital...",
+    );
 
-        localStorage.setItem(
-          "nombreUsuario",
-          nombreLimpio,
-        );
-
-        localStorage.setItem(
-          "cumpleUsuario",
-          fechaCumple,
-        );
-
-        localStorage.setItem(
-          "avatarUsuario",
-          avatar,
-        );
-
-        localStorage.setItem(
-          "tipoExploradorMDI",
-          tipoExplorador,
-        );
-
-        localStorage.setItem(
-          "areaFavoritaMDI",
-          areaFavorita,
-        );
-
-        localStorage.setItem(
-          "metaSemanalMDI",
-          metaSemanal.toString(),
-        );
-
-        localStorage.setItem(
-          "objetivoPersonalMDI",
+    const parametros =
+      new URLSearchParams({
+        accion: "guardar",
+        id: idUsuario,
+        nombre: nombreLimpio,
+        fecha: fechaCumple,
+        avatar,
+        acceso: fechaAcceso,
+        tipo: tipoExplorador,
+        area: areaFavorita,
+        meta: metaSemanal.toString(),
+        objetivo:
           objetivoPersonal.trim(),
-        );
+      });
 
-        /*
-        Avisar al menú que el nombre y los
-        datos del perfil cambiaron para que
-        actualice el saludo inmediatamente.
-        */
+    try {
+      const respuesta = await fetch(
+        `${URL_SCRIPT}?${parametros.toString()}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
 
-        window.dispatchEvent(
-          new Event(
-            "perfilActualizadoMDI",
-          ),
-        );
-
-        setEstadoGuardado(
-          "exito",
-        );
-
-        setAviso(
-          "¡Tu pasaporte digital fue actualizado correctamente!",
-        );
-      } catch (error) {
-        console.error(
-          "Error al guardar el perfil:",
-          error,
-        );
-
-        setEstadoGuardado(
-          "error",
-        );
-
-        setAviso(
-          error instanceof Error
-            ? error.message
-            : "No pudimos guardar el perfil.",
+      if (!respuesta.ok) {
+        throw new Error(
+          `Error ${respuesta.status}`,
         );
       }
-    };
+
+      const datos =
+        (await respuesta.json()) as RespuestaPerfil;
+
+      const guardadoCorrecto =
+        datos.status === "ok" ||
+        datos.ok === true ||
+        datos.exito === true;
+
+      if (!guardadoCorrecto) {
+        throw new Error(
+          datos.error ||
+            "Google no confirmó el guardado.",
+        );
+      }
+
+      guardarPerfilLocal({
+        nombre: nombreLimpio,
+        fechaCumple,
+        avatar,
+        tipoExplorador,
+        areaFavorita,
+        metaSemanal,
+        objetivoPersonal:
+          objetivoPersonal.trim(),
+      });
+
+      setNombre(nombreLimpio);
+
+      setEstadoGuardado("exito");
+
+      setAviso(
+        `¡Pasaporte actualizado! El menú ya puede saludarte como ${nombreLimpio.split(/\s+/)[0]}.`,
+      );
+    } catch (error) {
+      console.error(
+        "Error al guardar el perfil:",
+        error,
+      );
+
+      setEstadoGuardado("error");
+
+      setAviso(
+        error instanceof Error
+          ? error.message
+          : "No pudimos guardar el perfil.",
+      );
+    }
+  };
 
   /* ===================================================
      PÁGINA
@@ -1015,15 +893,28 @@ export default function Perfil() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base font-medium leading-relaxed text-blue-100/70 md:text-lg">
-            Personaliza tu identidad, descubre tu
-            nivel y conserva los logros alcanzados
-            dentro de Mundo Digital Infantil.
+            Personaliza tu identidad, descubre
+            tu nivel y conserva los logros
+            alcanzados dentro de Mundo Digital
+            Infantil.
           </p>
+
+          {consultandoPerfil && (
+            <div className="mx-auto mt-5 inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-200">
+              <span className="animate-spin">
+                ✨
+              </span>
+
+              Recuperando tu pasaporte...
+            </div>
+          )}
         </header>
 
-        {/* TARJETA PRINCIPAL */}
+        {/* TARJETAS PRINCIPALES */}
 
         <section className="mb-8 grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
+          {/* IDENTIDAD */}
+
           <article className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <div className="pointer-events-none absolute -right-16 -top-16 text-[13rem] opacity-[0.05]">
               🚀
@@ -1060,8 +951,7 @@ export default function Perfil() {
               </p>
 
               <h2 className="mt-2 text-3xl font-black text-white">
-                {nombre ||
-                  "Nuevo explorador"}
+                {nombre || "Nuevo explorador"}
               </h2>
 
               <p className="mt-2 font-bold text-violet-200">
@@ -1086,14 +976,9 @@ export default function Perfil() {
                 </span>
 
                 <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-blue-100/65">
-                  📱{" "}
-                  {mascararTelefono(
-                    telefono,
-                  )}
+                  📱 {mascararTelefono(telefono)}
                 </span>
               </div>
-
-              {/* NIVEL */}
 
               <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-5 text-left">
                 <div className="flex items-center justify-between">
@@ -1102,8 +987,7 @@ export default function Perfil() {
                   </span>
 
                   <span className="text-sm font-black text-cyan-300">
-                    {racha}/
-                    {nivel.siguiente}
+                    {racha}/{nivel.siguiente}
                   </span>
                 </div>
 
@@ -1117,9 +1001,9 @@ export default function Perfil() {
                 </div>
 
                 <p className="mt-3 text-xs leading-relaxed text-blue-100/50">
-                  Continúa completando misiones de
-                  aprendizaje para alcanzar el
-                  siguiente nivel.
+                  Continúa completando misiones
+                  para alcanzar el siguiente
+                  nivel.
                 </p>
               </div>
             </div>
@@ -1194,8 +1078,6 @@ export default function Perfil() {
               </div>
             </div>
 
-            {/* CUMPLEAÑOS */}
-
             <div className="mt-5 rounded-3xl border border-violet-300/20 bg-violet-300/10 p-5">
               <div className="flex items-center gap-4">
                 <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-300 text-3xl">
@@ -1230,7 +1112,7 @@ export default function Perfil() {
           </article>
         </section>
 
-        {/* EDITAR PERFIL */}
+        {/* EDICIÓN DEL PERFIL */}
 
         <section className="grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
           {/* AVATARES */}
@@ -1250,51 +1132,45 @@ export default function Perfil() {
             </p>
 
             <div className="mt-7 grid grid-cols-4 gap-3 sm:grid-cols-5">
-              {avatares.map(
-                (item) => {
-                  const seleccionado =
-                    item.url === avatar;
+              {avatares.map((item) => {
+                const seleccionado =
+                  item.url === avatar;
 
-                  return (
-                    <button
-                      key={`${item.nombre}-${item.url}`}
-                      type="button"
-                      onClick={() =>
-                        setAvatar(
-                          item.url,
-                        )
-                      }
-                      title={item.nombre}
-                      className={`relative aspect-square rounded-2xl border p-1.5 transition hover:-translate-y-1 ${
-                        seleccionado
-                          ? "border-yellow-300 bg-yellow-300/15 ring-2 ring-yellow-300/20"
-                          : "border-white/10 bg-white/5 hover:border-cyan-300/30 hover:bg-white/10"
-                      }`}
-                    >
-                      <img
-                        src={item.url}
-                        alt={item.nombre}
-                        className="h-full w-full rounded-xl object-cover"
-                        onError={(
-                          evento,
-                        ) => {
-                          evento.currentTarget.onerror =
-                            null;
+                return (
+                  <button
+                    key={`${item.nombre}-${item.url}`}
+                    type="button"
+                    onClick={() =>
+                      setAvatar(item.url)
+                    }
+                    title={item.nombre}
+                    className={`relative aspect-square rounded-2xl border p-1.5 transition hover:-translate-y-1 ${
+                      seleccionado
+                        ? "border-yellow-300 bg-yellow-300/15 ring-2 ring-yellow-300/20"
+                        : "border-white/10 bg-white/5 hover:border-cyan-300/30 hover:bg-white/10"
+                    }`}
+                  >
+                    <img
+                      src={item.url}
+                      alt={item.nombre}
+                      className="h-full w-full rounded-xl object-cover"
+                      onError={(evento) => {
+                        evento.currentTarget.onerror =
+                          null;
 
-                          evento.currentTarget.src =
-                            AVATAR_RESPALDO;
-                        }}
-                      />
+                        evento.currentTarget.src =
+                          AVATAR_RESPALDO;
+                      }}
+                    />
 
-                      {seleccionado && (
-                        <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-300 text-xs text-slate-950">
-                          ✓
-                        </span>
-                      )}
-                    </button>
-                  );
-                },
-              )}
+                    {seleccionado && (
+                      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-300 text-xs text-slate-950">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </article>
 
@@ -1438,7 +1314,8 @@ export default function Perfil() {
                   </label>
 
                   <p className="mt-1 text-sm text-blue-100/50">
-                    ¿Cuántos días deseas practicar?
+                    ¿Cuántos días deseas
+                    practicar?
                   </p>
                 </div>
 
@@ -1463,6 +1340,8 @@ export default function Perfil() {
                 className="mt-5 w-full accent-yellow-300"
               />
             </div>
+
+            {/* MISIÓN PERSONAL */}
 
             <div className="mt-5">
               <label
@@ -1491,6 +1370,8 @@ export default function Perfil() {
               </p>
             </div>
 
+            {/* BOTÓN GUARDAR */}
+
             <button
               type="button"
               onClick={() =>
@@ -1511,12 +1392,11 @@ export default function Perfil() {
             {aviso && (
               <div
                 role="status"
+                aria-live="polite"
                 className={`mt-5 rounded-2xl border p-4 text-sm font-bold ${
-                  estadoGuardado ===
-                  "exito"
+                  estadoGuardado === "exito"
                     ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
-                    : estadoGuardado ===
-                        "error"
+                    : estadoGuardado === "error"
                       ? "border-rose-300/30 bg-rose-300/10 text-rose-200"
                       : "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
                 }`}
@@ -1546,25 +1426,29 @@ export default function Perfil() {
                 href: "/biblioteca",
                 icono: "📚",
                 titulo: "Explorar materiales",
-                texto: "Visita la Biblioteca Estelar.",
+                texto:
+                  "Visita la Biblioteca Estelar.",
               },
               {
                 href: "/tecnologia",
                 icono: "💻",
                 titulo: "Descubrir tecnología",
-                texto: "Entra al Laboratorio Tech.",
+                texto:
+                  "Entra al Laboratorio Tech.",
               },
               {
                 href: "/comunidad",
                 icono: "💛",
                 titulo: "Compartir una idea",
-                texto: "Participa en la comunidad.",
+                texto:
+                  "Participa en la comunidad.",
               },
               {
                 href: "/calendario",
                 icono: "🏆",
                 titulo: "Completar la racha",
-                texto: "Reclama tu estrella diaria.",
+                texto:
+                  "Reclama tu estrella diaria.",
               },
             ].map((mision) => (
               <Link
