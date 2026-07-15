@@ -703,82 +703,184 @@ export default function InicioLanding() {
 
       <section
         id="como-funciona"
-        className="scroll-mt-24 bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 px-5 py-20 lg:px-8"
+        className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 px-5 py-24 lg:px-8"
       >
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-14 max-w-3xl text-center">
-            <span className="inline-flex rounded-full bg-yellow-300/10 px-4 py-2 text-sm font-black text-yellow-200">
-              COMENZAR ES MUY FÁCIL
+        <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl" />
+
+        <div className="pointer-events-none absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
+
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/10 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl">
+          <div className="mx-auto mb-16 max-w-4xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300/20 bg-yellow-300/10 px-5 py-2 text-sm font-black uppercase tracking-[0.14em] text-yellow-200 shadow-lg">
+              <span className="animate-pulse">✨</span>
+              Comenzar es muy fácil
             </span>
 
-            <h2 className="mt-5 text-4xl font-black sm:text-5xl">
-              Elige cómo quieres comenzar
+            <h2 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+              Elige cómo quieres{" "}
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
+                comenzar
+              </span>
             </h2>
+
+            <p className="mx-auto mt-5 max-w-2xl text-base font-medium leading-relaxed text-blue-100/70 sm:text-lg">
+              Conoce la plataforma, solicita tu prueba gratuita
+              y selecciona la membresía que mejor se adapte a ti.
+            </p>
           </div>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                numero: "01",
-                emoji: "🔍",
-                titulo: "Conoce la propuesta",
-                descripcion:
-                  "Revisa los contenidos y beneficios de la plataforma.",
-              },
-              {
-                numero: "02",
-                emoji: "🛸",
-                titulo: "Solicita la prueba",
-                descripcion:
-                  "Registra tu teléfono y explora durante 60 minutos.",
-              },
-              {
-                numero: "03",
-                emoji: "💎",
-                titulo: "Elige tu membresía",
-                descripcion:
-                  "Selecciona el plan de un mes, tres meses o un año y envía tu comprobante.",
-              },
-            ].map((paso) => (
-              <article
-                key={paso.numero}
-                className="relative rounded-[2rem] border border-white/10 bg-white/10 p-7 shadow-xl"
-              >
-                <span className="absolute right-6 top-5 text-5xl font-black text-white/5">
-                  {paso.numero}
+          <div className="relative">
+            <div className="pointer-events-none absolute left-[16%] right-[16%] top-20 hidden h-1 rounded-full bg-gradient-to-r from-yellow-300 via-orange-400 to-cyan-300 opacity-40 lg:block" />
+
+            <div className="grid gap-7 lg:grid-cols-3">
+              {[
+                {
+                  numero: "01",
+                  emoji: "🔍",
+                  etiqueta: "DESCUBRE",
+                  titulo: "Conoce la propuesta",
+                  descripcion:
+                    "Revisa los contenidos, beneficios y herramientas disponibles dentro de la plataforma.",
+                  detalles: [
+                    "Explora las categorías",
+                    "Conoce los beneficios",
+                  ],
+                  color: "from-yellow-300 to-orange-400",
+                  borde: "border-yellow-300/30",
+                  texto: "text-yellow-200",
+                },
+                {
+                  numero: "02",
+                  emoji: "🛸",
+                  etiqueta: "EXPLORA",
+                  titulo: "Solicita la prueba",
+                  descripcion:
+                    "Registra tu número de teléfono y explora la plataforma gratuitamente durante 60 minutos.",
+                  detalles: [
+                    "Prueba gratuita",
+                    "Sin compromiso",
+                  ],
+                  color: "from-orange-400 to-pink-500",
+                  borde: "border-pink-300/30",
+                  texto: "text-pink-200",
+                },
+                {
+                  numero: "03",
+                  emoji: "💎",
+                  etiqueta: "DESBLOQUEA",
+                  titulo: "Elige tu membresía",
+                  descripcion:
+                    "Selecciona el plan de un mes, tres meses o un año y envía tu comprobante.",
+                  detalles: [
+                    "Planes desde $3",
+                    "Acceso completo",
+                  ],
+                  color: "from-cyan-300 to-emerald-400",
+                  borde: "border-cyan-300/30",
+                  texto: "text-cyan-200",
+                },
+              ].map((paso) => (
+                <article
+                  key={paso.numero}
+                  className={`group relative flex h-full flex-col overflow-hidden rounded-[2.25rem] border ${paso.borde} bg-white/[0.08] p-7 shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-3 hover:bg-white/[0.12] sm:p-8`}
+                >
+                  <div
+                    className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${paso.color}`}
+                  />
+
+                  <div
+                    className={`pointer-events-none absolute -right-20 -top-20 h-44 w-44 rounded-full bg-gradient-to-br ${paso.color} opacity-10 blur-3xl transition duration-500 group-hover:opacity-25`}
+                  />
+
+                  <span className="absolute right-6 top-6 text-6xl font-black text-white/[0.04] transition duration-300 group-hover:text-white/[0.08]">
+                    {paso.numero}
+                  </span>
+
+                  <div
+                    className={`relative flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-gradient-to-br ${paso.color} text-4xl shadow-xl transition duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                  >
+                    {paso.emoji}
+
+                    <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-purple-950 bg-white text-xs font-black text-slate-950">
+                      {paso.numero}
+                    </span>
+                  </div>
+
+                  <span
+                    className={`mt-7 text-xs font-black uppercase tracking-[0.2em] ${paso.texto}`}
+                  >
+                    {paso.etiqueta}
+                  </span>
+
+                  <h3 className="mt-2 text-2xl font-black text-white sm:text-3xl">
+                    {paso.titulo}
+                  </h3>
+
+                  <p className="mt-4 flex-1 leading-relaxed text-blue-100/70">
+                    {paso.descripcion}
+                  </p>
+
+                  <div className="mt-7 flex flex-wrap gap-2">
+                    {paso.detalles.map((detalle) => (
+                      <span
+                        key={detalle}
+                        className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-black text-blue-50"
+                      >
+                        ✓ {detalle}
+                      </span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mx-auto mt-14 max-w-5xl overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.07] p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-yellow-300/5 via-pink-400/5 to-cyan-300/5" />
+
+            <div className="relative flex flex-col items-center justify-between gap-7 text-center lg:flex-row lg:text-left">
+              <div>
+                <span className="inline-flex rounded-full bg-emerald-300/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-emerald-200">
+                  🚀 Tu aventura comienza aquí
                 </span>
 
-                <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-400 text-3xl">
-                  {paso.emoji}
-                </span>
-
-                <h3 className="mt-6 text-2xl font-black">
-                  {paso.titulo}
+                <h3 className="mt-4 text-2xl font-black sm:text-3xl">
+                  Explora gratis o desbloquea todo
                 </h3>
 
-                <p className="mt-3 leading-relaxed text-blue-100/75">
-                  {paso.descripcion}
+                <p className="mt-2 max-w-xl leading-relaxed text-blue-100/65">
+                  Prueba la plataforma durante 60 minutos o
+                  revisa las membresías disponibles desde $3.
                 </p>
-              </article>
-            ))}
+              </div>
+
+              <div className="flex w-full flex-col gap-4 sm:w-auto sm:flex-row">
+                <button
+                  type="button"
+                  onClick={solicitarPruebaGratis}
+                  className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-7 py-4 text-base font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
+                >
+                  🛸 Probar 60 minutos
+                </button>
+
+                <button
+                  type="button"
+                  onClick={abrirMembresias}
+                  className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-7 py-4 text-base font-black text-cyan-200 shadow-xl transition hover:-translate-y-1 hover:bg-cyan-300 hover:text-slate-950"
+                >
+                  💎 Ver membresías
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-            <button
-              type="button"
-              onClick={solicitarPruebaGratis}
-              className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
-            >
-              🛸 Solicitar prueba de 60 minutos
-            </button>
-
-            <button
-              type="button"
-              onClick={abrirMembresias}
-              className="rounded-full border-2 border-emerald-300 bg-emerald-300/10 px-8 py-4 text-lg font-black text-emerald-200 shadow-xl transition hover:-translate-y-1"
-            >
-              💎 Ver membresías
-            </button>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-bold text-blue-100/55">
+            <span>✓ Prueba gratuita</span>
+            <span>✓ Activación por WhatsApp</span>
+            <span>✓ Planes desde $3</span>
+            <span>✓ Acceso desde cualquier dispositivo</span>
           </div>
         </div>
       </section>
