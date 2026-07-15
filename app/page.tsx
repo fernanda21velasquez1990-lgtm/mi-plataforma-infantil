@@ -4,6 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 /* =====================================================
+   TIPOS
+===================================================== */
+
+type PlanMembresia = {
+  id: "mensual" | "trimestral" | "anual";
+  nombre: string;
+  precio: string;
+  duracion: string;
+  descripcion: string;
+  beneficios: string[];
+  destacado?: boolean;
+};
+
+/* =====================================================
    RUTAS
 ===================================================== */
 
@@ -17,9 +31,61 @@ const DATOS_PAGO = {
   banco: "Venezuela (0102)",
   cedula: "V-16.113.624",
   telefono: "0414-4895281",
-  monto: "2500 Bs",
   whatsapp: "584144895281",
 };
+
+/* =====================================================
+   PLANES DE MEMBRESÍA
+===================================================== */
+
+const PLANES_MEMBRESIA: PlanMembresia[] = [
+  {
+    id: "mensual",
+    nombre: "Membresía mensual",
+    precio: "$3",
+    duracion: "1 mes",
+    descripcion:
+      "Ideal para comenzar y disfrutar todo el contenido durante un mes.",
+    beneficios: [
+      "Biblioteca educativa completa",
+      "Descargas habilitadas",
+      "Acceso al Laboratorio Tech",
+      "Uso desde cualquier dispositivo",
+      "Nuevos materiales y actividades",
+    ],
+  },
+  {
+    id: "trimestral",
+    nombre: "Membresía trimestral",
+    precio: "$6",
+    duracion: "3 meses",
+    descripcion:
+      "Tres meses de acceso con un precio más conveniente.",
+    beneficios: [
+      "Todos los beneficios del plan mensual",
+      "Acceso durante 3 meses",
+      "Ahorro frente al pago mensual",
+      "Nuevos materiales y actividades",
+      "Soporte por WhatsApp",
+    ],
+    destacado: true,
+  },
+  {
+    id: "anual",
+    nombre: "Membresía anual",
+    precio: "$12",
+    duracion: "1 año",
+    descripcion:
+      "La mejor alternativa para familias, docentes y creadores frecuentes.",
+    beneficios: [
+      "Acceso completo durante un año",
+      "Mayor ahorro",
+      "Biblioteca educativa completa",
+      "Acceso al Laboratorio Tech",
+      "Contenido y recursos exclusivos",
+    ],
+  },
+];
 
 /* =====================================================
    BENEFICIOS
@@ -51,7 +117,7 @@ const beneficios = [
     emoji: "⬇️",
     titulo: "Materiales descargables",
     descripcion:
-      "Con el acceso VIP podrás descargar los recursos educativos disponibles.",
+      "Con una membresía activa podrás descargar los recursos educativos disponibles.",
     color: "from-amber-500 to-yellow-400",
   },
   {
@@ -76,24 +142,34 @@ const beneficios = [
 
 const preguntasFrecuentes = [
   {
-    pregunta: "¿El pago es mensual?",
+    pregunta: "¿Qué planes de membresía están disponibles?",
     respuesta:
-      "No. El monto corresponde a un pago único para activar el acceso completo.",
+      "Puedes elegir una membresía de un mes por $3, tres meses por $6 o un año por $12.",
   },
   {
-    pregunta: "¿Cuánto tiempo dura el acceso?",
+    pregunta: "¿Cuánto tiempo dura cada membresía?",
     respuesta:
-      "El acceso VIP es ilimitado y no requiere pagos mensuales.",
+      "La membresía mensual dura un mes, la trimestral dura tres meses y la anual dura un año.",
+  },
+  {
+    pregunta: "¿La membresía se renueva automáticamente?",
+    respuesta:
+      "Por ahora la renovación es manual. Cuando tu membresía esté próxima a vencer podrás realizar un nuevo pago y enviar el comprobante por WhatsApp.",
   },
   {
     pregunta: "¿Puedo descargar los materiales?",
     respuesta:
-      "Sí. Las descargas estarán disponibles después de activar el acceso VIP.",
+      "Sí. Las descargas estarán disponibles mientras tu membresía se encuentre activa.",
   },
   {
-    pregunta: "¿Cómo se activa mi acceso?",
+    pregunta: "¿Cómo se activa mi membresía?",
     respuesta:
-      "Realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
+      "Selecciona un plan, realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
+  },
+  {
+    pregunta: "¿Qué ocurre cuando vence mi membresía?",
+    respuesta:
+      "El contenido protegido y las descargas se bloquearán hasta que renueves tu membresía.",
   },
   {
     pregunta: "¿Puedo utilizar la plataforma desde el teléfono?",
@@ -114,16 +190,14 @@ const preguntasFrecuentes = [
 export default function InicioLanding() {
   const router = useRouter();
 
-  const [mostrarPago, setMostrarPago] = useState(false);
+  const [planSeleccionado, setPlanSeleccionado] =
+    useState<PlanMembresia | null>(null);
 
   const [preguntaAbierta, setPreguntaAbierta] =
     useState<number | null>(null);
 
   /* ===================================================
-     ENVIAR A LA PÁGINA DE ACCESO EN MODO PRUEBA
-
-     Ya no se crea la prueba desde esta página.
-     La validación se realizará en /acceso.
+     PRUEBA GRATUITA
   =================================================== */
 
   const solicitarPruebaGratis = () => {
@@ -131,7 +205,7 @@ export default function InicioLanding() {
   };
 
   /* ===================================================
-     CLIENTE QUE YA PAGÓ
+     CLIENTE CON MEMBRESÍA
   =================================================== */
 
   const entrarComoCliente = () => {
@@ -150,28 +224,38 @@ export default function InicioLanding() {
   };
 
   /* ===================================================
-     ABRIR DATOS DE PAGO
+     IR A MEMBRESÍAS
   =================================================== */
 
-  const abrirPago = () => {
-    setMostrarPago(true);
+  const abrirMembresias = () => {
+    document.getElementById("membresias")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  /* ===================================================
+     SELECCIONAR MEMBRESÍA
+  =================================================== */
+
+  const seleccionarPlan = (plan: PlanMembresia) => {
+    setPlanSeleccionado(plan);
 
     setTimeout(() => {
-      document
-        .getElementById("acceso-completo")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
+      document.getElementById("datos-pago")?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     }, 100);
   };
 
   /* ===================================================
-     ENLACE DE WHATSAPP
+     WHATSAPP
   =================================================== */
 
-  const mensajeWhatsApp =
-    "Hola, quiero activar mi acceso VIP a Mundo Digital Infantil. Enviaré mi comprobante de pago:";
+  const mensajeWhatsApp = planSeleccionado
+    ? `Hola, quiero activar la ${planSeleccionado.nombre} de Mundo Digital Infantil por ${planSeleccionado.precio}. La membresía tendrá una duración de ${planSeleccionado.duracion}. Enviaré mi comprobante de pago:`
+    : "Hola, quiero recibir información sobre las membresías de Mundo Digital Infantil.";
 
   const enlaceWhatsApp = `https://wa.me/${
     DATOS_PAGO.whatsapp
@@ -180,13 +264,11 @@ export default function InicioLanding() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 font-sans text-white">
       {/* =================================================
-          MENÚ SUPERIOR SIN BOTÓN HAMBURGUESA
+          MENÚ SUPERIOR
       ================================================= */}
 
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          {/* LOGO */}
-
           <button
             type="button"
             onClick={() =>
@@ -212,8 +294,6 @@ export default function InicioLanding() {
               </p>
             </div>
           </button>
-
-          {/* MENÚ PARA COMPUTADOR */}
 
           <nav className="hidden items-center gap-6 text-sm font-bold text-blue-100 lg:flex">
             <button
@@ -242,6 +322,14 @@ export default function InicioLanding() {
 
             <button
               type="button"
+              onClick={() => irASeccion("membresias")}
+              className="transition hover:text-yellow-300"
+            >
+              Membresías
+            </button>
+
+            <button
+              type="button"
               onClick={() => irASeccion("preguntas")}
               className="transition hover:text-yellow-300"
             >
@@ -249,23 +337,21 @@ export default function InicioLanding() {
             </button>
           </nav>
 
-          {/* BOTONES VISIBLES EN TELÉFONO Y COMPUTADOR */}
-
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={entrarComoCliente}
               className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950 sm:px-5 sm:py-2.5 sm:text-sm"
             >
-              🔐 Ya pagué
+              🔐 Ya tengo membresía
             </button>
 
             <button
               type="button"
-              onClick={abrirPago}
+              onClick={abrirMembresias}
               className="hidden rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-5 py-2.5 text-sm font-black text-slate-950 shadow-lg transition hover:-translate-y-0.5 sm:block"
             >
-              Activar acceso
+              Ver membresías
             </button>
           </div>
         </div>
@@ -283,8 +369,6 @@ export default function InicioLanding() {
         <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-cyan-500/20 blur-3xl" />
 
         <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8">
-          {/* TEXTO PRINCIPAL */}
-
           <div className="text-center lg:text-left">
             <span className="mb-6 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200">
               ✨ APRENDER · JUGAR · CREAR
@@ -306,8 +390,6 @@ export default function InicioLanding() {
               docentes y creadores.
             </p>
 
-            {/* BOTONES PRINCIPALES */}
-
             <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
               <button
                 type="button"
@@ -322,7 +404,7 @@ export default function InicioLanding() {
                 onClick={entrarComoCliente}
                 className="rounded-full border-2 border-cyan-300/40 bg-white/10 px-8 py-4 text-lg font-black text-white shadow-xl transition hover:-translate-y-1 hover:border-cyan-300 hover:bg-cyan-300/15"
               >
-                🔐 Ya pagué, quiero entrar
+                🔐 Ya tengo membresía
               </button>
             </div>
 
@@ -332,14 +414,12 @@ export default function InicioLanding() {
               permanecerán bloqueadas.
             </p>
 
-            {/* INDICADORES */}
-
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
                 ["📚", "Materiales"],
                 ["🎮", "Actividades"],
                 ["🤖", "Tecnología"],
-                ["♾️", "Acceso VIP"],
+                ["💎", "Membresía VIP"],
               ].map(([emoji, texto]) => (
                 <div
                   key={texto}
@@ -356,8 +436,6 @@ export default function InicioLanding() {
               ))}
             </div>
           </div>
-
-          {/* PRESENTACIÓN DEL CONTENIDO */}
 
           <div className="relative mx-auto w-full max-w-xl">
             <div className="absolute -inset-6 rounded-[3rem] bg-gradient-to-r from-cyan-500/20 via-violet-500/20 to-pink-500/20 blur-2xl" />
@@ -426,8 +504,8 @@ export default function InicioLanding() {
 
                 <p className="mt-2 text-sm leading-relaxed text-blue-100">
                   Solicita la prueba gratuita para descubrir
-                  la plataforma antes de activar el acceso
-                  VIP.
+                  la plataforma antes de elegir tu
+                  membresía.
                 </p>
               </div>
             </div>
@@ -436,7 +514,7 @@ export default function InicioLanding() {
       </section>
 
       {/* =================================================
-          CLIENTES QUE YA PAGARON
+          CLIENTES CON MEMBRESÍA
       ================================================= */}
 
       <section className="relative border-y border-white/10 bg-gradient-to-r from-emerald-500/20 via-cyan-500/10 to-blue-500/20 px-5 py-10 lg:px-8">
@@ -448,11 +526,11 @@ export default function InicioLanding() {
 
             <div>
               <span className="inline-flex rounded-full bg-emerald-300/15 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-200">
-                Acceso para clientes
+                Acceso para miembros
               </span>
 
               <h2 className="mt-3 text-2xl font-black sm:text-3xl">
-                ¿Ya realizaste tu pago?
+                ¿Ya tienes una membresía activa?
               </h2>
 
               <p className="mt-2 max-w-2xl leading-relaxed text-blue-100/75">
@@ -467,7 +545,7 @@ export default function InicioLanding() {
             onClick={entrarComoCliente}
             className="w-full shrink-0 rounded-full bg-gradient-to-r from-emerald-300 to-cyan-400 px-7 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 lg:w-auto"
           >
-            ✅ Ya pagué, quiero entrar
+            ✅ Ingresar a mi cuenta
           </button>
         </div>
       </section>
@@ -527,7 +605,7 @@ export default function InicioLanding() {
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
-                🔒 Disponible con prueba o acceso VIP
+                🔒 Disponible con prueba o membresía activa
               </div>
             </article>
 
@@ -566,7 +644,7 @@ export default function InicioLanding() {
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
-                🔒 Disponible con prueba o acceso VIP
+                🔒 Disponible con prueba o membresía activa
               </div>
             </article>
           </div>
@@ -657,9 +735,9 @@ export default function InicioLanding() {
               {
                 numero: "03",
                 emoji: "💎",
-                titulo: "Activa el acceso",
+                titulo: "Elige tu membresía",
                 descripcion:
-                  "Realiza el pago y envía el comprobante para habilitar todo.",
+                  "Selecciona el plan de un mes, tres meses o un año y envía tu comprobante.",
               },
             ].map((paso) => (
               <article
@@ -685,7 +763,7 @@ export default function InicioLanding() {
             ))}
           </div>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
             <button
               type="button"
               onClick={solicitarPruebaGratis}
@@ -693,98 +771,169 @@ export default function InicioLanding() {
             >
               🛸 Solicitar prueba de 60 minutos
             </button>
+
+            <button
+              type="button"
+              onClick={abrirMembresias}
+              className="rounded-full border-2 border-emerald-300 bg-emerald-300/10 px-8 py-4 text-lg font-black text-emerald-200 shadow-xl transition hover:-translate-y-1"
+            >
+              💎 Ver membresías
+            </button>
           </div>
         </div>
       </section>
 
       {/* =================================================
-          ACCESO COMPLETO
+          MEMBRESÍAS
       ================================================= */}
 
       <section
-        id="acceso-completo"
+        id="membresias"
         className="scroll-mt-24 bg-slate-50 px-5 py-20 text-slate-900 lg:px-8"
       >
-        <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
-          <div>
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
             <span className="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
-              ACCESO VIP
+              MEMBRESÍAS VIP
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
-              Desbloquea todo el universo digital
+              Elige el plan ideal para ti
             </h2>
 
             <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              Acceso ilimitado a la biblioteca y al
-              laboratorio digital.
+              Disfruta la biblioteca educativa, las
+              descargas y todas las herramientas digitales
+              mientras tu membresía se encuentre activa.
             </p>
-
-            <ul className="mt-8 space-y-4">
-              {[
-                "Acceso ilimitado",
-                "Biblioteca educativa completa",
-                "Descargas habilitadas",
-                "Laboratorio Tech",
-                "Uso desde cualquier dispositivo",
-                "Sin mensualidades",
-              ].map((elemento) => (
-                <li
-                  key={elemento}
-                  className="flex items-center gap-3 font-bold text-slate-700"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    ✓
-                  </span>
-
-                  {elemento}
-                </li>
-              ))}
-            </ul>
           </div>
 
-          <div className="relative rounded-[2.5rem] border-4 border-emerald-300 bg-white p-7 shadow-2xl sm:p-9">
-            {!mostrarPago ? (
-              <div className="text-center">
-                <span className="text-5xl">
-                  💎
-                </span>
+          <div className="grid gap-7 lg:grid-cols-3">
+            {PLANES_MEMBRESIA.map((plan) => (
+              <article
+                key={plan.id}
+                className={`relative flex flex-col rounded-[2.5rem] border-4 bg-white p-7 shadow-xl transition hover:-translate-y-2 hover:shadow-2xl sm:p-8 ${
+                  plan.destacado
+                    ? "border-yellow-300 lg:scale-105"
+                    : "border-emerald-200"
+                }`}
+              >
+                {plan.destacado && (
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-5 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-950 shadow-lg">
+                    Más recomendado
+                  </span>
+                )}
 
-                <p className="mt-5 text-sm font-black uppercase tracking-[0.2em] text-emerald-600">
-                  Pago único
-                </p>
-
-                <div className="mt-3 flex items-end justify-center gap-2">
-                  <span className="text-5xl font-black sm:text-6xl">
-                    2500
+                <div className="text-center">
+                  <span className="text-5xl">
+                    {plan.id === "mensual"
+                      ? "🚀"
+                      : plan.id === "trimestral"
+                        ? "💎"
+                        : "🌟"}
                   </span>
 
-                  <span className="pb-2 text-xl font-black text-slate-500">
-                    Bs
-                  </span>
+                  <h3 className="mt-5 text-2xl font-black">
+                    {plan.nombre}
+                  </h3>
+
+                  <div className="mt-5">
+                    <span className="text-4xl font-black text-emerald-600 sm:text-5xl">
+                      {plan.precio}
+                    </span>
+                  </div>
+
+                  <p className="mt-2 font-black text-slate-500">
+                    Acceso por {plan.duracion}
+                  </p>
+
+                  <p className="mt-5 min-h-[72px] leading-relaxed text-slate-600">
+                    {plan.descripcion}
+                  </p>
                 </div>
 
-                <p className="mt-3 font-bold text-slate-500">
-                  Sin mensualidades
-                </p>
+                <ul className="mt-7 flex-1 space-y-4">
+                  {plan.beneficios.map((beneficio) => (
+                    <li
+                      key={beneficio}
+                      className="flex items-start gap-3 font-bold text-slate-700"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                        ✓
+                      </span>
+
+                      <span>{beneficio}</span>
+                    </li>
+                  ))}
+                </ul>
 
                 <button
                   type="button"
-                  onClick={() => setMostrarPago(true)}
-                  className="mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-green-500 px-6 py-5 text-xl font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
+                  onClick={() => seleccionarPlan(plan)}
+                  className={`mt-8 w-full rounded-full px-6 py-4 text-lg font-black shadow-xl transition hover:-translate-y-1 ${
+                    plan.destacado
+                      ? "bg-gradient-to-r from-yellow-300 to-orange-400 text-slate-950"
+                      : "bg-gradient-to-r from-emerald-400 to-green-500 text-slate-950"
+                  }`}
                 >
-                  💎 Mostrar datos de pago
+                  Elegir membresía
                 </button>
+              </article>
+            ))}
+          </div>
+
+          {planSeleccionado && (
+            <div
+              id="datos-pago"
+              className="mt-14 grid scroll-mt-28 overflow-hidden rounded-[2.5rem] border border-emerald-300 bg-white shadow-2xl lg:grid-cols-2"
+            >
+              <div className="bg-gradient-to-br from-emerald-500 to-cyan-500 p-7 text-white sm:p-10">
+                <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-xs font-black uppercase tracking-[0.16em]">
+                  Plan seleccionado
+                </span>
+
+                <h3 className="mt-5 text-3xl font-black sm:text-4xl">
+                  {planSeleccionado.nombre}
+                </h3>
+
+                <div className="mt-6">
+                  <span className="text-5xl font-black">
+                    {planSeleccionado.precio}
+                  </span>
+                </div>
+
+                <p className="mt-3 text-lg font-bold text-emerald-50">
+                  Vigencia: {planSeleccionado.duracion}
+                </p>
+
+                <p className="mt-6 leading-relaxed text-emerald-50">
+                  Realiza el pago y envía el comprobante por
+                  WhatsApp. Tu membresía será activada
+                  después de verificar la operación.
+                </p>
+
+                <div className="mt-7 rounded-2xl border border-white/20 bg-white/10 p-5">
+                  <p className="font-black">
+                    Importante
+                  </p>
+
+                  <p className="mt-2 text-sm leading-relaxed text-emerald-50">
+                    La renovación es manual. Cuando finalice
+                    la vigencia, deberás renovar para
+                    continuar accediendo al contenido
+                    protegido.
+                  </p>
+                </div>
               </div>
-            ) : (
-              <div>
+
+              <div className="p-7 sm:p-10">
                 <div className="text-center">
                   <span className="text-5xl">
                     📲
                   </span>
 
                   <h3 className="mt-4 text-3xl font-black text-emerald-600">
-                    Taquilla VIP
+                    Datos de pago
                   </h3>
                 </div>
 
@@ -813,7 +962,14 @@ export default function InicioLanding() {
                   <p>
                     💵 Monto:{" "}
                     <strong className="text-emerald-600">
-                      {DATOS_PAGO.monto}
+                      {planSeleccionado.precio}
+                    </strong>
+                  </p>
+
+                  <p>
+                    ⏳ Duración:{" "}
+                    <strong className="text-violet-700">
+                      {planSeleccionado.duracion}
                     </strong>
                   </p>
                 </div>
@@ -822,21 +978,32 @@ export default function InicioLanding() {
                   href={enlaceWhatsApp}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
+                  className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-center text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
                 >
-                  📲 Enviar comprobante
+                  📲 Enviar comprobante por WhatsApp
                 </a>
 
                 <button
                   type="button"
-                  onClick={() => setMostrarPago(false)}
+                  onClick={() => {
+                    setPlanSeleccionado(null);
+
+                    setTimeout(() => {
+                      document
+                        .getElementById("membresias")
+                        ?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        });
+                    }, 100);
+                  }}
                   className="mt-4 w-full font-bold text-slate-400 underline"
                 >
-                  Ocultar datos de pago
+                  Cambiar membresía
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -848,7 +1015,7 @@ export default function InicioLanding() {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left">
           <div>
             <h2 className="text-3xl font-black sm:text-4xl">
-              ¿Quieres explorar antes de pagar?
+              ¿Quieres explorar antes de elegir?
             </h2>
 
             <p className="mt-3 max-w-2xl text-lg font-semibold">
@@ -949,15 +1116,15 @@ export default function InicioLanding() {
               onClick={entrarComoCliente}
               className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-7 py-4 font-black text-cyan-200"
             >
-              🔐 Ya pagué, quiero entrar
+              🔐 Ya tengo membresía
             </button>
 
             <button
               type="button"
-              onClick={abrirPago}
+              onClick={abrirMembresias}
               className="rounded-full border-2 border-emerald-300 bg-emerald-300/10 px-7 py-4 font-black text-emerald-200"
             >
-              💎 Activar acceso
+              💎 Ver membresías
             </button>
           </div>
         </div>
