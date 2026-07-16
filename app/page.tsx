@@ -1,20 +1,10 @@
+
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-/* =====================================================
-   TIPOS
-===================================================== */
-
-type PlanId =
-  | "mensual"
-  | "trimestral"
-  | "anual";
+type PlanId = "mensual" | "trimestral" | "anual";
 
 type PlanMembresia = {
   id: PlanId;
@@ -85,18 +75,10 @@ type TiempoRestante = {
   segundos: number;
 };
 
-/* =====================================================
-   RUTAS Y CONEXIÓN
-===================================================== */
-
 const RUTA_ACCESO = "/acceso";
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzXwycKtQWGWgdIYK2b1CQ7r5DLkS8_Wnw0XgI9ILiad2qIS-e8DmlTOKxX0RqY6aEL7w/exec";
-
-/* =====================================================
-   DATOS DE PAGO
-===================================================== */
 
 const DATOS_PAGO = {
   banco: "Venezuela (0102)",
@@ -104,10 +86,6 @@ const DATOS_PAGO = {
   telefono: "0414-4895281",
   whatsapp: "584144895281",
 };
-
-/* =====================================================
-   PLANES DE MEMBRESÍA
-===================================================== */
 
 const PLANES_MEMBRESIA: PlanMembresia[] = [
   {
@@ -161,10 +139,6 @@ const PLANES_MEMBRESIA: PlanMembresia[] = [
   },
 ];
 
-/* =====================================================
-   BENEFICIOS
-===================================================== */
-
 const beneficios = [
   {
     emoji: "📚",
@@ -182,42 +156,33 @@ const beneficios = [
   },
   {
     emoji: "📱",
-    titulo:
-      "Disponible en varios dispositivos",
+    titulo: "Disponible en varios dispositivos",
     descripcion:
       "Utiliza la plataforma desde teléfonos, tabletas y computadoras.",
-    color:
-      "from-violet-500 to-fuchsia-400",
+    color: "from-violet-500 to-fuchsia-400",
   },
   {
     emoji: "⬇️",
     titulo: "Materiales descargables",
     descripcion:
       "Con una membresía activa podrás descargar los recursos educativos disponibles.",
-    color:
-      "from-amber-500 to-yellow-400",
+    color: "from-amber-500 to-yellow-400",
   },
   {
     emoji: "👨‍👩‍👧‍👦",
     titulo: "Para familias y docentes",
     descripcion:
       "Recursos útiles para acompañar el aprendizaje en casa y en el aula.",
-    color:
-      "from-emerald-500 to-green-400",
+    color: "from-emerald-500 to-green-400",
   },
   {
     emoji: "🚀",
     titulo: "Contenido en crecimiento",
     descripcion:
       "La plataforma continúa incorporando nuevos materiales y herramientas.",
-    color:
-      "from-indigo-500 to-blue-400",
+    color: "from-indigo-500 to-blue-400",
   },
 ];
-
-/* =====================================================
-   CONTENIDOS
-===================================================== */
 
 const contenidoBiblioteca = [
   "📖 Cuentos y lecturas",
@@ -241,323 +206,203 @@ const contenidoTecnologia = [
   "📱 Herramientas digitales",
 ];
 
-/* =====================================================
-   PREGUNTAS FRECUENTES
-===================================================== */
-
 const preguntasFrecuentes = [
   {
-    pregunta:
-      "¿Qué planes de membresía están disponibles?",
+    pregunta: "¿Qué planes de membresía están disponibles?",
     respuesta:
       "Puedes elegir una membresía de un mes por $3, tres meses por $6 o un año por $12.",
   },
   {
-    pregunta:
-      "¿Cómo funciona la oferta de lanzamiento?",
+    pregunta: "¿Cómo funciona la oferta de lanzamiento?",
     respuesta:
       "Durante siete días y hasta agotar los cupos disponibles, los planes tienen un 50 % de descuento.",
   },
   {
-    pregunta:
-      "¿Cuándo se descuenta un cupo?",
+    pregunta: "¿Cuándo se descuenta un cupo?",
     respuesta:
       "El cupo se descuenta cuando escribes tu WhatsApp, eliges un plan y presionas el botón para reservar.",
   },
   {
-    pregunta:
-      "¿Qué pasa cuando se agotan los cupos?",
+    pregunta: "¿Qué pasa cuando se agotan los cupos?",
     respuesta:
       "La página deja de ofrecer el descuento y muestra automáticamente los precios normales.",
   },
   {
-    pregunta:
-      "¿La membresía se renueva automáticamente?",
+    pregunta: "¿La membresía se renueva automáticamente?",
     respuesta:
       "Por ahora la renovación es manual. Cuando finalice tu membresía podrás realizar un nuevo pago.",
   },
   {
-    pregunta:
-      "¿Puedo descargar los materiales?",
-    respuesta:
-      "Sí. Las descargas estarán disponibles mientras tu membresía se encuentre activa.",
-  },
-  {
-    pregunta:
-      "¿Cómo se activa mi membresía?",
+    pregunta: "¿Cómo se activa mi membresía?",
     respuesta:
       "Selecciona un plan, realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
   },
   {
-    pregunta:
-      "¿Qué incluye la prueba gratuita?",
+    pregunta: "¿Qué incluye la prueba gratuita?",
     respuesta:
       "Permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas durante la prueba.",
   },
+  {
+    pregunta: "¿Cómo funcionan los diamantes y premios?",
+    respuesta:
+      "La sección presenta el programa de recompensas. El saldo automático de diamantes y el canje de premios deben programarse como una siguiente función dentro de la plataforma.",
+  },
 ];
 
-/* =====================================================
-   FUNCIONES AUXILIARES
-===================================================== */
+const mostrarPrecio = (precio: number) =>
+  Number.isInteger(precio) ? `$${precio}` : `$${precio.toFixed(2)}`;
 
-const mostrarPrecio = (
-  precio: number,
-) => {
-  if (Number.isInteger(precio)) {
-    return `$${precio}`;
-  }
-
-  return `$${precio.toFixed(2)}`;
-};
-
-const normalizarTelefono = (
-  telefono: string,
-) => telefono.replace(/\D/g, "");
+const normalizarTelefono = (telefono: string) =>
+  telefono.replace(/\D/g, "");
 
 const iconoPlan = (id: PlanId) => {
-  if (id === "mensual") {
-    return "🚀";
-  }
-
-  if (id === "trimestral") {
-    return "💎";
-  }
-
+  if (id === "mensual") return "🚀";
+  if (id === "trimestral") return "💎";
   return "🌟";
 };
-
-/* =====================================================
-   CONEXIÓN JSONP CON GOOGLE APPS SCRIPT
-===================================================== */
 
 function consultarGoogleScript<T>(
   parametros: Record<string, string>,
 ): Promise<T> {
-  return new Promise(
-    (resolve, reject) => {
-      if (
-        typeof window === "undefined"
-      ) {
-        reject(
-          new Error(
-            "Esta consulta solo puede ejecutarse en el navegador.",
-          ),
-        );
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(
+        new Error(
+          "Esta consulta solo puede ejecutarse en el navegador.",
+        ),
+      );
+      return;
+    }
 
-        return;
+    const callback = `__mdi_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
+    const url = new URL(GOOGLE_SCRIPT_URL);
+
+    Object.entries(parametros).forEach(([clave, valor]) => {
+      url.searchParams.set(clave, valor);
+    });
+
+    url.searchParams.set("callback", callback);
+
+    const script = document.createElement("script");
+
+    const ventana = window as typeof window &
+      Record<string, unknown>;
+
+    let terminado = false;
+
+    const limpiar = () => {
+      if (terminado) return;
+
+      terminado = true;
+
+      script.remove();
+
+      try {
+        delete ventana[callback];
+      } catch {
+        ventana[callback] = undefined;
       }
+    };
 
-      const callback = `__mdi_${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2)}`;
+    const temporizador = window.setTimeout(() => {
+      limpiar();
 
-      const url = new URL(
-        GOOGLE_SCRIPT_URL,
+      reject(
+        new Error(
+          "La consulta tardó demasiado tiempo.",
+        ),
       );
+    }, 15000);
 
-      Object.entries(
-        parametros,
-      ).forEach(
-        ([clave, valor]) => {
-          url.searchParams.set(
-            clave,
-            valor,
-          );
-        },
+    ventana[callback] = (datos: T) => {
+      window.clearTimeout(temporizador);
+
+      limpiar();
+
+      resolve(datos);
+    };
+
+    script.src = url.toString();
+    script.async = true;
+
+    script.onerror = () => {
+      window.clearTimeout(temporizador);
+
+      limpiar();
+
+      reject(
+        new Error(
+          "No se pudo conectar con Google Sheets.",
+        ),
       );
+    };
 
-      url.searchParams.set(
-        "callback",
-        callback,
-      );
-
-      const script =
-        document.createElement(
-          "script",
-        );
-
-      const ventana =
-        window as typeof window &
-          Record<string, unknown>;
-
-      let terminado = false;
-
-      const limpiar = () => {
-        if (terminado) {
-          return;
-        }
-
-        terminado = true;
-
-        script.remove();
-
-        try {
-          delete ventana[callback];
-        } catch {
-          ventana[callback] =
-            undefined;
-        }
-      };
-
-      const temporizador =
-        window.setTimeout(() => {
-          limpiar();
-
-          reject(
-            new Error(
-              "La consulta tardó demasiado tiempo.",
-            ),
-          );
-        }, 15000);
-
-      ventana[callback] = (
-        datos: T,
-      ) => {
-        window.clearTimeout(
-          temporizador,
-        );
-
-        limpiar();
-
-        resolve(datos);
-      };
-
-      script.src = url.toString();
-      script.async = true;
-
-      script.onerror = () => {
-        window.clearTimeout(
-          temporizador,
-        );
-
-        limpiar();
-
-        reject(
-          new Error(
-            "No se pudo conectar con Google Sheets.",
-          ),
-        );
-      };
-
-      document.body.appendChild(
-        script,
-      );
-    },
-  );
+    document.body.appendChild(script);
+  });
 }
-
-/* =====================================================
-   COMPONENTE PRINCIPAL
-===================================================== */
 
 export default function InicioLanding() {
   const router = useRouter();
 
-  const [
-    planSeleccionado,
-    setPlanSeleccionado,
-  ] = useState<PlanMembresia | null>(
-    null,
-  );
+  const [planSeleccionado, setPlanSeleccionado] =
+    useState<PlanMembresia | null>(null);
 
-  const [
-    preguntaAbierta,
-    setPreguntaAbierta,
-  ] = useState<number | null>(null);
+  const [preguntaAbierta, setPreguntaAbierta] =
+    useState<number | null>(null);
 
-  const [
-    estadoOferta,
-    setEstadoOferta,
-  ] = useState<EstadoOfertaApi | null>(
-    null,
-  );
+  const [estadoOferta, setEstadoOferta] =
+    useState<EstadoOfertaApi | null>(null);
 
-  const [
-    cargandoOferta,
-    setCargandoOferta,
-  ] = useState(true);
+  const [cargandoOferta, setCargandoOferta] =
+    useState(true);
 
-  const [
-    errorOferta,
-    setErrorOferta,
-  ] = useState("");
+  const [errorOferta, setErrorOferta] =
+    useState("");
 
-  const [
-    telefonoOferta,
-    setTelefonoOferta,
-  ] = useState("");
+  const [telefonoOferta, setTelefonoOferta] =
+    useState("");
 
-  const [
-    mensajeTelefono,
-    setMensajeTelefono,
-  ] = useState("");
+  const [mensajeTelefono, setMensajeTelefono] =
+    useState("");
 
-  const [
-    reservandoOferta,
-    setReservandoOferta,
-  ] = useState(false);
+  const [reservandoOferta, setReservandoOferta] =
+    useState(false);
 
   const [
     planOfertaEnProceso,
     setPlanOfertaEnProceso,
   ] = useState<PlanId | null>(null);
 
-  const [
-    mensajeReserva,
-    setMensajeReserva,
-  ] = useState("");
+  const [mensajeReserva, setMensajeReserva] =
+    useState("");
 
-  const [
-    reservaOferta,
-    setReservaOferta,
-  ] = useState<ReservaOferta | null>(
-    null,
-  );
+  const [reservaOferta, setReservaOferta] =
+    useState<ReservaOferta | null>(null);
 
-  const [
-    tiempoRestante,
-    setTiempoRestante,
-  ] = useState<TiempoRestante>({
-    dias: 0,
-    horas: 0,
-    minutos: 0,
-    segundos: 0,
-  });
+  const [tiempoRestante, setTiempoRestante] =
+    useState<TiempoRestante>({
+      dias: 0,
+      horas: 0,
+      minutos: 0,
+      segundos: 0,
+    });
 
-  /* ===================================================
-     NAVEGACIÓN
-  =================================================== */
-
-  const solicitarPruebaGratis =
-    () => {
-      router.push(
-        "/acceso?modo=prueba",
-      );
-    };
+  const solicitarPruebaGratis = () => {
+    router.push("/acceso?modo=prueba");
+  };
 
   const entrarComoCliente = () => {
     router.push(RUTA_ACCESO);
   };
 
-  const irASeccion = (
-    id: string,
-  ) => {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-  };
-
-  const abrirOferta = () => {
-    irASeccion(
-      "oferta-lanzamiento",
-    );
-  };
-
-  const abrirMembresias = () => {
-    irASeccion("membresias");
+  const irASeccion = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const seleccionarPlan = (
@@ -565,11 +410,9 @@ export default function InicioLanding() {
   ) => {
     setPlanSeleccionado(plan);
 
-    setTimeout(() => {
+    window.setTimeout(() => {
       document
-        .getElementById(
-          "datos-pago-normal",
-        )
+        .getElementById("datos-pago-normal")
         ?.scrollIntoView({
           behavior: "smooth",
           block: "center",
@@ -577,118 +420,86 @@ export default function InicioLanding() {
     }, 100);
   };
 
-  /* ===================================================
-     CONSULTAR OFERTA
-  =================================================== */
+  const cargarEstadoOferta = useCallback(
+    async (mostrarIndicador = false) => {
+      if (mostrarIndicador) {
+        setCargandoOferta(true);
+      }
 
-  const cargarEstadoOferta =
-    useCallback(
-      async (
-        mostrarIndicador = false,
-      ) => {
-        if (mostrarIndicador) {
-          setCargandoOferta(true);
-        }
+      try {
+        const respuesta =
+          await consultarGoogleScript<EstadoOfertaApi>({
+            accion: "estado",
+          });
 
-        try {
-          const respuesta =
-            await consultarGoogleScript<EstadoOfertaApi>(
-              {
-                accion: "estado",
-              },
-            );
-
-          if (!respuesta.ok) {
-            throw new Error(
-              respuesta.mensaje ||
-                "No se pudo consultar la oferta.",
-            );
-          }
-
-          setEstadoOferta(respuesta);
-
-          setErrorOferta("");
-        } catch (error) {
-          setErrorOferta(
-            error instanceof Error
-              ? error.message
-              : "No se pudo consultar la oferta.",
+        if (!respuesta.ok) {
+          throw new Error(
+            respuesta.mensaje ||
+              "No se pudo consultar la oferta.",
           );
-        } finally {
-          setCargandoOferta(false);
         }
-      },
-      [],
-    );
+
+        setEstadoOferta(respuesta);
+        setErrorOferta("");
+      } catch (error) {
+        setErrorOferta(
+          error instanceof Error
+            ? error.message
+            : "No se pudo consultar la oferta.",
+        );
+      } finally {
+        setCargandoOferta(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     void cargarEstadoOferta(true);
 
-    const intervalo =
-      window.setInterval(() => {
-        void cargarEstadoOferta(
-          false,
-        );
-      }, 30000);
+    const intervalo = window.setInterval(() => {
+      void cargarEstadoOferta(false);
+    }, 30000);
 
     return () => {
-      window.clearInterval(
-        intervalo,
-      );
+      window.clearInterval(intervalo);
     };
   }, [cargarEstadoOferta]);
 
-  /* ===================================================
-     CUENTA REGRESIVA
-  =================================================== */
-
   useEffect(() => {
-    if (
-      !estadoOferta?.fechaFinal
-    ) {
+    if (!estadoOferta?.fechaFinal) {
       return;
     }
 
-    const actualizarTiempo =
-      () => {
-        const diferencia =
-          Math.max(
-            new Date(
-              estadoOferta.fechaFinal,
-            ).getTime() -
-              Date.now(),
-            0,
-          );
+    const actualizarTiempo = () => {
+      const diferencia = Math.max(
+        new Date(
+          estadoOferta.fechaFinal,
+        ).getTime() - Date.now(),
+        0,
+      );
 
-        setTiempoRestante({
-          dias: Math.floor(
-            diferencia /
-              (1000 *
-                60 *
-                60 *
-                24),
-          ),
-
-          horas: Math.floor(
-            (diferencia /
-              (1000 *
-                60 *
-                60)) %
-              24,
-          ),
-
-          minutos: Math.floor(
-            (diferencia /
-              (1000 * 60)) %
-              60,
-          ),
-
-          segundos: Math.floor(
-            (diferencia / 1000) %
-              60,
-          ),
-        });
-      };
+      setTiempoRestante({
+        dias: Math.floor(
+          diferencia /
+            (1000 * 60 * 60 * 24),
+        ),
+        horas: Math.floor(
+          (diferencia /
+            (1000 * 60 * 60)) %
+            24,
+        ),
+        minutos: Math.floor(
+          (diferencia /
+            (1000 * 60)) %
+            60,
+        ),
+        segundos: Math.floor(
+          (diferencia / 1000) %
+            60,
+        ),
+      });
+    };
 
     actualizarTiempo();
 
@@ -699,15 +510,9 @@ export default function InicioLanding() {
       );
 
     return () => {
-      window.clearInterval(
-        intervalo,
-      );
+      window.clearInterval(intervalo);
     };
   }, [estadoOferta?.fechaFinal]);
-
-  /* ===================================================
-     CONTINUAR A LOS PLANES
-  =================================================== */
 
   const continuarAPlanes = () => {
     const telefono =
@@ -743,10 +548,6 @@ export default function InicioLanding() {
         block: "start",
       });
   };
-
-  /* ===================================================
-     RESERVAR OFERTA
-  =================================================== */
 
   const reservarOferta = async (
     plan: PlanMembresia,
@@ -785,26 +586,18 @@ export default function InicioLanding() {
     }
 
     setMensajeTelefono("");
-
     setReservandoOferta(true);
-
-    setPlanOfertaEnProceso(
-      plan.id,
-    );
-
+    setPlanOfertaEnProceso(plan.id);
     setMensajeReserva("");
-
     setReservaOferta(null);
 
     try {
       const respuesta =
-        await consultarGoogleScript<RespuestaReservaApi>(
-          {
-            accion: "reservar",
-            plan: plan.id,
-            whatsapp: telefono,
-          },
-        );
+        await consultarGoogleScript<RespuestaReservaApi>({
+          accion: "reservar",
+          plan: plan.id,
+          whatsapp: telefono,
+        });
 
       if (
         respuesta.ok &&
@@ -859,7 +652,7 @@ export default function InicioLanding() {
           false,
         );
 
-        setTimeout(() => {
+        window.setTimeout(() => {
           document
             .getElementById(
               "reserva-confirmada",
@@ -894,15 +687,9 @@ export default function InicioLanding() {
     } finally {
       setReservandoOferta(false);
 
-      setPlanOfertaEnProceso(
-        null,
-      );
+      setPlanOfertaEnProceso(null);
     }
   };
-
-  /* ===================================================
-     ESTADO VISUAL DE LA OFERTA
-  =================================================== */
 
   const ofertaDisponible =
     Boolean(
@@ -914,8 +701,7 @@ export default function InicioLanding() {
     ) > 0;
 
   const cuposTotales =
-    estadoOferta?.cuposTotales ??
-    50;
+    estadoOferta?.cuposTotales ?? 50;
 
   const cuposDisponibles =
     estadoOferta?.cuposDisponibles ??
@@ -934,9 +720,32 @@ export default function InicioLanding() {
         )
       : 0;
 
-  /* ===================================================
-     WHATSAPP PLAN NORMAL
-  =================================================== */
+  const planesOferta = useMemo(() => {
+    return PLANES_MEMBRESIA.map(
+      (plan) => {
+        const planApi =
+          estadoOferta?.planes?.find(
+            (elemento) =>
+              elemento.id ===
+              plan.id,
+          );
+
+        return {
+          ...plan,
+
+          precioNormal: Number(
+            planApi?.precioNormal ??
+              plan.precioNormal,
+          ),
+
+          precioOferta: Number(
+            planApi?.precioOferta ??
+              plan.precioOferta,
+          ),
+        };
+      },
+    );
+  }, [estadoOferta?.planes]);
 
   const mensajeWhatsAppNormal =
     planSeleccionado
@@ -950,10 +759,6 @@ export default function InicioLanding() {
   }?text=${encodeURIComponent(
     mensajeWhatsAppNormal,
   )}`;
-
-  /* ===================================================
-     WHATSAPP OFERTA
-  =================================================== */
 
   const mensajeWhatsAppOferta =
     reservaOferta
@@ -977,10 +782,6 @@ Enviaré mi comprobante de pago:`
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 font-sans text-white">
-      {/* =================================================
-          MENÚ SUPERIOR
-      ================================================= */}
-
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
@@ -1012,7 +813,11 @@ Enviaré mi comprobante de pago:`
           <nav className="hidden items-center gap-5 text-sm font-bold text-blue-100 lg:flex">
             <button
               type="button"
-              onClick={abrirOferta}
+              onClick={() =>
+                irASeccion(
+                  "oferta-lanzamiento",
+                )
+              }
               className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-4 py-2 font-black text-slate-950 transition hover:-translate-y-0.5"
             >
               🔥 Oferta
@@ -1021,9 +826,7 @@ Enviaré mi comprobante de pago:`
             <button
               type="button"
               onClick={() =>
-                irASeccion(
-                  "contenido",
-                )
+                irASeccion("contenido")
               }
               className="transition hover:text-yellow-300"
             >
@@ -1033,9 +836,7 @@ Enviaré mi comprobante de pago:`
             <button
               type="button"
               onClick={() =>
-                irASeccion(
-                  "beneficios",
-                )
+                irASeccion("beneficios")
               }
               className="transition hover:text-yellow-300"
             >
@@ -1046,18 +847,18 @@ Enviaré mi comprobante de pago:`
               type="button"
               onClick={() =>
                 irASeccion(
-                  "como-funciona",
+                  "recompensas",
                 )
               }
               className="transition hover:text-yellow-300"
             >
-              Cómo funciona
+              Recompensas
             </button>
 
             <button
               type="button"
-              onClick={
-                abrirMembresias
+              onClick={() =>
+                irASeccion("membresias")
               }
               className="transition hover:text-yellow-300"
             >
@@ -1077,10 +878,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </header>
 
-      {/* =================================================
-          PORTADA
-      ================================================= */}
-
       <section className="relative isolate overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950">
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-blue-600/30 blur-3xl" />
 
@@ -1091,8 +888,7 @@ Enviaré mi comprobante de pago:`
         <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8">
           <div className="text-center lg:text-left">
             <span className="mb-6 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200">
-              ✨ APRENDER · JUGAR ·
-              CREAR
+              ✨ APRENDER · JUGAR · CREAR
             </span>
 
             <h1 className="text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
@@ -1116,7 +912,11 @@ Enviaré mi comprobante de pago:`
             <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
               <button
                 type="button"
-                onClick={abrirOferta}
+                onClick={() =>
+                  irASeccion(
+                    "oferta-lanzamiento",
+                  )
+                }
                 className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
               >
                 🔥 Ver oferta especial
@@ -1141,22 +941,10 @@ Enviaré mi comprobante de pago:`
 
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                [
-                  "📚",
-                  "Materiales",
-                ],
-                [
-                  "🎮",
-                  "Actividades",
-                ],
-                [
-                  "🤖",
-                  "Tecnología",
-                ],
-                [
-                  "💎",
-                  "Membresía VIP",
-                ],
+                ["📚", "Materiales"],
+                ["🎮", "Actividades"],
+                ["🤖", "Tecnología"],
+                ["💎", "Membresía VIP"],
               ].map(
                 ([emoji, texto]) => (
                   <div
@@ -1187,8 +975,7 @@ Enviaré mi comprobante de pago:`
                   </p>
 
                   <h2 className="mt-1 text-2xl font-black">
-                    Tu estación de
-                    aprendizaje
+                    Tu estación de aprendizaje
                   </h2>
                 </div>
 
@@ -1209,8 +996,7 @@ Enviaré mi comprobante de pago:`
 
                   <p className="mt-2 text-sm leading-relaxed text-blue-50">
                     Guías, cuentos, juegos,
-                    matemáticas y
-                    caligrafía.
+                    matemáticas y caligrafía.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -1229,8 +1015,8 @@ Enviaré mi comprobante de pago:`
 
                   <p className="mt-2 text-sm leading-relaxed text-violet-50">
                     Inteligencia artificial,
-                    automatización y
-                    recursos digitales.
+                    automatización y recursos
+                    digitales.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -1255,10 +1041,6 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          OFERTA ESPECIAL
-      ================================================= */}
 
       <section
         id="oferta-lanzamiento"
@@ -1286,8 +1068,8 @@ Enviaré mi comprobante de pago:`
 
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-blue-100/75">
               Promoción válida durante
-              siete días o hasta agotar
-              los cupos disponibles.
+              siete días o hasta agotar los
+              cupos disponibles.
             </p>
           </div>
 
@@ -1335,8 +1117,6 @@ Enviaré mi comprobante de pago:`
           {!cargandoOferta &&
             estadoOferta && (
               <>
-                {/* CUENTA REGRESIVA */}
-
                 <div className="mx-auto mt-12 grid max-w-3xl grid-cols-4 gap-3">
                   {[
                     [
@@ -1380,8 +1160,6 @@ Enviaré mi comprobante de pago:`
                     ),
                   )}
                 </div>
-
-                {/* CUPOS */}
 
                 <div className="mx-auto mt-8 max-w-3xl rounded-[2rem] border border-cyan-300/20 bg-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
                   <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
@@ -1436,8 +1214,6 @@ Enviaré mi comprobante de pago:`
                     )}
                 </div>
 
-                {/* CAMPO DE WHATSAPP */}
-
                 {ofertaDisponible && (
                   <div className="mx-auto mt-8 max-w-2xl rounded-[2rem] border border-cyan-300/25 bg-white/[0.06] p-6 text-center shadow-2xl backdrop-blur-xl">
                     <label
@@ -1445,13 +1221,12 @@ Enviaré mi comprobante de pago:`
                       className="text-lg font-black text-white"
                     >
                       📱 Escribe tu
-                      WhatsApp para
-                      reservar
+                      WhatsApp para reservar
                     </label>
 
                     <p className="mt-2 text-sm text-blue-100/65">
-                      Incluye el código
-                      del país. Ejemplo:
+                      Incluye el código del
+                      país. Ejemplo:
                       584141234567
                     </p>
 
@@ -1489,14 +1264,14 @@ Enviaré mi comprobante de pago:`
                       }
                       className="mt-5 w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
                     >
-                      💎 Continuar y
-                      elegir mi plan
+                      💎 Continuar y elegir
+                      mi plan
                     </button>
 
                     <p className="mt-3 text-xs font-bold text-blue-100/50">
-                      Después selecciona
-                      la membresía que
-                      deseas reservar.
+                      Después selecciona la
+                      membresía que deseas
+                      reservar.
                     </p>
 
                     {mensajeTelefono && (
@@ -1510,189 +1285,160 @@ Enviaré mi comprobante de pago:`
                   </div>
                 )}
 
-                {/* PLANES DE LA OFERTA */}
-
                 <div
                   id="planes-oferta"
                   className="mt-12 grid scroll-mt-28 gap-7 lg:grid-cols-3"
                 >
-                  {PLANES_MEMBRESIA.map(
-                    (plan) => {
-                      const planApi =
-                        estadoOferta.planes?.find(
-                          (
-                            elemento,
-                          ) =>
-                            elemento.id ===
-                            plan.id,
-                        );
-
-                      const precioNormal =
-                        Number(
-                          planApi?.precioNormal ??
-                            plan.precioNormal,
-                        );
-
-                      const precioOferta =
-                        Number(
-                          planApi?.precioOferta ??
-                            plan.precioOferta,
-                        );
-
-                      return (
-                        <article
-                          key={plan.id}
-                          className={`group relative flex flex-col overflow-hidden rounded-[2.5rem] border bg-white/[0.08] p-7 text-white shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-3 hover:bg-white/[0.12] sm:p-8 ${
+                  {planesOferta.map(
+                    (plan) => (
+                      <article
+                        key={plan.id}
+                        className={`group relative flex flex-col overflow-hidden rounded-[2.5rem] border bg-white/[0.08] p-7 text-white shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-3 hover:bg-white/[0.12] sm:p-8 ${
+                          plan.destacado
+                            ? "border-yellow-300/60 ring-4 ring-yellow-300/10"
+                            : "border-cyan-300/20"
+                        }`}
+                      >
+                        <div
+                          className={`absolute inset-x-0 top-0 h-1.5 ${
                             plan.destacado
-                              ? "border-yellow-300/60 ring-4 ring-yellow-300/10"
-                              : "border-cyan-300/20"
+                              ? "bg-gradient-to-r from-yellow-300 to-orange-400"
+                              : "bg-gradient-to-r from-cyan-400 to-blue-500"
                           }`}
-                        >
-                          <div
-                            className={`absolute inset-x-0 top-0 h-1.5 ${
-                              plan.destacado
-                                ? "bg-gradient-to-r from-yellow-300 to-orange-400"
-                                : "bg-gradient-to-r from-cyan-400 to-blue-500"
-                            }`}
-                          />
+                        />
 
-                          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl transition group-hover:bg-cyan-500/20" />
+                        <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-cyan-500/10 blur-3xl transition group-hover:bg-cyan-500/20" />
 
-                          {plan.destacado && (
-                            <span className="absolute right-4 top-5 rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-4 py-2 text-xs font-black uppercase text-slate-950 shadow-lg">
-                              Más elegido
-                            </span>
-                          )}
-
-                          <span className="relative text-5xl">
-                            {iconoPlan(
-                              plan.id,
-                            )}
+                        {plan.destacado && (
+                          <span className="absolute right-4 top-5 rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-4 py-2 text-xs font-black uppercase text-slate-950 shadow-lg">
+                            Más elegido
                           </span>
+                        )}
 
-                          <h3 className="relative mt-5 text-2xl font-black text-white">
-                            {plan.nombre}
-                          </h3>
+                        <span className="relative text-5xl">
+                          {iconoPlan(
+                            plan.id,
+                          )}
+                        </span>
 
-                          <p className="relative mt-2 font-bold text-blue-100/65">
-                            Acceso durante{" "}
-                            {
-                              plan.duracion
-                            }
-                          </p>
+                        <h3 className="relative mt-5 text-2xl font-black text-white">
+                          {plan.nombre}
+                        </h3>
 
-                          {ofertaDisponible ? (
-                            <>
-                              <p className="relative mt-7 text-lg font-black text-blue-100/45 line-through">
-                                Precio normal:{" "}
+                        <p className="relative mt-2 font-bold text-blue-100/65">
+                          Acceso durante{" "}
+                          {plan.duracion}
+                        </p>
+
+                        {ofertaDisponible ? (
+                          <>
+                            <p className="relative mt-7 text-lg font-black text-blue-100/45 line-through">
+                              Precio normal:{" "}
+                              {mostrarPrecio(
+                                plan.precioNormal,
+                              )}
+                            </p>
+
+                            <div className="relative mt-2 flex items-end gap-2">
+                              <span className="text-5xl font-black text-yellow-300">
                                 {mostrarPrecio(
-                                  precioNormal,
-                                )}
-                              </p>
-
-                              <div className="relative mt-2 flex items-end gap-2">
-                                <span className="text-5xl font-black text-yellow-300">
-                                  {mostrarPrecio(
-                                    precioOferta,
-                                  )}
-                                </span>
-
-                                <span className="pb-2 text-sm font-black text-emerald-300">
-                                  50 % DTO.
-                                </span>
-                              </div>
-
-                              <p className="relative mt-4 rounded-xl border border-emerald-300/15 bg-emerald-300/10 px-3 py-2 text-center text-sm font-black text-emerald-200">
-                                Ahorras{" "}
-                                {mostrarPrecio(
-                                  precioNormal -
-                                    precioOferta,
-                                )}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="relative mt-7 text-sm font-black uppercase tracking-wider text-blue-100/50">
-                                Precio normal
-                              </p>
-
-                              <span className="relative mt-2 text-5xl font-black text-emerald-300">
-                                {mostrarPrecio(
-                                  precioNormal,
+                                  plan.precioOferta,
                                 )}
                               </span>
-                            </>
-                          )}
 
-                          <ul className="relative mt-7 flex-1 space-y-3">
-                            {plan.beneficios
-                              .slice(0, 4)
-                              .map(
-                                (
-                                  beneficio,
-                                ) => (
-                                  <li
-                                    key={
+                              <span className="pb-2 text-sm font-black text-emerald-300">
+                                50 % DTO.
+                              </span>
+                            </div>
+
+                            <p className="relative mt-4 rounded-xl border border-emerald-300/15 bg-emerald-300/10 px-3 py-2 text-center text-sm font-black text-emerald-200">
+                              Ahorras{" "}
+                              {mostrarPrecio(
+                                plan.precioNormal -
+                                  plan.precioOferta,
+                              )}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="relative mt-7 text-sm font-black uppercase tracking-wider text-blue-100/50">
+                              Precio normal
+                            </p>
+
+                            <span className="relative mt-2 text-5xl font-black text-emerald-300">
+                              {mostrarPrecio(
+                                plan.precioNormal,
+                              )}
+                            </span>
+                          </>
+                        )}
+
+                        <ul className="relative mt-7 flex-1 space-y-3">
+                          {plan.beneficios
+                            .slice(0, 4)
+                            .map(
+                              (
+                                beneficio,
+                              ) => (
+                                <li
+                                  key={
+                                    beneficio
+                                  }
+                                  className="flex items-start gap-3 text-sm font-bold text-blue-100/75"
+                                >
+                                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-300/15 text-emerald-300">
+                                    ✓
+                                  </span>
+
+                                  <span>
+                                    {
                                       beneficio
                                     }
-                                    className="flex items-start gap-3 text-sm font-bold text-blue-100/75"
-                                  >
-                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-300/15 text-emerald-300">
-                                      ✓
-                                    </span>
+                                  </span>
+                                </li>
+                              ),
+                            )}
+                        </ul>
 
-                                    <span>
-                                      {
-                                        beneficio
-                                      }
-                                    </span>
-                                  </li>
-                                ),
-                              )}
-                          </ul>
-
-                          {ofertaDisponible ? (
-                            <button
-                              type="button"
-                              disabled={
-                                reservandoOferta
-                              }
-                              onClick={() =>
-                                void reservarOferta(
-                                  plan,
-                                )
-                              }
-                              className="relative mt-8 w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {planOfertaEnProceso ===
-                                plan.id &&
+                        {ofertaDisponible ? (
+                          <button
+                            type="button"
+                            disabled={
                               reservandoOferta
-                                ? "⏳ Reservando..."
-                                : `🔥 Reservar por ${mostrarPrecio(
-                                    precioOferta,
-                                  )}`}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                seleccionarPlan(
-                                  plan,
-                                )
-                              }
-                              className="relative mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
-                            >
-                              Elegir a precio
-                              normal
-                            </button>
-                          )}
-                        </article>
-                      );
-                    },
+                            }
+                            onClick={() =>
+                              void reservarOferta(
+                                plan,
+                              )
+                            }
+                            className="relative mt-8 w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {planOfertaEnProceso ===
+                              plan.id &&
+                            reservandoOferta
+                              ? "⏳ Reservando..."
+                              : `🔥 Reservar por ${mostrarPrecio(
+                                  plan.precioOferta,
+                                )}`}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              seleccionarPlan(
+                                plan,
+                              )
+                            }
+                            className="relative mt-8 w-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
+                          >
+                            Elegir a precio
+                            normal
+                          </button>
+                        )}
+                      </article>
+                    ),
                   )}
                 </div>
-
-                {/* MENSAJE DE RESERVA */}
 
                 {mensajeReserva && (
                   <div
@@ -1717,8 +1463,6 @@ Enviaré mi comprobante de pago:`
                     </p>
                   </div>
                 )}
-
-                {/* RESERVA CONFIRMADA */}
 
                 {reservaOferta && (
                   <div
@@ -1760,8 +1504,7 @@ Enviaré mi comprobante de pago:`
 
                       <div className="mt-7 rounded-2xl border border-white/20 bg-white/10 p-5">
                         <p className="font-black">
-                          WhatsApp
-                          registrado
+                          WhatsApp registrado
                         </p>
 
                         <p className="mt-2 text-xl font-black">
@@ -1829,9 +1572,8 @@ Enviaré mi comprobante de pago:`
                         rel="noopener noreferrer"
                         className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-center text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
                       >
-                        📲 Enviar
-                        comprobante por
-                        WhatsApp
+                        📲 Enviar comprobante
+                        por WhatsApp
                       </a>
                     </div>
                   </div>
@@ -1840,10 +1582,6 @@ Enviaré mi comprobante de pago:`
             )}
         </div>
       </section>
-
-      {/* =================================================
-          CLIENTES
-      ================================================= */}
 
       <section className="relative border-y border-white/10 bg-gradient-to-r from-emerald-500/20 via-cyan-500/10 to-blue-500/20 px-5 py-10 lg:px-8">
         <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-7 rounded-[2rem] border border-emerald-300/25 bg-white/10 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8 lg:flex-row lg:text-left">
@@ -1858,15 +1596,14 @@ Enviaré mi comprobante de pago:`
               </span>
 
               <h2 className="mt-3 text-2xl font-black sm:text-3xl">
-                ¿Ya tienes una
-                membresía activa?
+                ¿Ya tienes una membresía
+                activa?
               </h2>
 
               <p className="mt-2 max-w-2xl leading-relaxed text-blue-100/75">
-                Ingresa con el mismo
-                número de WhatsApp
-                utilizado para enviar tu
-                comprobante.
+                Ingresa con el mismo número
+                de WhatsApp utilizado para
+                enviar tu comprobante.
               </p>
             </div>
           </div>
@@ -1882,10 +1619,6 @@ Enviaré mi comprobante de pago:`
           </button>
         </div>
       </section>
-
-      {/* =================================================
-          CONTENIDO
-      ================================================= */}
 
       <section
         id="contenido"
@@ -1907,8 +1640,8 @@ Enviaré mi comprobante de pago:`
           <div className="grid gap-8 lg:grid-cols-2">
             <article className="rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-blue-950">
-                PARA NIÑOS, FAMILIAS
-                Y DOCENTES
+                PARA NIÑOS, FAMILIAS Y
+                DOCENTES
               </span>
 
               <h3 className="mt-6 text-3xl font-black text-cyan-200 sm:text-4xl">
@@ -1935,15 +1668,14 @@ Enviaré mi comprobante de pago:`
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
-                🔒 Disponible con prueba
-                o membresía activa
+                🔒 Disponible con prueba o
+                membresía activa
               </div>
             </article>
 
             <article className="rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-fuchsia-300 px-4 py-2 text-sm font-black text-violet-950">
-                PARA ADULTOS Y
-                CREADORES
+                PARA ADULTOS Y CREADORES
               </span>
 
               <h3 className="mt-6 text-3xl font-black text-fuchsia-200 sm:text-4xl">
@@ -1951,9 +1683,9 @@ Enviaré mi comprobante de pago:`
               </h3>
 
               <p className="mt-4 text-lg leading-relaxed text-violet-100">
-                Herramientas digitales
-                para aprender, crear y
-                mejorar proyectos.
+                Herramientas digitales para
+                aprender, crear y mejorar
+                proyectos.
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -1970,17 +1702,13 @@ Enviaré mi comprobante de pago:`
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
-                🔒 Disponible con prueba
-                o membresía activa
+                🔒 Disponible con prueba o
+                membresía activa
               </div>
             </article>
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          BENEFICIOS
-      ================================================= */}
 
       <section
         id="beneficios"
@@ -1997,8 +1725,8 @@ Enviaré mi comprobante de pago:`
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
-              Una plataforma para
-              facilitar el aprendizaje
+              Una plataforma para facilitar
+              el aprendizaje
             </h2>
           </div>
 
@@ -2039,71 +1767,83 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          CÓMO FUNCIONA
-      ================================================= */}
-
       <section
-        id="como-funciona"
+        id="recompensas"
         className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-indigo-950 via-purple-950 to-slate-950 px-5 py-24 lg:px-8"
       >
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-fuchsia-500/20 blur-3xl" />
 
         <div className="pointer-events-none absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-cyan-500/20 blur-3xl" />
 
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-yellow-300/10 blur-3xl" />
+
         <div className="relative mx-auto max-w-7xl">
-          <div className="mx-auto mb-16 max-w-4xl text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300/20 bg-yellow-300/10 px-5 py-2 text-sm font-black uppercase tracking-[0.14em] text-yellow-200">
-              ✨ Comenzar es muy fácil
+          <div className="mx-auto mb-16 max-w-5xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300/25 bg-yellow-300/10 px-5 py-2 text-sm font-black uppercase tracking-[0.14em] text-yellow-200">
+              ✨ Aprende, participa y gana
             </span>
 
             <h2 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
-              Elige cómo quieres{" "}
+              Aprende mientras{" "}
               <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">
-                comenzar
+                acumulas diamantes
               </span>
             </h2>
+
+            <p className="mx-auto mt-5 max-w-3xl text-lg leading-relaxed text-blue-100/75">
+              Descarga materiales, completa
+              actividades y participa en retos
+              para acercarte a premios,
+              contenido exclusivo y membresías
+              de regalo.
+            </p>
           </div>
 
           <div className="grid gap-7 lg:grid-cols-3">
             {[
               {
                 numero: "01",
-                emoji: "🔍",
-                etiqueta: "DESCUBRE",
+                emoji: "📚",
+                etiqueta: "APRENDE",
                 titulo:
-                  "Conoce la propuesta",
+                  "Explora nuevos materiales",
                 descripcion:
-                  "Revisa los contenidos, beneficios y herramientas disponibles.",
+                  "Descubre cuentos, juegos, actividades, guías educativas y herramientas digitales.",
+                recompensa:
+                  "Encuentra contenido nuevo cada semana",
                 color:
                   "from-yellow-300 to-orange-400",
               },
               {
                 numero: "02",
-                emoji: "🛸",
-                etiqueta: "EXPLORA",
+                emoji: "💎",
+                etiqueta: "ACUMULA",
                 titulo:
-                  "Solicita la prueba",
+                  "Gana diamantes",
                 descripcion:
-                  "Registra tu teléfono y explora gratuitamente durante 60 minutos.",
+                  "Obtén diamantes cuando descargues materiales, completes actividades o participes en desafíos.",
+                recompensa:
+                  "Tus acciones se convierten en recompensas",
                 color:
-                  "from-orange-400 to-pink-500",
+                  "from-cyan-300 to-emerald-400",
               },
               {
                 numero: "03",
-                emoji: "💎",
+                emoji: "🎁",
                 etiqueta: "DESBLOQUEA",
                 titulo:
-                  "Elige tu membresía",
+                  "Canjea premios increíbles",
                 descripcion:
-                  "Aprovecha la oferta o selecciona uno de los planes regulares.",
+                  "Usa tus diamantes para acceder a premios, recursos especiales y membresías de regalo.",
+                recompensa:
+                  "Premios, beneficios y mucho más",
                 color:
-                  "from-cyan-300 to-emerald-400",
+                  "from-orange-400 to-pink-500",
               },
             ].map((paso) => (
               <article
                 key={paso.numero}
-                className="group relative flex h-full flex-col overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.08] p-7 shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-3 hover:bg-white/[0.12] sm:p-8"
+                className="group relative flex h-full flex-col overflow-hidden rounded-[2.25rem] border border-white/10 bg-white/[0.08] p-7 shadow-2xl backdrop-blur-xl transition duration-300 hover:-translate-y-3 hover:border-white/20 hover:bg-white/[0.12] sm:p-8"
               >
                 <div
                   className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${paso.color}`}
@@ -2114,7 +1854,7 @@ Enviaré mi comprobante de pago:`
                 </span>
 
                 <div
-                  className={`flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-gradient-to-br ${paso.color} text-4xl shadow-xl transition group-hover:scale-110`}
+                  className={`flex h-20 w-20 items-center justify-center rounded-[1.5rem] bg-gradient-to-br ${paso.color} text-4xl shadow-xl transition duration-300 group-hover:scale-110 group-hover:rotate-3`}
                 >
                   {paso.emoji}
                 </div>
@@ -2123,22 +1863,80 @@ Enviaré mi comprobante de pago:`
                   {paso.etiqueta}
                 </span>
 
-                <h3 className="mt-2 text-2xl font-black">
+                <h3 className="mt-2 text-2xl font-black text-white">
                   {paso.titulo}
                 </h3>
 
-                <p className="mt-4 leading-relaxed text-blue-100/70">
+                <p className="mt-4 flex-1 leading-relaxed text-blue-100/70">
                   {paso.descripcion}
                 </p>
+
+                <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-4">
+                  <p className="flex items-center gap-2 text-sm font-black text-cyan-200">
+                    <span>⭐</span>
+
+                    {paso.recompensa}
+                  </p>
+                </div>
               </article>
             ))}
+          </div>
+
+          <div className="relative mx-auto mt-12 max-w-6xl overflow-hidden rounded-[2.5rem] border border-yellow-300/25 bg-gradient-to-r from-yellow-300/10 via-orange-400/10 to-pink-400/10 p-7 shadow-2xl backdrop-blur-xl sm:p-9">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-yellow-300/15 blur-3xl" />
+
+            <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_auto]">
+              <div>
+                <span className="inline-flex rounded-full bg-yellow-300 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-slate-950">
+                  🏆 Programa de recompensas
+                </span>
+
+                <h3 className="mt-5 text-3xl font-black text-white sm:text-4xl">
+                  Tus diamantes pueden
+                  convertirse en premios
+                </h3>
+
+                <p className="mt-4 max-w-3xl text-lg leading-relaxed text-blue-100/75">
+                  Participa activamente,
+                  aumenta tu colección de
+                  diamantes y prepárate para
+                  desbloquear beneficios
+                  especiales dentro de la
+                  plataforma.
+                </p>
+
+                <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    "🎁 Premios sorpresa",
+                    "💎 Contenido exclusivo",
+                    "📚 Materiales especiales",
+                    "👑 Membresías de regalo",
+                  ].map((premio) => (
+                    <div
+                      key={premio}
+                      className="rounded-2xl border border-white/10 bg-white/[0.08] px-4 py-3 text-center text-sm font-black text-white"
+                    >
+                      {premio}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mx-auto flex h-44 w-44 shrink-0 items-center justify-center rounded-full border-4 border-cyan-300/30 bg-gradient-to-br from-cyan-300 to-emerald-400 text-7xl shadow-2xl shadow-cyan-500/20 transition hover:scale-105">
+                💎
+              </div>
+            </div>
           </div>
 
           <div className="mt-12 flex flex-col justify-center gap-4 sm:flex-row">
             <button
               type="button"
-              onClick={abrirOferta}
-              className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1"
+              onClick={() =>
+                irASeccion(
+                  "oferta-lanzamiento",
+                )
+              }
+              className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
             >
               🔥 Ver oferta especial
             </button>
@@ -2148,17 +1946,13 @@ Enviaré mi comprobante de pago:`
               onClick={
                 solicitarPruebaGratis
               }
-              className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-8 py-4 text-lg font-black text-cyan-200 transition hover:-translate-y-1"
+              className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-8 py-4 text-lg font-black text-cyan-200 shadow-xl transition hover:-translate-y-1 hover:bg-cyan-300/20"
             >
-              🛸 Solicitar prueba
+              🛸 Comenzar prueba gratuita
             </button>
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          MEMBRESÍAS NORMALES
-      ================================================= */}
 
       <section
         id="membresias"
@@ -2375,10 +2169,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          PRUEBA GRATUITA
-      ================================================= */}
-
       <section className="border-y border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-5 py-16">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 rounded-[2rem] border border-yellow-300/20 bg-white/[0.07] p-7 text-center shadow-2xl backdrop-blur-xl lg:flex-row lg:text-left">
           <div>
@@ -2388,9 +2178,8 @@ Enviaré mi comprobante de pago:`
             </h2>
 
             <p className="mt-3 max-w-2xl text-lg font-semibold text-blue-100/75">
-              Registra tu número y
-              disfruta de 60 minutos
-              para conocer la
+              Registra tu número y disfruta
+              de 60 minutos para conocer la
               plataforma.
             </p>
           </div>
@@ -2407,10 +2196,6 @@ Enviaré mi comprobante de pago:`
           </button>
         </div>
       </section>
-
-      {/* =================================================
-          PREGUNTAS FRECUENTES
-      ================================================= */}
 
       <section
         id="preguntas"
@@ -2479,10 +2264,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          LLAMADO FINAL
-      ================================================= */}
-
       <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center">
         <div className="mx-auto max-w-3xl">
           <span className="text-6xl">
@@ -2490,14 +2271,18 @@ Enviaré mi comprobante de pago:`
           </span>
 
           <h2 className="mt-5 text-3xl font-black sm:text-4xl">
-            El conocimiento está listo
-            para despegar
+            El conocimiento está listo para
+            despegar
           </h2>
 
           <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
             <button
               type="button"
-              onClick={abrirOferta}
+              onClick={() =>
+                irASeccion(
+                  "oferta-lanzamiento",
+                )
+              }
               className="rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-7 py-4 font-black text-slate-950"
             >
               🔥 Ver oferta especial
@@ -2515,10 +2300,6 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          PIE DE PÁGINA
-      ================================================= */}
 
       <footer className="border-t border-white/10 bg-slate-950 px-5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
