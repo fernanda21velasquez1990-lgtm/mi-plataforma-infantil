@@ -3,10 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-/* =====================================================
-   TIPOS
-===================================================== */
-
 type PlanId = "mensual" | "trimestral" | "anual";
 
 type PlanMembresia = {
@@ -39,7 +35,6 @@ type EstadoOfertaApi = {
   cuposUsados: number;
   cuposDisponibles: number;
   planes: PlanOfertaApi[];
-  codigo?: string;
   mensaje?: string;
 };
 
@@ -59,7 +54,6 @@ type RespuestaReservaApi = {
   codigo: string;
   mensaje: string;
   usarPrecioNormal?: boolean;
-  cuposDisponibles?: number;
   reserva?: ReservaOfertaApi;
 };
 
@@ -80,18 +74,10 @@ type TiempoRestante = {
   segundos: number;
 };
 
-/* =====================================================
-   RUTAS Y CONEXIÓN CON GOOGLE SHEETS
-===================================================== */
-
 const RUTA_ACCESO = "/acceso";
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzXwycKtQWGWgdIYK2b1CQ7r5DLkS8_Wnw0XgI9ILiad2qIS-e8DmlTOKxX0RqY6aEL7w/exec";
-
-/* =====================================================
-   DATOS DE PAGO
-===================================================== */
 
 const DATOS_PAGO = {
   banco: "Venezuela (0102)",
@@ -99,10 +85,6 @@ const DATOS_PAGO = {
   telefono: "0414-4895281",
   whatsapp: "584144895281",
 };
-
-/* =====================================================
-   PLANES
-===================================================== */
 
 const PLANES_MEMBRESIA: PlanMembresia[] = [
   {
@@ -156,10 +138,6 @@ const PLANES_MEMBRESIA: PlanMembresia[] = [
   },
 ];
 
-/* =====================================================
-   BENEFICIOS
-===================================================== */
-
 const beneficios = [
   {
     emoji: "📚",
@@ -205,10 +183,6 @@ const beneficios = [
   },
 ];
 
-/* =====================================================
-   PREGUNTAS FRECUENTES
-===================================================== */
-
 const preguntasFrecuentes = [
   {
     pregunta: "¿Qué planes de membresía están disponibles?",
@@ -252,24 +226,39 @@ const preguntasFrecuentes = [
   },
 ];
 
-/* =====================================================
-   FUNCIONES AUXILIARES
-===================================================== */
+const contenidoBiblioteca = [
+  "📖 Cuentos y lecturas",
+  "🔢 Matemáticas",
+  "✍️ Caligrafía",
+  "🧠 Recursos para TDAH",
+  "🧩 Método Montessori",
+  "🗣️ Terapia de lenguaje",
+  "🎮 Juegos educativos",
+  "🖼️ Pictogramas",
+];
 
-const mostrarPrecio = (precio: number) => {
-  if (Number.isInteger(precio)) {
-    return `$${precio}`;
-  }
+const contenidoTecnologia = [
+  "🤖 Inteligencia artificial",
+  "⚙️ Automatización",
+  "📊 Google Sheets",
+  "📣 Marketing digital",
+  "🎨 Diseño para redes",
+  "🗓️ Calendarios de contenido",
+  "🧠 Productividad",
+  "📱 Herramientas digitales",
+];
 
-  return `$${precio.toFixed(2)}`;
-};
+const mostrarPrecio = (precio: number) =>
+  Number.isInteger(precio) ? `$${precio}` : `$${precio.toFixed(2)}`;
 
 const normalizarTelefono = (telefono: string) =>
   telefono.replace(/\D/g, "");
 
-/* =====================================================
-   CONEXIÓN JSONP CON GOOGLE APPS SCRIPT
-===================================================== */
+const iconoPlan = (id: PlanId) => {
+  if (id === "mensual") return "🚀";
+  if (id === "trimestral") return "💎";
+  return "🌟";
+};
 
 function consultarGoogleScript<T>(
   parametros: Record<string, string>,
@@ -285,7 +274,7 @@ function consultarGoogleScript<T>(
       return;
     }
 
-    const nombreCallback = `__mdi_callback_${Date.now()}_${Math.random()
+    const callback = `__mdi_${Date.now()}_${Math.random()
       .toString(36)
       .slice(2)}`;
 
@@ -295,28 +284,26 @@ function consultarGoogleScript<T>(
       url.searchParams.set(clave, valor);
     });
 
-    url.searchParams.set("callback", nombreCallback);
+    url.searchParams.set("callback", callback);
 
     const script = document.createElement("script");
 
-    const ventana = window as typeof window & {
-      [clave: string]: unknown;
-    };
+    const ventana = window as typeof window &
+      Record<string, unknown>;
 
-    let finalizado = false;
+    let terminado = false;
 
     const limpiar = () => {
-      if (finalizado) {
-        return;
-      }
+      if (terminado) return;
 
-      finalizado = true;
+      terminado = true;
+
       script.remove();
 
       try {
-        delete ventana[nombreCallback];
+        delete ventana[callback];
       } catch {
-        ventana[nombreCallback] = undefined;
+        ventana[callback] = undefined;
       }
     };
 
@@ -330,9 +317,11 @@ function consultarGoogleScript<T>(
       );
     }, 15000);
 
-    ventana[nombreCallback] = (datos: T) => {
+    ventana[callback] = (datos: T) => {
       window.clearTimeout(temporizador);
+
       limpiar();
+
       resolve(datos);
     };
 
@@ -341,6 +330,7 @@ function consultarGoogleScript<T>(
 
     script.onerror = () => {
       window.clearTimeout(temporizador);
+
       limpiar();
 
       reject(
@@ -353,10 +343,6 @@ function consultarGoogleScript<T>(
     document.body.appendChild(script);
   });
 }
-
-/* =====================================================
-   COMPONENTE PRINCIPAL
-===================================================== */
 
 export default function InicioLanding() {
   const router = useRouter();
@@ -401,33 +387,19 @@ export default function InicioLanding() {
       segundos: 0,
     });
 
-  /* ===================================================
-     PRUEBA GRATUITA
-  =================================================== */
-
   const solicitarPruebaGratis = () => {
     router.push("/acceso?modo=prueba");
   };
-
-  /* ===================================================
-     ACCESO PARA CLIENTES
-  =================================================== */
 
   const entrarComoCliente = () => {
     router.push(RUTA_ACCESO);
   };
 
-  /* ===================================================
-     DESPLAZAMIENTO
-  =================================================== */
-
   const irASeccion = (id: string) => {
-    document
-      .getElementById(id)
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+    document.getElementById(id)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 
   const abrirOferta = () => {
@@ -438,10 +410,6 @@ export default function InicioLanding() {
     irASeccion("membresias");
   };
 
-  /* ===================================================
-     PLAN NORMAL
-  =================================================== */
-
   const seleccionarPlan = (
     plan: PlanMembresia,
   ) => {
@@ -449,19 +417,13 @@ export default function InicioLanding() {
 
     setTimeout(() => {
       document
-        .getElementById(
-          "datos-pago-normal",
-        )
+        .getElementById("datos-pago-normal")
         ?.scrollIntoView({
           behavior: "smooth",
           block: "center",
         });
     }, 100);
   };
-
-  /* ===================================================
-     CONSULTAR ESTADO DE LA OFERTA
-  =================================================== */
 
   const cargarEstadoOferta = useCallback(
     async (mostrarIndicador = false) => {
@@ -483,6 +445,7 @@ export default function InicioLanding() {
         }
 
         setEstadoOferta(respuesta);
+
         setErrorOferta("");
       } catch (error) {
         setErrorOferta(
@@ -509,50 +472,36 @@ export default function InicioLanding() {
     };
   }, [cargarEstadoOferta]);
 
-  /* ===================================================
-     CUENTA REGRESIVA
-  =================================================== */
-
   useEffect(() => {
     if (!estadoOferta?.fechaFinal) {
       return;
     }
 
     const actualizarTiempo = () => {
-      const fechaFinal = new Date(
-        estadoOferta.fechaFinal,
-      ).getTime();
-
       const diferencia = Math.max(
-        fechaFinal - Date.now(),
+        new Date(
+          estadoOferta.fechaFinal,
+        ).getTime() - Date.now(),
         0,
       );
 
-      const dias = Math.floor(
-        diferencia /
-          (1000 * 60 * 60 * 24),
-      );
-
-      const horas = Math.floor(
-        (diferencia /
-          (1000 * 60 * 60)) %
-          24,
-      );
-
-      const minutos = Math.floor(
-        (diferencia / (1000 * 60)) %
-          60,
-      );
-
-      const segundos = Math.floor(
-        (diferencia / 1000) % 60,
-      );
-
       setTiempoRestante({
-        dias,
-        horas,
-        minutos,
-        segundos,
+        dias: Math.floor(
+          diferencia /
+            (1000 * 60 * 60 * 24),
+        ),
+        horas: Math.floor(
+          (diferencia /
+            (1000 * 60 * 60)) %
+            24,
+        ),
+        minutos: Math.floor(
+          (diferencia / (1000 * 60)) %
+            60,
+        ),
+        segundos: Math.floor(
+          (diferencia / 1000) % 60,
+        ),
       });
     };
 
@@ -568,10 +517,6 @@ export default function InicioLanding() {
     };
   }, [estadoOferta?.fechaFinal]);
 
-  /* ===================================================
-     RESERVAR OFERTA
-  =================================================== */
-
   const reservarOferta = async (
     plan: PlanMembresia,
   ) => {
@@ -584,6 +529,7 @@ export default function InicioLanding() {
       telefono.length > 15
     ) {
       setReservaOferta(null);
+
       setMensajeReserva(
         "Escribe un número de WhatsApp válido, incluyendo el código del país.",
       );
@@ -596,8 +542,11 @@ export default function InicioLanding() {
     }
 
     setReservandoOferta(true);
+
     setPlanOfertaEnProceso(plan.id);
+
     setMensajeReserva("");
+
     setReservaOferta(null);
 
     try {
@@ -618,23 +567,29 @@ export default function InicioLanding() {
           {
             whatsapp:
               datos.whatsapp || telefono,
+
             planId:
               datos.planId || plan.id,
+
             planNombre:
               datos.planNombre ||
               datos.plan ||
               plan.nombre,
+
             duracion:
               datos.duracion ||
               plan.duracion,
+
             precioNormal: Number(
               datos.precioNormal ??
                 plan.precioNormal,
             ),
+
             precioOferta: Number(
               datos.precioOferta ??
                 plan.precioOferta,
             ),
+
             estado:
               datos.estado || "RESERVADO",
           };
@@ -679,13 +634,10 @@ export default function InicioLanding() {
       );
     } finally {
       setReservandoOferta(false);
+
       setPlanOfertaEnProceso(null);
     }
   };
-
-  /* ===================================================
-     DATOS VISUALES DE LA OFERTA
-  =================================================== */
 
   const ofertaDisponible =
     Boolean(
@@ -715,10 +667,6 @@ export default function InicioLanding() {
         )
       : 0;
 
-  /* ===================================================
-     WHATSAPP DE PLAN NORMAL
-  =================================================== */
-
   const mensajeWhatsAppNormal =
     planSeleccionado
       ? `Hola, quiero activar la ${planSeleccionado.nombre} de Mundo Digital Infantil por ${mostrarPrecio(
@@ -731,10 +679,6 @@ export default function InicioLanding() {
   }?text=${encodeURIComponent(
     mensajeWhatsAppNormal,
   )}`;
-
-  /* ===================================================
-     WHATSAPP DE LA OFERTA
-  =================================================== */
 
   const mensajeWhatsAppOferta =
     reservaOferta
@@ -758,10 +702,6 @@ Enviaré mi comprobante de pago:`
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 font-sans text-white">
-      {/* =================================================
-          MENÚ
-      ================================================= */}
-
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
@@ -838,23 +778,17 @@ Enviaré mi comprobante de pago:`
             </button>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={entrarComoCliente}
-              className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950 sm:px-5 sm:py-2.5 sm:text-sm"
-            >
-              🔐 Ya tengo membresía
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={entrarComoCliente}
+            className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950 sm:px-5 sm:py-2.5 sm:text-sm"
+          >
+            🔐 Ya tengo membresía
+          </button>
         </div>
       </header>
 
-      {/* =================================================
-          ENCABEZADO
-      ================================================= */}
-
-      <section className="relative isolate overflow-hidden">
+      <section className="relative isolate overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950">
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-blue-600/30 blur-3xl" />
 
         <div className="pointer-events-none absolute -right-32 top-5 h-96 w-96 rounded-full bg-fuchsia-600/25 blur-3xl" />
@@ -944,8 +878,7 @@ Enviaré mi comprobante de pago:`
                   </p>
 
                   <h2 className="mt-1 text-2xl font-black">
-                    Tu estación de
-                    aprendizaje
+                    Tu estación de aprendizaje
                   </h2>
                 </div>
 
@@ -1010,10 +943,6 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          OFERTA ESPECIAL
-      ================================================= */}
 
       <section
         id="oferta-lanzamiento"
@@ -1207,7 +1136,7 @@ Enviaré mi comprobante de pago:`
                         );
                       }}
                       placeholder="584141234567"
-                      className="mt-5 w-full rounded-2xl border-2 border-cyan-300/20 bg-white px-5 py-4 text-center text-lg font-black text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/15"
+                      className="mt-5 w-full rounded-2xl border-2 border-cyan-300/20 bg-slate-950/70 px-5 py-4 text-center text-lg font-black text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/15"
                     />
                   </div>
                 )}
@@ -1260,13 +1189,9 @@ Enviaré mi comprobante de pago:`
                           )}
 
                           <span className="relative text-5xl">
-                            {plan.id ===
-                            "mensual"
-                              ? "🚀"
-                              : plan.id ===
-                                  "trimestral"
-                                ? "💎"
-                                : "🌟"}
+                            {iconoPlan(
+                              plan.id,
+                            )}
                           </span>
 
                           <h3 className="relative mt-5 text-2xl font-black text-white">
@@ -1407,6 +1332,7 @@ Enviaré mi comprobante de pago:`
                       {reservaOferta
                         ? "✅ "
                         : "⚠️ "}
+
                       {mensajeReserva}
                     </p>
                   </div>
@@ -1435,13 +1361,11 @@ Enviaré mi comprobante de pago:`
                         }
                       </p>
 
-                      <div className="mt-6">
-                        <span className="text-5xl font-black">
-                          {mostrarPrecio(
-                            reservaOferta.precioOferta,
-                          )}
-                        </span>
-                      </div>
+                      <span className="mt-6 block text-5xl font-black">
+                        {mostrarPrecio(
+                          reservaOferta.precioOferta,
+                        )}
+                      </span>
 
                       <p className="mt-3 text-sm font-bold text-emerald-50">
                         Precio normal:{" "}
@@ -1465,7 +1389,7 @@ Enviaré mi comprobante de pago:`
                       </div>
                     </div>
 
-                    <div className="bg-slate-900 p-7 sm:p-10">
+                    <div className="bg-slate-900 p-7 text-white sm:p-10">
                       <div className="text-center">
                         <span className="text-5xl">
                           📲
@@ -1533,10 +1457,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          CLIENTES CON MEMBRESÍA
-      ================================================= */}
-
       <section className="relative border-y border-white/10 bg-gradient-to-r from-emerald-500/20 via-cyan-500/10 to-blue-500/20 px-5 py-10 lg:px-8">
         <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-7 rounded-[2rem] border border-emerald-300/25 bg-white/10 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8 lg:flex-row lg:text-left">
           <div className="flex flex-col items-center gap-5 sm:flex-row">
@@ -1572,10 +1492,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          CONTENIDO
-      ================================================= */}
-
       <section
         id="contenido"
         className="scroll-mt-24 bg-gradient-to-b from-slate-950 to-indigo-950 px-5 py-20 lg:px-8"
@@ -1610,23 +1526,16 @@ Enviaré mi comprobante de pago:`
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                {[
-                  "📖 Cuentos y lecturas",
-                  "🔢 Matemáticas",
-                  "✍️ Caligrafía",
-                  "🧠 Recursos para TDAH",
-                  "🧩 Método Montessori",
-                  "🗣️ Terapia de lenguaje",
-                  "🎮 Juegos educativos",
-                  "🖼️ Pictogramas",
-                ].map((elemento) => (
-                  <div
-                    key={elemento}
-                    className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
-                  >
-                    {elemento}
-                  </div>
-                ))}
+                {contenidoBiblioteca.map(
+                  (elemento) => (
+                    <div
+                      key={elemento}
+                      className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
+                    >
+                      {elemento}
+                    </div>
+                  ),
+                )}
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
@@ -1651,23 +1560,16 @@ Enviaré mi comprobante de pago:`
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                {[
-                  "🤖 Inteligencia artificial",
-                  "⚙️ Automatización",
-                  "📊 Google Sheets",
-                  "📣 Marketing digital",
-                  "🎨 Diseño para redes",
-                  "🗓️ Calendarios de contenido",
-                  "🧠 Productividad",
-                  "📱 Herramientas digitales",
-                ].map((elemento) => (
-                  <div
-                    key={elemento}
-                    className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
-                  >
-                    {elemento}
-                  </div>
-                ))}
+                {contenidoTecnologia.map(
+                  (elemento) => (
+                    <div
+                      key={elemento}
+                      className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 font-bold"
+                    >
+                      {elemento}
+                    </div>
+                  ),
+                )}
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
@@ -1679,17 +1581,17 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          BENEFICIOS
-      ================================================= */}
-
       <section
         id="beneficios"
-        className="scroll-mt-24 bg-slate-50 px-5 py-20 text-slate-900 lg:px-8"
+        className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-5 py-20 text-white lg:px-8"
       >
-        <div className="mx-auto max-w-7xl">
+        <div className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-blue-600/15 blur-3xl" />
+
+        <div className="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-fuchsia-600/15 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl">
           <div className="mx-auto mb-12 max-w-3xl text-center">
-            <span className="inline-flex rounded-full bg-violet-100 px-4 py-2 text-sm font-black text-violet-700">
+            <span className="inline-flex rounded-full border border-violet-300/25 bg-violet-300/10 px-4 py-2 text-sm font-black text-violet-200">
               TODO EN UN MISMO LUGAR
             </span>
 
@@ -1706,13 +1608,13 @@ Enviaré mi comprobante de pago:`
                   key={
                     beneficio.titulo
                   }
-                  className="group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-lg transition hover:-translate-y-2 hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-3xl border border-cyan-300/15 bg-white/[0.08] p-6 text-white shadow-2xl backdrop-blur-xl transition hover:-translate-y-2 hover:border-cyan-300/30 hover:bg-white/[0.12]"
                 >
                   <div
                     className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${beneficio.color}`}
                   />
 
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-3xl">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-3xl shadow-lg">
                     {
                       beneficio.emoji
                     }
@@ -1724,7 +1626,7 @@ Enviaré mi comprobante de pago:`
                     }
                   </h3>
 
-                  <p className="mt-3 leading-relaxed text-slate-600">
+                  <p className="mt-3 leading-relaxed text-blue-100/70">
                     {
                       beneficio.descripcion
                     }
@@ -1735,10 +1637,6 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          CÓMO FUNCIONA
-      ================================================= */}
 
       <section
         id="como-funciona"
@@ -1851,17 +1749,17 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          PLANES NORMALES
-      ================================================= */}
-
       <section
         id="membresias"
-        className="scroll-mt-24 bg-slate-50 px-5 py-20 text-slate-900 lg:px-8"
+        className="relative scroll-mt-24 overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-5 py-20 text-white lg:px-8"
       >
-        <div className="mx-auto max-w-7xl">
+        <div className="pointer-events-none absolute -left-32 top-20 h-80 w-80 rounded-full bg-cyan-500/15 blur-3xl" />
+
+        <div className="pointer-events-none absolute -right-32 bottom-0 h-80 w-80 rounded-full bg-fuchsia-500/15 blur-3xl" />
+
+        <div className="relative mx-auto max-w-7xl">
           <div className="mx-auto mb-12 max-w-3xl text-center">
-            <span className="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-700">
+            <span className="inline-flex rounded-full border border-emerald-300/25 bg-emerald-300/10 px-4 py-2 text-sm font-black text-emerald-200">
               PRECIOS REGULARES
             </span>
 
@@ -1869,7 +1767,7 @@ Enviaré mi comprobante de pago:`
               Planes de membresía
             </h2>
 
-            <p className="mt-5 text-lg leading-relaxed text-slate-600">
+            <p className="mt-5 text-lg leading-relaxed text-blue-100/70">
               Estos precios se aplican cuando
               termina la oferta o se agotan los
               cupos promocionales.
@@ -1881,10 +1779,10 @@ Enviaré mi comprobante de pago:`
               (plan) => (
                 <article
                   key={plan.id}
-                  className={`relative flex flex-col rounded-[2.5rem] border-4 bg-white p-7 shadow-xl transition hover:-translate-y-2 hover:shadow-2xl sm:p-8 ${
+                  className={`relative flex flex-col rounded-[2.5rem] border bg-white/[0.08] p-7 text-white shadow-2xl backdrop-blur-xl transition hover:-translate-y-2 hover:bg-white/[0.12] sm:p-8 ${
                     plan.destacado
-                      ? "border-yellow-300 lg:scale-105"
-                      : "border-emerald-200"
+                      ? "border-yellow-300/70 ring-4 ring-yellow-300/10 lg:scale-105"
+                      : "border-cyan-300/20 hover:border-cyan-300/40"
                   }`}
                 >
                   {plan.destacado && (
@@ -1895,33 +1793,25 @@ Enviaré mi comprobante de pago:`
 
                   <div className="text-center">
                     <span className="text-5xl">
-                      {plan.id ===
-                      "mensual"
-                        ? "🚀"
-                        : plan.id ===
-                            "trimestral"
-                          ? "💎"
-                          : "🌟"}
+                      {iconoPlan(plan.id)}
                     </span>
 
-                    <h3 className="mt-5 text-2xl font-black">
+                    <h3 className="mt-5 text-2xl font-black text-white">
                       {plan.nombre}
                     </h3>
 
-                    <div className="mt-5">
-                      <span className="text-5xl font-black text-emerald-600">
-                        {mostrarPrecio(
-                          plan.precioNormal,
-                        )}
-                      </span>
-                    </div>
+                    <span className="mt-5 block text-5xl font-black text-emerald-300">
+                      {mostrarPrecio(
+                        plan.precioNormal,
+                      )}
+                    </span>
 
-                    <p className="mt-2 font-black text-slate-500">
+                    <p className="mt-2 font-black text-blue-100/60">
                       Acceso por{" "}
                       {plan.duracion}
                     </p>
 
-                    <p className="mt-5 min-h-[72px] leading-relaxed text-slate-600">
+                    <p className="mt-5 min-h-[72px] leading-relaxed text-blue-100/70">
                       {plan.descripcion}
                     </p>
                   </div>
@@ -1931,9 +1821,9 @@ Enviaré mi comprobante de pago:`
                       (beneficio) => (
                         <li
                           key={beneficio}
-                          className="flex items-start gap-3 font-bold text-slate-700"
+                          className="flex items-start gap-3 font-bold text-blue-100/80"
                         >
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-300/15 text-emerald-300">
                             ✓
                           </span>
 
@@ -1953,7 +1843,7 @@ Enviaré mi comprobante de pago:`
                     className={`mt-8 w-full rounded-full px-6 py-4 text-lg font-black shadow-xl transition hover:-translate-y-1 ${
                       plan.destacado
                         ? "bg-gradient-to-r from-yellow-300 to-orange-400 text-slate-950"
-                        : "bg-gradient-to-r from-emerald-400 to-green-500 text-slate-950"
+                        : "bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950"
                     }`}
                   >
                     Elegir membresía
@@ -1966,7 +1856,7 @@ Enviaré mi comprobante de pago:`
           {planSeleccionado && (
             <div
               id="datos-pago-normal"
-              className="mt-14 grid scroll-mt-28 overflow-hidden rounded-[2.5rem] border border-emerald-300 bg-white shadow-2xl lg:grid-cols-2"
+              className="mt-14 grid scroll-mt-28 overflow-hidden rounded-[2.5rem] border border-cyan-300/30 bg-slate-900 text-white shadow-2xl lg:grid-cols-2"
             >
               <div className="bg-gradient-to-br from-emerald-500 to-cyan-500 p-7 text-white sm:p-10">
                 <span className="inline-flex rounded-full bg-white/20 px-4 py-2 text-xs font-black uppercase tracking-[0.16em]">
@@ -1993,21 +1883,21 @@ Enviaré mi comprobante de pago:`
                 </p>
               </div>
 
-              <div className="p-7 sm:p-10">
+              <div className="bg-slate-900 p-7 text-white sm:p-10">
                 <div className="text-center">
                   <span className="text-5xl">
                     📲
                   </span>
 
-                  <h3 className="mt-4 text-3xl font-black text-emerald-600">
+                  <h3 className="mt-4 text-3xl font-black text-cyan-300">
                     Datos de pago
                   </h3>
                 </div>
 
-                <div className="mt-7 space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div className="mt-7 space-y-4 rounded-2xl border border-white/10 bg-white/[0.06] p-5 text-blue-100">
                   <p>
                     🏦 Banco:{" "}
-                    <strong className="text-blue-700">
+                    <strong className="text-cyan-300">
                       {
                         DATOS_PAGO.banco
                       }
@@ -2016,7 +1906,7 @@ Enviaré mi comprobante de pago:`
 
                   <p>
                     📝 Cédula:{" "}
-                    <strong className="text-blue-700">
+                    <strong className="text-cyan-300">
                       {
                         DATOS_PAGO.cedula
                       }
@@ -2025,7 +1915,7 @@ Enviaré mi comprobante de pago:`
 
                   <p>
                     📱 Teléfono:{" "}
-                    <strong className="text-blue-700">
+                    <strong className="text-cyan-300">
                       {
                         DATOS_PAGO.telefono
                       }
@@ -2034,7 +1924,7 @@ Enviaré mi comprobante de pago:`
 
                   <p>
                     💵 Monto:{" "}
-                    <strong className="text-emerald-600">
+                    <strong className="text-emerald-300">
                       {mostrarPrecio(
                         planSeleccionado.precioNormal,
                       )}
@@ -2061,7 +1951,7 @@ Enviaré mi comprobante de pago:`
                       null,
                     )
                   }
-                  className="mt-4 w-full font-bold text-slate-400 underline"
+                  className="mt-4 w-full font-bold text-blue-100/50 underline"
                 >
                   Cambiar membresía
                 </button>
@@ -2071,19 +1961,15 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          PRUEBA GRATUITA
-      ================================================= */}
-
-      <section className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 px-5 py-16 text-slate-950">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 text-center lg:flex-row lg:text-left">
+      <section className="border-y border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-5 py-16">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 rounded-[2rem] border border-yellow-300/20 bg-white/[0.07] p-7 text-center shadow-2xl backdrop-blur-xl lg:flex-row lg:text-left">
           <div>
-            <h2 className="text-3xl font-black sm:text-4xl">
+            <h2 className="text-3xl font-black text-white sm:text-4xl">
               ¿Quieres explorar antes de
               elegir?
             </h2>
 
-            <p className="mt-3 max-w-2xl text-lg font-semibold">
+            <p className="mt-3 max-w-2xl text-lg font-semibold text-blue-100/75">
               Registra tu número y disfruta de
               60 minutos para conocer la
               plataforma.
@@ -2095,7 +1981,7 @@ Enviaré mi comprobante de pago:`
             onClick={
               solicitarPruebaGratis
             }
-            className="w-full rounded-full bg-slate-950 px-8 py-5 text-lg font-black text-yellow-300 shadow-2xl lg:w-auto"
+            className="w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-8 py-5 text-lg font-black text-slate-950 shadow-2xl transition hover:-translate-y-1 lg:w-auto"
           >
             🛸 Solicitar prueba de 60
             minutos
@@ -2103,13 +1989,9 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          PREGUNTAS
-      ================================================= */}
-
       <section
         id="preguntas"
-        className="scroll-mt-24 bg-slate-950 px-5 py-20"
+        className="scroll-mt-24 bg-gradient-to-b from-purple-950 to-slate-950 px-5 py-20"
       >
         <div className="mx-auto max-w-4xl">
           <div className="mb-12 text-center">
@@ -2130,7 +2012,7 @@ Enviaré mi comprobante de pago:`
                     key={
                       elemento.pregunta
                     }
-                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/5"
+                    className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl"
                   >
                     <button
                       type="button"
@@ -2171,10 +2053,6 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
-      {/* =================================================
-          LLAMADO FINAL
-      ================================================= */}
-
       <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center">
         <div className="mx-auto max-w-3xl">
           <span className="text-6xl">
@@ -2205,10 +2083,6 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
-
-      {/* =================================================
-          PIE DE PÁGINA
-      ================================================= */}
 
       <footer className="border-t border-white/10 bg-slate-950 px-5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
