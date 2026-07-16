@@ -1,9 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 
-type PlanId = "mensual" | "trimestral" | "anual";
+/* =====================================================
+   TIPOS
+===================================================== */
+
+type PlanId =
+  | "mensual"
+  | "trimestral"
+  | "anual";
 
 type PlanMembresia = {
   id: PlanId;
@@ -74,10 +85,18 @@ type TiempoRestante = {
   segundos: number;
 };
 
+/* =====================================================
+   RUTAS Y CONEXIÓN
+===================================================== */
+
 const RUTA_ACCESO = "/acceso";
 
 const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbzXwycKtQWGWgdIYK2b1CQ7r5DLkS8_Wnw0XgI9ILiad2qIS-e8DmlTOKxX0RqY6aEL7w/exec";
+
+/* =====================================================
+   DATOS DE PAGO
+===================================================== */
 
 const DATOS_PAGO = {
   banco: "Venezuela (0102)",
@@ -85,6 +104,10 @@ const DATOS_PAGO = {
   telefono: "0414-4895281",
   whatsapp: "584144895281",
 };
+
+/* =====================================================
+   PLANES DE MEMBRESÍA
+===================================================== */
 
 const PLANES_MEMBRESIA: PlanMembresia[] = [
   {
@@ -138,6 +161,10 @@ const PLANES_MEMBRESIA: PlanMembresia[] = [
   },
 ];
 
+/* =====================================================
+   BENEFICIOS
+===================================================== */
+
 const beneficios = [
   {
     emoji: "📚",
@@ -155,76 +182,42 @@ const beneficios = [
   },
   {
     emoji: "📱",
-    titulo: "Disponible en varios dispositivos",
+    titulo:
+      "Disponible en varios dispositivos",
     descripcion:
       "Utiliza la plataforma desde teléfonos, tabletas y computadoras.",
-    color: "from-violet-500 to-fuchsia-400",
+    color:
+      "from-violet-500 to-fuchsia-400",
   },
   {
     emoji: "⬇️",
     titulo: "Materiales descargables",
     descripcion:
       "Con una membresía activa podrás descargar los recursos educativos disponibles.",
-    color: "from-amber-500 to-yellow-400",
+    color:
+      "from-amber-500 to-yellow-400",
   },
   {
     emoji: "👨‍👩‍👧‍👦",
     titulo: "Para familias y docentes",
     descripcion:
       "Recursos útiles para acompañar el aprendizaje en casa y en el aula.",
-    color: "from-emerald-500 to-green-400",
+    color:
+      "from-emerald-500 to-green-400",
   },
   {
     emoji: "🚀",
     titulo: "Contenido en crecimiento",
     descripcion:
       "La plataforma continúa incorporando nuevos materiales y herramientas.",
-    color: "from-indigo-500 to-blue-400",
+    color:
+      "from-indigo-500 to-blue-400",
   },
 ];
 
-const preguntasFrecuentes = [
-  {
-    pregunta: "¿Qué planes de membresía están disponibles?",
-    respuesta:
-      "Puedes elegir una membresía de un mes por $3, tres meses por $6 o un año por $12.",
-  },
-  {
-    pregunta: "¿Cómo funciona la oferta de lanzamiento?",
-    respuesta:
-      "Durante siete días y hasta agotar los cupos disponibles, los planes tienen un 50 % de descuento.",
-  },
-  {
-    pregunta: "¿Cuándo se descuenta un cupo?",
-    respuesta:
-      "El cupo se descuenta cuando escribes tu WhatsApp y presionas el botón para reservar la oferta.",
-  },
-  {
-    pregunta: "¿Qué pasa cuando se agotan los cupos?",
-    respuesta:
-      "La página deja de ofrecer el descuento y muestra automáticamente los precios normales.",
-  },
-  {
-    pregunta: "¿La membresía se renueva automáticamente?",
-    respuesta:
-      "Por ahora la renovación es manual. Cuando finalice tu membresía podrás realizar un nuevo pago.",
-  },
-  {
-    pregunta: "¿Puedo descargar los materiales?",
-    respuesta:
-      "Sí. Las descargas estarán disponibles mientras tu membresía se encuentre activa.",
-  },
-  {
-    pregunta: "¿Cómo se activa mi membresía?",
-    respuesta:
-      "Selecciona un plan, realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
-  },
-  {
-    pregunta: "¿Qué incluye la prueba gratuita?",
-    respuesta:
-      "Permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas durante la prueba.",
-  },
-];
+/* =====================================================
+   CONTENIDOS
+===================================================== */
 
 const contenidoBiblioteca = [
   "📖 Cuentos y lecturas",
@@ -248,162 +241,319 @@ const contenidoTecnologia = [
   "📱 Herramientas digitales",
 ];
 
-const mostrarPrecio = (precio: number) =>
-  Number.isInteger(precio) ? `$${precio}` : `$${precio.toFixed(2)}`;
+/* =====================================================
+   PREGUNTAS FRECUENTES
+===================================================== */
 
-const normalizarTelefono = (telefono: string) =>
-  telefono.replace(/\D/g, "");
+const preguntasFrecuentes = [
+  {
+    pregunta:
+      "¿Qué planes de membresía están disponibles?",
+    respuesta:
+      "Puedes elegir una membresía de un mes por $3, tres meses por $6 o un año por $12.",
+  },
+  {
+    pregunta:
+      "¿Cómo funciona la oferta de lanzamiento?",
+    respuesta:
+      "Durante siete días y hasta agotar los cupos disponibles, los planes tienen un 50 % de descuento.",
+  },
+  {
+    pregunta:
+      "¿Cuándo se descuenta un cupo?",
+    respuesta:
+      "El cupo se descuenta cuando escribes tu WhatsApp, eliges un plan y presionas el botón para reservar.",
+  },
+  {
+    pregunta:
+      "¿Qué pasa cuando se agotan los cupos?",
+    respuesta:
+      "La página deja de ofrecer el descuento y muestra automáticamente los precios normales.",
+  },
+  {
+    pregunta:
+      "¿La membresía se renueva automáticamente?",
+    respuesta:
+      "Por ahora la renovación es manual. Cuando finalice tu membresía podrás realizar un nuevo pago.",
+  },
+  {
+    pregunta:
+      "¿Puedo descargar los materiales?",
+    respuesta:
+      "Sí. Las descargas estarán disponibles mientras tu membresía se encuentre activa.",
+  },
+  {
+    pregunta:
+      "¿Cómo se activa mi membresía?",
+    respuesta:
+      "Selecciona un plan, realiza el pago, envía el comprobante por WhatsApp y espera la confirmación.",
+  },
+  {
+    pregunta:
+      "¿Qué incluye la prueba gratuita?",
+    respuesta:
+      "Permite explorar la plataforma durante 60 minutos. Las descargas permanecen bloqueadas durante la prueba.",
+  },
+];
+
+/* =====================================================
+   FUNCIONES AUXILIARES
+===================================================== */
+
+const mostrarPrecio = (
+  precio: number,
+) => {
+  if (Number.isInteger(precio)) {
+    return `$${precio}`;
+  }
+
+  return `$${precio.toFixed(2)}`;
+};
+
+const normalizarTelefono = (
+  telefono: string,
+) => telefono.replace(/\D/g, "");
 
 const iconoPlan = (id: PlanId) => {
-  if (id === "mensual") return "🚀";
-  if (id === "trimestral") return "💎";
+  if (id === "mensual") {
+    return "🚀";
+  }
+
+  if (id === "trimestral") {
+    return "💎";
+  }
+
   return "🌟";
 };
+
+/* =====================================================
+   CONEXIÓN JSONP CON GOOGLE APPS SCRIPT
+===================================================== */
 
 function consultarGoogleScript<T>(
   parametros: Record<string, string>,
 ): Promise<T> {
-  return new Promise((resolve, reject) => {
-    if (typeof window === "undefined") {
-      reject(
-        new Error(
-          "Esta consulta solo puede ejecutarse en el navegador.",
-        ),
-      );
+  return new Promise(
+    (resolve, reject) => {
+      if (
+        typeof window === "undefined"
+      ) {
+        reject(
+          new Error(
+            "Esta consulta solo puede ejecutarse en el navegador.",
+          ),
+        );
 
-      return;
-    }
-
-    const callback = `__mdi_${Date.now()}_${Math.random()
-      .toString(36)
-      .slice(2)}`;
-
-    const url = new URL(GOOGLE_SCRIPT_URL);
-
-    Object.entries(parametros).forEach(([clave, valor]) => {
-      url.searchParams.set(clave, valor);
-    });
-
-    url.searchParams.set("callback", callback);
-
-    const script = document.createElement("script");
-
-    const ventana = window as typeof window &
-      Record<string, unknown>;
-
-    let terminado = false;
-
-    const limpiar = () => {
-      if (terminado) return;
-
-      terminado = true;
-
-      script.remove();
-
-      try {
-        delete ventana[callback];
-      } catch {
-        ventana[callback] = undefined;
+        return;
       }
-    };
 
-    const temporizador = window.setTimeout(() => {
-      limpiar();
+      const callback = `__mdi_${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2)}`;
 
-      reject(
-        new Error(
-          "La consulta tardó demasiado tiempo.",
-        ),
+      const url = new URL(
+        GOOGLE_SCRIPT_URL,
       );
-    }, 15000);
 
-    ventana[callback] = (datos: T) => {
-      window.clearTimeout(temporizador);
-
-      limpiar();
-
-      resolve(datos);
-    };
-
-    script.src = url.toString();
-    script.async = true;
-
-    script.onerror = () => {
-      window.clearTimeout(temporizador);
-
-      limpiar();
-
-      reject(
-        new Error(
-          "No se pudo conectar con Google Sheets.",
-        ),
+      Object.entries(
+        parametros,
+      ).forEach(
+        ([clave, valor]) => {
+          url.searchParams.set(
+            clave,
+            valor,
+          );
+        },
       );
-    };
 
-    document.body.appendChild(script);
-  });
+      url.searchParams.set(
+        "callback",
+        callback,
+      );
+
+      const script =
+        document.createElement(
+          "script",
+        );
+
+      const ventana =
+        window as typeof window &
+          Record<string, unknown>;
+
+      let terminado = false;
+
+      const limpiar = () => {
+        if (terminado) {
+          return;
+        }
+
+        terminado = true;
+
+        script.remove();
+
+        try {
+          delete ventana[callback];
+        } catch {
+          ventana[callback] =
+            undefined;
+        }
+      };
+
+      const temporizador =
+        window.setTimeout(() => {
+          limpiar();
+
+          reject(
+            new Error(
+              "La consulta tardó demasiado tiempo.",
+            ),
+          );
+        }, 15000);
+
+      ventana[callback] = (
+        datos: T,
+      ) => {
+        window.clearTimeout(
+          temporizador,
+        );
+
+        limpiar();
+
+        resolve(datos);
+      };
+
+      script.src = url.toString();
+      script.async = true;
+
+      script.onerror = () => {
+        window.clearTimeout(
+          temporizador,
+        );
+
+        limpiar();
+
+        reject(
+          new Error(
+            "No se pudo conectar con Google Sheets.",
+          ),
+        );
+      };
+
+      document.body.appendChild(
+        script,
+      );
+    },
+  );
 }
+
+/* =====================================================
+   COMPONENTE PRINCIPAL
+===================================================== */
 
 export default function InicioLanding() {
   const router = useRouter();
 
-  const [planSeleccionado, setPlanSeleccionado] =
-    useState<PlanMembresia | null>(null);
+  const [
+    planSeleccionado,
+    setPlanSeleccionado,
+  ] = useState<PlanMembresia | null>(
+    null,
+  );
 
-  const [preguntaAbierta, setPreguntaAbierta] =
-    useState<number | null>(null);
+  const [
+    preguntaAbierta,
+    setPreguntaAbierta,
+  ] = useState<number | null>(null);
 
-  const [estadoOferta, setEstadoOferta] =
-    useState<EstadoOfertaApi | null>(null);
+  const [
+    estadoOferta,
+    setEstadoOferta,
+  ] = useState<EstadoOfertaApi | null>(
+    null,
+  );
 
-  const [cargandoOferta, setCargandoOferta] =
-    useState(true);
+  const [
+    cargandoOferta,
+    setCargandoOferta,
+  ] = useState(true);
 
-  const [errorOferta, setErrorOferta] =
-    useState("");
+  const [
+    errorOferta,
+    setErrorOferta,
+  ] = useState("");
 
-  const [telefonoOferta, setTelefonoOferta] =
-    useState("");
+  const [
+    telefonoOferta,
+    setTelefonoOferta,
+  ] = useState("");
 
-  const [reservandoOferta, setReservandoOferta] =
-    useState(false);
+  const [
+    mensajeTelefono,
+    setMensajeTelefono,
+  ] = useState("");
+
+  const [
+    reservandoOferta,
+    setReservandoOferta,
+  ] = useState(false);
 
   const [
     planOfertaEnProceso,
     setPlanOfertaEnProceso,
   ] = useState<PlanId | null>(null);
 
-  const [mensajeReserva, setMensajeReserva] =
-    useState("");
+  const [
+    mensajeReserva,
+    setMensajeReserva,
+  ] = useState("");
 
-  const [reservaOferta, setReservaOferta] =
-    useState<ReservaOferta | null>(null);
+  const [
+    reservaOferta,
+    setReservaOferta,
+  ] = useState<ReservaOferta | null>(
+    null,
+  );
 
-  const [tiempoRestante, setTiempoRestante] =
-    useState<TiempoRestante>({
-      dias: 0,
-      horas: 0,
-      minutos: 0,
-      segundos: 0,
-    });
+  const [
+    tiempoRestante,
+    setTiempoRestante,
+  ] = useState<TiempoRestante>({
+    dias: 0,
+    horas: 0,
+    minutos: 0,
+    segundos: 0,
+  });
 
-  const solicitarPruebaGratis = () => {
-    router.push("/acceso?modo=prueba");
-  };
+  /* ===================================================
+     NAVEGACIÓN
+  =================================================== */
+
+  const solicitarPruebaGratis =
+    () => {
+      router.push(
+        "/acceso?modo=prueba",
+      );
+    };
 
   const entrarComoCliente = () => {
     router.push(RUTA_ACCESO);
   };
 
-  const irASeccion = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+  const irASeccion = (
+    id: string,
+  ) => {
+    document
+      .getElementById(id)
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
   };
 
   const abrirOferta = () => {
-    irASeccion("oferta-lanzamiento");
+    irASeccion(
+      "oferta-lanzamiento",
+    );
   };
 
   const abrirMembresias = () => {
@@ -417,7 +567,9 @@ export default function InicioLanding() {
 
     setTimeout(() => {
       document
-        .getElementById("datos-pago-normal")
+        .getElementById(
+          "datos-pago-normal",
+        )
         ?.scrollIntoView({
           behavior: "smooth",
           block: "center",
@@ -425,104 +577,184 @@ export default function InicioLanding() {
     }, 100);
   };
 
-  const cargarEstadoOferta = useCallback(
-    async (mostrarIndicador = false) => {
-      if (mostrarIndicador) {
-        setCargandoOferta(true);
-      }
+  /* ===================================================
+     CONSULTAR OFERTA
+  =================================================== */
 
-      try {
-        const respuesta =
-          await consultarGoogleScript<EstadoOfertaApi>({
-            accion: "estado",
-          });
-
-        if (!respuesta.ok) {
-          throw new Error(
-            respuesta.mensaje ||
-              "No se pudo consultar la oferta.",
-          );
+  const cargarEstadoOferta =
+    useCallback(
+      async (
+        mostrarIndicador = false,
+      ) => {
+        if (mostrarIndicador) {
+          setCargandoOferta(true);
         }
 
-        setEstadoOferta(respuesta);
+        try {
+          const respuesta =
+            await consultarGoogleScript<EstadoOfertaApi>(
+              {
+                accion: "estado",
+              },
+            );
 
-        setErrorOferta("");
-      } catch (error) {
-        setErrorOferta(
-          error instanceof Error
-            ? error.message
-            : "No se pudo consultar la oferta.",
-        );
-      } finally {
-        setCargandoOferta(false);
-      }
-    },
-    [],
-  );
+          if (!respuesta.ok) {
+            throw new Error(
+              respuesta.mensaje ||
+                "No se pudo consultar la oferta.",
+            );
+          }
+
+          setEstadoOferta(respuesta);
+
+          setErrorOferta("");
+        } catch (error) {
+          setErrorOferta(
+            error instanceof Error
+              ? error.message
+              : "No se pudo consultar la oferta.",
+          );
+        } finally {
+          setCargandoOferta(false);
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
     void cargarEstadoOferta(true);
 
-    const intervalo = window.setInterval(() => {
-      void cargarEstadoOferta(false);
-    }, 30000);
+    const intervalo =
+      window.setInterval(() => {
+        void cargarEstadoOferta(
+          false,
+        );
+      }, 30000);
 
     return () => {
-      window.clearInterval(intervalo);
+      window.clearInterval(
+        intervalo,
+      );
     };
   }, [cargarEstadoOferta]);
 
+  /* ===================================================
+     CUENTA REGRESIVA
+  =================================================== */
+
   useEffect(() => {
-    if (!estadoOferta?.fechaFinal) {
+    if (
+      !estadoOferta?.fechaFinal
+    ) {
       return;
     }
 
-    const actualizarTiempo = () => {
-      const diferencia = Math.max(
-        new Date(
-          estadoOferta.fechaFinal,
-        ).getTime() - Date.now(),
-        0,
-      );
+    const actualizarTiempo =
+      () => {
+        const diferencia =
+          Math.max(
+            new Date(
+              estadoOferta.fechaFinal,
+            ).getTime() -
+              Date.now(),
+            0,
+          );
 
-      setTiempoRestante({
-        dias: Math.floor(
-          diferencia /
-            (1000 * 60 * 60 * 24),
-        ),
-        horas: Math.floor(
-          (diferencia /
-            (1000 * 60 * 60)) %
-            24,
-        ),
-        minutos: Math.floor(
-          (diferencia / (1000 * 60)) %
-            60,
-        ),
-        segundos: Math.floor(
-          (diferencia / 1000) % 60,
-        ),
-      });
-    };
+        setTiempoRestante({
+          dias: Math.floor(
+            diferencia /
+              (1000 *
+                60 *
+                60 *
+                24),
+          ),
+
+          horas: Math.floor(
+            (diferencia /
+              (1000 *
+                60 *
+                60)) %
+              24,
+          ),
+
+          minutos: Math.floor(
+            (diferencia /
+              (1000 * 60)) %
+              60,
+          ),
+
+          segundos: Math.floor(
+            (diferencia / 1000) %
+              60,
+          ),
+        });
+      };
 
     actualizarTiempo();
 
-    const intervalo = window.setInterval(
-      actualizarTiempo,
-      1000,
-    );
+    const intervalo =
+      window.setInterval(
+        actualizarTiempo,
+        1000,
+      );
 
     return () => {
-      window.clearInterval(intervalo);
+      window.clearInterval(
+        intervalo,
+      );
     };
   }, [estadoOferta?.fechaFinal]);
+
+  /* ===================================================
+     CONTINUAR A LOS PLANES
+  =================================================== */
+
+  const continuarAPlanes = () => {
+    const telefono =
+      normalizarTelefono(
+        telefonoOferta,
+      );
+
+    if (
+      telefono.length < 8 ||
+      telefono.length > 15
+    ) {
+      setMensajeTelefono(
+        "Escribe un número de WhatsApp válido incluyendo el código del país.",
+      );
+
+      document
+        .getElementById(
+          "telefono-oferta",
+        )
+        ?.focus();
+
+      return;
+    }
+
+    setMensajeTelefono("");
+
+    document
+      .getElementById(
+        "planes-oferta",
+      )
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+  };
+
+  /* ===================================================
+     RESERVAR OFERTA
+  =================================================== */
 
   const reservarOferta = async (
     plan: PlanMembresia,
   ) => {
-    const telefono = normalizarTelefono(
-      telefonoOferta,
-    );
+    const telefono =
+      normalizarTelefono(
+        telefonoOferta,
+      );
 
     if (
       telefono.length < 8 ||
@@ -530,20 +762,35 @@ export default function InicioLanding() {
     ) {
       setReservaOferta(null);
 
-      setMensajeReserva(
-        "Escribe un número de WhatsApp válido, incluyendo el código del país.",
+      setMensajeTelefono(
+        "Escribe un número de WhatsApp válido incluyendo el código del país.",
       );
 
       document
-        .getElementById("telefono-oferta")
+        .getElementById(
+          "telefono-oferta",
+        )
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+
+      document
+        .getElementById(
+          "telefono-oferta",
+        )
         ?.focus();
 
       return;
     }
 
+    setMensajeTelefono("");
+
     setReservandoOferta(true);
 
-    setPlanOfertaEnProceso(plan.id);
+    setPlanOfertaEnProceso(
+      plan.id,
+    );
 
     setMensajeReserva("");
 
@@ -551,25 +798,30 @@ export default function InicioLanding() {
 
     try {
       const respuesta =
-        await consultarGoogleScript<RespuestaReservaApi>({
-          accion: "reservar",
-          plan: plan.id,
-          whatsapp: telefono,
-        });
+        await consultarGoogleScript<RespuestaReservaApi>(
+          {
+            accion: "reservar",
+            plan: plan.id,
+            whatsapp: telefono,
+          },
+        );
 
       if (
         respuesta.ok &&
         respuesta.reserva
       ) {
-        const datos = respuesta.reserva;
+        const datos =
+          respuesta.reserva;
 
         const reservaNormalizada: ReservaOferta =
           {
             whatsapp:
-              datos.whatsapp || telefono,
+              datos.whatsapp ||
+              telefono,
 
             planId:
-              datos.planId || plan.id,
+              datos.planId ||
+              plan.id,
 
             planNombre:
               datos.planNombre ||
@@ -591,7 +843,8 @@ export default function InicioLanding() {
             ),
 
             estado:
-              datos.estado || "RESERVADO",
+              datos.estado ||
+              "RESERVADO",
           };
 
         setReservaOferta(
@@ -602,7 +855,9 @@ export default function InicioLanding() {
           respuesta.mensaje,
         );
 
-        await cargarEstadoOferta(false);
+        await cargarEstadoOferta(
+          false,
+        );
 
         setTimeout(() => {
           document
@@ -623,8 +878,12 @@ export default function InicioLanding() {
           "No fue posible reservar el cupo.",
       );
 
-      if (respuesta.usarPrecioNormal) {
-        await cargarEstadoOferta(false);
+      if (
+        respuesta.usarPrecioNormal
+      ) {
+        await cargarEstadoOferta(
+          false,
+        );
       }
     } catch (error) {
       setMensajeReserva(
@@ -635,9 +894,15 @@ export default function InicioLanding() {
     } finally {
       setReservandoOferta(false);
 
-      setPlanOfertaEnProceso(null);
+      setPlanOfertaEnProceso(
+        null,
+      );
     }
   };
+
+  /* ===================================================
+     ESTADO VISUAL DE LA OFERTA
+  =================================================== */
 
   const ofertaDisponible =
     Boolean(
@@ -649,10 +914,12 @@ export default function InicioLanding() {
     ) > 0;
 
   const cuposTotales =
-    estadoOferta?.cuposTotales ?? 50;
+    estadoOferta?.cuposTotales ??
+    50;
 
   const cuposDisponibles =
-    estadoOferta?.cuposDisponibles ?? 0;
+    estadoOferta?.cuposDisponibles ??
+    0;
 
   const porcentajeDisponible =
     cuposTotales > 0
@@ -667,6 +934,10 @@ export default function InicioLanding() {
         )
       : 0;
 
+  /* ===================================================
+     WHATSAPP PLAN NORMAL
+  =================================================== */
+
   const mensajeWhatsAppNormal =
     planSeleccionado
       ? `Hola, quiero activar la ${planSeleccionado.nombre} de Mundo Digital Infantil por ${mostrarPrecio(
@@ -679,6 +950,10 @@ export default function InicioLanding() {
   }?text=${encodeURIComponent(
     mensajeWhatsAppNormal,
   )}`;
+
+  /* ===================================================
+     WHATSAPP OFERTA
+  =================================================== */
 
   const mensajeWhatsAppOferta =
     reservaOferta
@@ -702,6 +977,10 @@ Enviaré mi comprobante de pago:`
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-950 font-sans text-white">
+      {/* =================================================
+          MENÚ SUPERIOR
+      ================================================= */}
+
       <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <button
@@ -742,7 +1021,9 @@ Enviaré mi comprobante de pago:`
             <button
               type="button"
               onClick={() =>
-                irASeccion("contenido")
+                irASeccion(
+                  "contenido",
+                )
               }
               className="transition hover:text-yellow-300"
             >
@@ -752,7 +1033,9 @@ Enviaré mi comprobante de pago:`
             <button
               type="button"
               onClick={() =>
-                irASeccion("beneficios")
+                irASeccion(
+                  "beneficios",
+                )
               }
               className="transition hover:text-yellow-300"
             >
@@ -762,7 +1045,9 @@ Enviaré mi comprobante de pago:`
             <button
               type="button"
               onClick={() =>
-                irASeccion("como-funciona")
+                irASeccion(
+                  "como-funciona",
+                )
               }
               className="transition hover:text-yellow-300"
             >
@@ -771,7 +1056,9 @@ Enviaré mi comprobante de pago:`
 
             <button
               type="button"
-              onClick={abrirMembresias}
+              onClick={
+                abrirMembresias
+              }
               className="transition hover:text-yellow-300"
             >
               Membresías
@@ -780,13 +1067,19 @@ Enviaré mi comprobante de pago:`
 
           <button
             type="button"
-            onClick={entrarComoCliente}
+            onClick={
+              entrarComoCliente
+            }
             className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-xs font-black text-cyan-200 transition hover:bg-cyan-300 hover:text-slate-950 sm:px-5 sm:py-2.5 sm:text-sm"
           >
             🔐 Ya tengo membresía
           </button>
         </div>
       </header>
+
+      {/* =================================================
+          PORTADA
+      ================================================= */}
 
       <section className="relative isolate overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950">
         <div className="pointer-events-none absolute -left-32 top-20 h-96 w-96 rounded-full bg-blue-600/30 blur-3xl" />
@@ -798,7 +1091,8 @@ Enviaré mi comprobante de pago:`
         <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:px-8">
           <div className="text-center lg:text-left">
             <span className="mb-6 inline-flex rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-sm font-extrabold text-cyan-200">
-              ✨ APRENDER · JUGAR · CREAR
+              ✨ APRENDER · JUGAR ·
+              CREAR
             </span>
 
             <h1 className="text-5xl font-black leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl">
@@ -815,7 +1109,8 @@ Enviaré mi comprobante de pago:`
               Materiales educativos,
               actividades infantiles y
               herramientas digitales para
-              familias, docentes y creadores.
+              familias, docentes y
+              creadores.
             </p>
 
             <div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
@@ -839,31 +1134,45 @@ Enviaré mi comprobante de pago:`
             </div>
 
             <p className="mx-auto mt-4 max-w-xl text-sm text-blue-200/70 lg:mx-0">
-              La oferta tiene cupos reales
+              Oferta con cupos reales
               controlados mediante Google
               Sheets.
             </p>
 
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                ["📚", "Materiales"],
-                ["🎮", "Actividades"],
-                ["🤖", "Tecnología"],
-                ["💎", "Membresía VIP"],
-              ].map(([emoji, texto]) => (
-                <div
-                  key={texto}
-                  className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center"
-                >
-                  <span className="block text-2xl">
-                    {emoji}
-                  </span>
+                [
+                  "📚",
+                  "Materiales",
+                ],
+                [
+                  "🎮",
+                  "Actividades",
+                ],
+                [
+                  "🤖",
+                  "Tecnología",
+                ],
+                [
+                  "💎",
+                  "Membresía VIP",
+                ],
+              ].map(
+                ([emoji, texto]) => (
+                  <div
+                    key={texto}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center"
+                  >
+                    <span className="block text-2xl">
+                      {emoji}
+                    </span>
 
-                  <span className="mt-1 block text-xs font-bold">
-                    {texto}
-                  </span>
-                </div>
-              ))}
+                    <span className="mt-1 block text-xs font-bold">
+                      {texto}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
           </div>
 
@@ -878,7 +1187,8 @@ Enviaré mi comprobante de pago:`
                   </p>
 
                   <h2 className="mt-1 text-2xl font-black">
-                    Tu estación de aprendizaje
+                    Tu estación de
+                    aprendizaje
                   </h2>
                 </div>
 
@@ -899,7 +1209,8 @@ Enviaré mi comprobante de pago:`
 
                   <p className="mt-2 text-sm leading-relaxed text-blue-50">
                     Guías, cuentos, juegos,
-                    matemáticas y caligrafía.
+                    matemáticas y
+                    caligrafía.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -918,8 +1229,8 @@ Enviaré mi comprobante de pago:`
 
                   <p className="mt-2 text-sm leading-relaxed text-violet-50">
                     Inteligencia artificial,
-                    automatización y recursos
-                    digitales.
+                    automatización y
+                    recursos digitales.
                   </p>
 
                   <span className="mt-5 inline-flex rounded-full bg-white/20 px-3 py-2 text-xs font-black">
@@ -935,14 +1246,19 @@ Enviaré mi comprobante de pago:`
 
                 <p className="mt-2 text-sm leading-relaxed text-blue-100">
                   Aprovecha un 50 % de
-                  descuento durante siete días
-                  o hasta agotar los cupos.
+                  descuento durante siete
+                  días o hasta agotar los
+                  cupos.
                 </p>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* =================================================
+          OFERTA ESPECIAL
+      ================================================= */}
 
       <section
         id="oferta-lanzamiento"
@@ -957,7 +1273,8 @@ Enviaré mi comprobante de pago:`
         <div className="relative mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex animate-pulse items-center gap-2 rounded-full border border-yellow-300/25 bg-yellow-300/10 px-5 py-2 text-sm font-black uppercase tracking-[0.16em] text-yellow-200">
-              🔥 Oferta especial de lanzamiento
+              🔥 Oferta especial de
+              lanzamiento
             </span>
 
             <h2 className="mt-6 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
@@ -968,9 +1285,9 @@ Enviaré mi comprobante de pago:`
             </h2>
 
             <p className="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-blue-100/75">
-              Promoción válida durante siete
-              días o hasta agotar los cupos
-              disponibles.
+              Promoción válida durante
+              siete días o hasta agotar
+              los cupos disponibles.
             </p>
           </div>
 
@@ -991,13 +1308,14 @@ Enviaré mi comprobante de pago:`
             errorOferta && (
               <div className="mx-auto mt-10 max-w-2xl rounded-3xl border border-yellow-300/30 bg-yellow-300/10 p-6 text-center">
                 <p className="font-black text-yellow-200">
-                  ⚠️ No pudimos verificar los
-                  cupos
+                  ⚠️ No pudimos verificar
+                  los cupos
                 </p>
 
                 <p className="mt-2 text-sm text-blue-100/70">
-                  Por seguridad se mostrarán
-                  los precios normales.
+                  Por seguridad se
+                  mostrarán los precios
+                  normales.
                 </p>
 
                 <button
@@ -1017,6 +1335,8 @@ Enviaré mi comprobante de pago:`
           {!cargandoOferta &&
             estadoOferta && (
               <>
+                {/* CUENTA REGRESIVA */}
+
                 <div className="mx-auto mt-12 grid max-w-3xl grid-cols-4 gap-3">
                   {[
                     [
@@ -1036,7 +1356,10 @@ Enviaré mi comprobante de pago:`
                       "Segundos",
                     ],
                   ].map(
-                    ([cantidad, texto]) => (
+                    ([
+                      cantidad,
+                      texto,
+                    ]) => (
                       <div
                         key={texto}
                         className="rounded-2xl border border-cyan-300/15 bg-white/[0.08] p-3 text-center shadow-xl backdrop-blur-xl sm:p-5"
@@ -1044,7 +1367,10 @@ Enviaré mi comprobante de pago:`
                         <span className="block text-2xl font-black text-yellow-300 sm:text-4xl">
                           {String(
                             cantidad,
-                          ).padStart(2, "0")}
+                          ).padStart(
+                            2,
+                            "0",
+                          )}
                         </span>
 
                         <span className="mt-1 block text-[10px] font-black uppercase tracking-wide text-blue-100/60 sm:text-xs">
@@ -1055,6 +1381,8 @@ Enviaré mi comprobante de pago:`
                   )}
                 </div>
 
+                {/* CUPOS */}
+
                 <div className="mx-auto mt-8 max-w-3xl rounded-[2rem] border border-cyan-300/20 bg-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
                   <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
                     <div>
@@ -1063,9 +1391,12 @@ Enviaré mi comprobante de pago:`
                       </p>
 
                       <p className="mt-2 text-2xl font-black text-white">
-                        {cuposDisponibles} de{" "}
-                        {cuposTotales} cupos
-                        disponibles
+                        {
+                          cuposDisponibles
+                        }{" "}
+                        de{" "}
+                        {cuposTotales}{" "}
+                        cupos disponibles
                       </p>
                     </div>
 
@@ -1098,12 +1429,14 @@ Enviaré mi comprobante de pago:`
                     cuposDisponibles <=
                       10 && (
                       <p className="mt-4 text-center text-sm font-black text-yellow-200">
-                        ⚡ Quedan pocos cupos
-                        promocionales
+                        ⚡ Quedan pocos
+                        cupos promocionales
                         disponibles
                       </p>
                     )}
                 </div>
+
+                {/* CAMPO DE WHATSAPP */}
 
                 {ofertaDisponible && (
                   <div className="mx-auto mt-8 max-w-2xl rounded-[2rem] border border-cyan-300/25 bg-white/[0.06] p-6 text-center shadow-2xl backdrop-blur-xl">
@@ -1111,13 +1444,14 @@ Enviaré mi comprobante de pago:`
                       htmlFor="telefono-oferta"
                       className="text-lg font-black text-white"
                     >
-                      📱 Escribe tu WhatsApp
-                      para reservar
+                      📱 Escribe tu
+                      WhatsApp para
+                      reservar
                     </label>
 
                     <p className="mt-2 text-sm text-blue-100/65">
-                      Incluye el código del
-                      país. Ejemplo:
+                      Incluye el código
+                      del país. Ejemplo:
                       584141234567
                     </p>
 
@@ -1125,10 +1459,19 @@ Enviaré mi comprobante de pago:`
                       id="telefono-oferta"
                       type="tel"
                       inputMode="tel"
-                      value={telefonoOferta}
-                      onChange={(evento) => {
+                      value={
+                        telefonoOferta
+                      }
+                      onChange={(
+                        evento,
+                      ) => {
                         setTelefonoOferta(
-                          evento.target.value,
+                          evento.target
+                            .value,
+                        );
+
+                        setMensajeTelefono(
+                          "",
                         );
 
                         setMensajeReserva(
@@ -1138,15 +1481,48 @@ Enviaré mi comprobante de pago:`
                       placeholder="584141234567"
                       className="mt-5 w-full rounded-2xl border-2 border-cyan-300/20 bg-slate-950/70 px-5 py-4 text-center text-lg font-black text-white outline-none transition placeholder:text-blue-100/35 focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/15"
                     />
+
+                    <button
+                      type="button"
+                      onClick={
+                        continuarAPlanes
+                      }
+                      className="mt-5 w-full rounded-full bg-gradient-to-r from-yellow-300 to-orange-400 px-6 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:brightness-110"
+                    >
+                      💎 Continuar y
+                      elegir mi plan
+                    </button>
+
+                    <p className="mt-3 text-xs font-bold text-blue-100/50">
+                      Después selecciona
+                      la membresía que
+                      deseas reservar.
+                    </p>
+
+                    {mensajeTelefono && (
+                      <p className="mt-4 rounded-2xl border border-yellow-300/25 bg-yellow-300/10 px-4 py-3 text-sm font-black text-yellow-200">
+                        ⚠️{" "}
+                        {
+                          mensajeTelefono
+                        }
+                      </p>
+                    )}
                   </div>
                 )}
 
-                <div className="mt-12 grid gap-7 lg:grid-cols-3">
+                {/* PLANES DE LA OFERTA */}
+
+                <div
+                  id="planes-oferta"
+                  className="mt-12 grid scroll-mt-28 gap-7 lg:grid-cols-3"
+                >
                   {PLANES_MEMBRESIA.map(
                     (plan) => {
                       const planApi =
                         estadoOferta.planes?.find(
-                          (elemento) =>
+                          (
+                            elemento,
+                          ) =>
                             elemento.id ===
                             plan.id,
                         );
@@ -1200,7 +1576,9 @@ Enviaré mi comprobante de pago:`
 
                           <p className="relative mt-2 font-bold text-blue-100/65">
                             Acceso durante{" "}
-                            {plan.duracion}
+                            {
+                              plan.duracion
+                            }
                           </p>
 
                           {ofertaDisponible ? (
@@ -1314,6 +1692,8 @@ Enviaré mi comprobante de pago:`
                   )}
                 </div>
 
+                {/* MENSAJE DE RESERVA */}
+
                 {mensajeReserva && (
                   <div
                     className={`mx-auto mt-10 max-w-3xl rounded-3xl border p-6 text-center backdrop-blur-xl ${
@@ -1337,6 +1717,8 @@ Enviaré mi comprobante de pago:`
                     </p>
                   </div>
                 )}
+
+                {/* RESERVA CONFIRMADA */}
 
                 {reservaOferta && (
                   <div
@@ -1378,7 +1760,8 @@ Enviaré mi comprobante de pago:`
 
                       <div className="mt-7 rounded-2xl border border-white/20 bg-white/10 p-5">
                         <p className="font-black">
-                          WhatsApp registrado
+                          WhatsApp
+                          registrado
                         </p>
 
                         <p className="mt-2 text-xl font-black">
@@ -1446,8 +1829,9 @@ Enviaré mi comprobante de pago:`
                         rel="noopener noreferrer"
                         className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-5 py-4 text-center text-lg font-black text-white shadow-lg transition hover:-translate-y-1"
                       >
-                        📲 Enviar comprobante
-                        por WhatsApp
+                        📲 Enviar
+                        comprobante por
+                        WhatsApp
                       </a>
                     </div>
                   </div>
@@ -1456,6 +1840,10 @@ Enviaré mi comprobante de pago:`
             )}
         </div>
       </section>
+
+      {/* =================================================
+          CLIENTES
+      ================================================= */}
 
       <section className="relative border-y border-white/10 bg-gradient-to-r from-emerald-500/20 via-cyan-500/10 to-blue-500/20 px-5 py-10 lg:px-8">
         <div className="relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-7 rounded-[2rem] border border-emerald-300/25 bg-white/10 p-6 text-center shadow-2xl backdrop-blur-xl sm:p-8 lg:flex-row lg:text-left">
@@ -1470,27 +1858,34 @@ Enviaré mi comprobante de pago:`
               </span>
 
               <h2 className="mt-3 text-2xl font-black sm:text-3xl">
-                ¿Ya tienes una membresía
-                activa?
+                ¿Ya tienes una
+                membresía activa?
               </h2>
 
               <p className="mt-2 max-w-2xl leading-relaxed text-blue-100/75">
-                Ingresa con el mismo número
-                de WhatsApp utilizado para
-                enviar tu comprobante.
+                Ingresa con el mismo
+                número de WhatsApp
+                utilizado para enviar tu
+                comprobante.
               </p>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={entrarComoCliente}
+            onClick={
+              entrarComoCliente
+            }
             className="w-full shrink-0 rounded-full bg-gradient-to-r from-emerald-300 to-cyan-400 px-7 py-4 text-lg font-black text-slate-950 shadow-xl transition hover:-translate-y-1 lg:w-auto"
           >
             ✅ Ingresar a mi cuenta
           </button>
         </div>
       </section>
+
+      {/* =================================================
+          CONTENIDO
+      ================================================= */}
 
       <section
         id="contenido"
@@ -1499,7 +1894,8 @@ Enviaré mi comprobante de pago:`
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-12 max-w-3xl text-center">
             <span className="inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-cyan-200">
-              CONOCE TODO LO QUE INCLUYE
+              CONOCE TODO LO QUE
+              INCLUYE
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
@@ -1511,8 +1907,8 @@ Enviaré mi comprobante de pago:`
           <div className="grid gap-8 lg:grid-cols-2">
             <article className="rounded-[2.5rem] border border-cyan-300/20 bg-gradient-to-br from-blue-600/30 to-cyan-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-cyan-300 px-4 py-2 text-sm font-black text-blue-950">
-                PARA NIÑOS, FAMILIAS Y
-                DOCENTES
+                PARA NIÑOS, FAMILIAS
+                Y DOCENTES
               </span>
 
               <h3 className="mt-6 text-3xl font-black text-cyan-200 sm:text-4xl">
@@ -1539,14 +1935,15 @@ Enviaré mi comprobante de pago:`
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-cyan-200/30 bg-cyan-300/15 px-6 py-3 font-black text-cyan-100">
-                🔒 Disponible con prueba o
-                membresía activa
+                🔒 Disponible con prueba
+                o membresía activa
               </div>
             </article>
 
             <article className="rounded-[2.5rem] border border-fuchsia-300/20 bg-gradient-to-br from-violet-600/30 to-fuchsia-500/10 p-7 shadow-2xl sm:p-9">
               <span className="inline-flex rounded-full bg-fuchsia-300 px-4 py-2 text-sm font-black text-violet-950">
-                PARA ADULTOS Y CREADORES
+                PARA ADULTOS Y
+                CREADORES
               </span>
 
               <h3 className="mt-6 text-3xl font-black text-fuchsia-200 sm:text-4xl">
@@ -1554,9 +1951,9 @@ Enviaré mi comprobante de pago:`
               </h3>
 
               <p className="mt-4 text-lg leading-relaxed text-violet-100">
-                Herramientas digitales para
-                aprender, crear y mejorar
-                proyectos.
+                Herramientas digitales
+                para aprender, crear y
+                mejorar proyectos.
               </p>
 
               <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -1573,13 +1970,17 @@ Enviaré mi comprobante de pago:`
               </div>
 
               <div className="mt-8 inline-flex rounded-full border border-fuchsia-200/30 bg-fuchsia-300/15 px-6 py-3 font-black text-fuchsia-100">
-                🔒 Disponible con prueba o
-                membresía activa
+                🔒 Disponible con prueba
+                o membresía activa
               </div>
             </article>
           </div>
         </div>
       </section>
+
+      {/* =================================================
+          BENEFICIOS
+      ================================================= */}
 
       <section
         id="beneficios"
@@ -1596,8 +1997,8 @@ Enviaré mi comprobante de pago:`
             </span>
 
             <h2 className="mt-5 text-4xl font-black sm:text-5xl">
-              Una plataforma para facilitar
-              el aprendizaje
+              Una plataforma para
+              facilitar el aprendizaje
             </h2>
           </div>
 
@@ -1637,6 +2038,10 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
+
+      {/* =================================================
+          CÓMO FUNCIONA
+      ================================================= */}
 
       <section
         id="como-funciona"
@@ -1740,7 +2145,9 @@ Enviaré mi comprobante de pago:`
 
             <button
               type="button"
-              onClick={solicitarPruebaGratis}
+              onClick={
+                solicitarPruebaGratis
+              }
               className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-8 py-4 text-lg font-black text-cyan-200 transition hover:-translate-y-1"
             >
               🛸 Solicitar prueba
@@ -1748,6 +2155,10 @@ Enviaré mi comprobante de pago:`
           </div>
         </div>
       </section>
+
+      {/* =================================================
+          MEMBRESÍAS NORMALES
+      ================================================= */}
 
       <section
         id="membresias"
@@ -1768,9 +2179,10 @@ Enviaré mi comprobante de pago:`
             </h2>
 
             <p className="mt-5 text-lg leading-relaxed text-blue-100/70">
-              Estos precios se aplican cuando
-              termina la oferta o se agotan los
-              cupos promocionales.
+              Estos precios se aplican
+              cuando termina la oferta o
+              se agotan los cupos
+              promocionales.
             </p>
           </div>
 
@@ -1793,7 +2205,9 @@ Enviaré mi comprobante de pago:`
 
                   <div className="text-center">
                     <span className="text-5xl">
-                      {iconoPlan(plan.id)}
+                      {iconoPlan(
+                        plan.id,
+                      )}
                     </span>
 
                     <h3 className="mt-5 text-2xl font-black text-white">
@@ -1961,6 +2375,10 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
+      {/* =================================================
+          PRUEBA GRATUITA
+      ================================================= */}
+
       <section className="border-y border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-5 py-16">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-8 rounded-[2rem] border border-yellow-300/20 bg-white/[0.07] p-7 text-center shadow-2xl backdrop-blur-xl lg:flex-row lg:text-left">
           <div>
@@ -1970,8 +2388,9 @@ Enviaré mi comprobante de pago:`
             </h2>
 
             <p className="mt-3 max-w-2xl text-lg font-semibold text-blue-100/75">
-              Registra tu número y disfruta de
-              60 minutos para conocer la
+              Registra tu número y
+              disfruta de 60 minutos
+              para conocer la
               plataforma.
             </p>
           </div>
@@ -1989,6 +2408,10 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
+      {/* =================================================
+          PREGUNTAS FRECUENTES
+      ================================================= */}
+
       <section
         id="preguntas"
         className="scroll-mt-24 bg-gradient-to-b from-purple-950 to-slate-950 px-5 py-20"
@@ -2002,7 +2425,10 @@ Enviaré mi comprobante de pago:`
 
           <div className="space-y-4">
             {preguntasFrecuentes.map(
-              (elemento, indice) => {
+              (
+                elemento,
+                indice,
+              ) => {
                 const abierta =
                   preguntaAbierta ===
                   indice;
@@ -2053,6 +2479,10 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
+      {/* =================================================
+          LLAMADO FINAL
+      ================================================= */}
+
       <section className="border-t border-white/10 bg-indigo-950 px-5 py-16 text-center">
         <div className="mx-auto max-w-3xl">
           <span className="text-6xl">
@@ -2060,8 +2490,8 @@ Enviaré mi comprobante de pago:`
           </span>
 
           <h2 className="mt-5 text-3xl font-black sm:text-4xl">
-            El conocimiento está listo para
-            despegar
+            El conocimiento está listo
+            para despegar
           </h2>
 
           <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
@@ -2075,7 +2505,9 @@ Enviaré mi comprobante de pago:`
 
             <button
               type="button"
-              onClick={entrarComoCliente}
+              onClick={
+                entrarComoCliente
+              }
               className="rounded-full border-2 border-cyan-300 bg-cyan-300/10 px-7 py-4 font-black text-cyan-200"
             >
               🔐 Ya tengo membresía
@@ -2084,6 +2516,10 @@ Enviaré mi comprobante de pago:`
         </div>
       </section>
 
+      {/* =================================================
+          PIE DE PÁGINA
+      ================================================= */}
+
       <footer className="border-t border-white/10 bg-slate-950 px-5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="font-black text-yellow-300">
@@ -2091,7 +2527,8 @@ Enviaré mi comprobante de pago:`
           </p>
 
           <p className="text-sm font-bold text-blue-300/50">
-            MUNDO DIGITAL INFANTIL © 2026
+            MUNDO DIGITAL INFANTIL ©
+            2026
           </p>
         </div>
       </footer>
