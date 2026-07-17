@@ -1,15 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-
-/* =====================================================
-   TIPOS
-===================================================== */
+import { useEffect, useMemo, useState } from "react";
 
 type Avatar = {
-  url: string;
   nombre: string;
+  url: string;
 };
 
 type EstadoGuardado =
@@ -23,39 +19,32 @@ type ModoAcceso =
   | "prueba"
   | "visitante";
 
-type PerfilServidor = {
-  nombre?: string;
-  fechaCumpleanos?: string;
-  avatar?: string;
-  ultimoAcceso?: string;
-  tipoExplorador?: string;
-  areaFavorita?: string;
-  metaSemanal?: number;
-  objetivoPersonal?: string;
+type ClienteDiamantes = {
+  idCliente: string;
+  whatsapp: string;
+  nombre: string;
+  email: string;
+  estadoMembresia: string;
+  plan: string;
+  fechaInicio: string;
+  fechaFin: string;
+  diamantesDisponibles: number;
+  diamantesGanados: number;
+  diamantesCanjeados: number;
+  nivel: string;
+  diasRacha: number;
+  mejorRacha: number;
 };
 
-type RespuestaPerfil = {
-  status?: string;
-  ok?: boolean;
-  exito?: boolean;
-  encontrado?: boolean;
-  perfil?: PerfilServidor;
-  error?: string;
+type RespuestaDiamantes = {
+  ok: boolean;
+  codigo?: string;
+  mensaje?: string;
+  cliente?: ClienteDiamantes;
 };
-
-/* =====================================================
-   CONFIGURACIÓN
-===================================================== */
-
-const URL_SCRIPT =
-  "https://script.google.com/macros/s/AKfycbxWt5rMx95rYFzithWJn5pUniASVVkVyFB26G0EHxsDnXsQ2ptI1jq-bt3Ua3lrf8qGcg/exec";
 
 const AVATAR_RESPALDO =
   "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='100%25' height='100%25' rx='150' fill='%231e1b4b'/%3E%3Ctext x='50%25' y='48%25' text-anchor='middle' dominant-baseline='middle' font-size='110'%3E🚀%3C/text%3E%3C/svg%3E";
-
-/* =====================================================
-   AVATARES
-===================================================== */
 
 const avatares: Avatar[] = [
   {
@@ -118,27 +107,7 @@ const avatares: Avatar[] = [
     nombre: "Papá Digital",
     url: "https://cdn-icons-png.flaticon.com/128/1154/1154448.png",
   },
-  {
-    nombre: "Mentora",
-    url: "https://cdn-icons-png.flaticon.com/128/3048/3048163.png",
-  },
-  {
-    nombre: "Educadora",
-    url: "https://cdn-icons-png.flaticon.com/128/3048/3048162.png",
-  },
-  {
-    nombre: "Especialista",
-    url: "https://cdn-icons-png.flaticon.com/128/3048/3048154.png",
-  },
-  {
-    nombre: "Comunicadora",
-    url: "https://cdn-icons-png.flaticon.com/128/3048/3048148.png",
-  },
 ];
-
-/* =====================================================
-   OPCIONES
-===================================================== */
 
 const tiposExplorador = [
   "Familia exploradora",
@@ -157,29 +126,42 @@ const areasFavoritas = [
   "Ofertas Estelares",
 ];
 
-/* =====================================================
-   FUNCIONES AUXILIARES
-===================================================== */
+function limitarMeta(valor: unknown): number {
+  const numero = Number(valor);
+
+  if (!Number.isFinite(numero)) {
+    return 5;
+  }
+
+  return Math.min(
+    7,
+    Math.max(1, Math.round(numero)),
+  );
+}
 
 function leerArreglo(clave: string): string[] {
   try {
-    const guardado = localStorage.getItem(clave);
+    const guardado =
+      localStorage.getItem(clave);
 
     if (!guardado) {
       return [];
     }
 
-    const datos: unknown = JSON.parse(guardado);
+    const resultado: unknown =
+      JSON.parse(guardado);
 
-    return Array.isArray(datos)
-      ? datos.map(String)
+    return Array.isArray(resultado)
+      ? resultado.map(String)
       : [];
   } catch {
     return [];
   }
 }
 
-function mascararTelefono(telefono: string): string {
+function mascararTelefono(
+  telefono: string,
+): string {
   if (!telefono) {
     return "No registrado";
   }
@@ -188,57 +170,10 @@ function mascararTelefono(telefono: string): string {
     return telefono;
   }
 
-  return `${telefono.slice(0, 3)}••••${telefono.slice(-3)}`;
-}
-
-function limitarMeta(valor: unknown): number {
-  const numero = Number(valor);
-
-  if (!Number.isFinite(numero)) {
-    return 5;
-  }
-
-  return Math.min(7, Math.max(1, Math.round(numero)));
-}
-
-function obtenerNivel(racha: number) {
-  if (racha >= 30) {
-    return {
-      nombre: "Leyenda del Universo",
-      icono: "👑",
-      siguiente: 50,
-    };
-  }
-
-  if (racha >= 15) {
-    return {
-      nombre: "Capitán Digital",
-      icono: "🚀",
-      siguiente: 30,
-    };
-  }
-
-  if (racha >= 7) {
-    return {
-      nombre: "Navegante Estelar",
-      icono: "🪐",
-      siguiente: 15,
-    };
-  }
-
-  if (racha >= 3) {
-    return {
-      nombre: "Explorador Creativo",
-      icono: "🌟",
-      siguiente: 7,
-    };
-  }
-
-  return {
-    nombre: "Aprendiz Digital",
-    icono: "✨",
-    siguiente: 3,
-  };
+  return `${telefono.slice(
+    0,
+    3,
+  )}••••${telefono.slice(-3)}`;
 }
 
 function diasHastaCumpleanos(
@@ -248,14 +183,18 @@ function diasHastaCumpleanos(
     return null;
   }
 
-  const partes = fecha.split("-");
+  const partes =
+    fecha.split("-");
 
   if (partes.length !== 3) {
     return null;
   }
 
-  const mes = Number(partes[1]) - 1;
-  const dia = Number(partes[2]);
+  const mes =
+    Number(partes[1]) - 1;
+
+  const dia =
+    Number(partes[2]);
 
   if (
     Number.isNaN(mes) ||
@@ -264,99 +203,49 @@ function diasHastaCumpleanos(
     return null;
   }
 
-  const hoy = new Date();
+  const hoy =
+    new Date();
 
-  const inicioHoy = new Date(
-    hoy.getFullYear(),
-    hoy.getMonth(),
-    hoy.getDate(),
+  const inicioHoy =
+    new Date(
+      hoy.getFullYear(),
+      hoy.getMonth(),
+      hoy.getDate(),
+    );
+
+  let proximoCumple =
+    new Date(
+      hoy.getFullYear(),
+      mes,
+      dia,
+    );
+
+  proximoCumple.setHours(
+    0,
+    0,
+    0,
+    0,
   );
-
-  let proximoCumple = new Date(
-    hoy.getFullYear(),
-    mes,
-    dia,
-  );
-
-  proximoCumple.setHours(0, 0, 0, 0);
 
   if (
     proximoCumple.getTime() <
     inicioHoy.getTime()
   ) {
-    proximoCumple = new Date(
-      hoy.getFullYear() + 1,
-      mes,
-      dia,
-    );
+    proximoCumple =
+      new Date(
+        hoy.getFullYear() + 1,
+        mes,
+        dia,
+      );
   }
 
   return Math.ceil(
-    (proximoCumple.getTime() -
-      inicioHoy.getTime()) /
-      86400000,
+    (
+      proximoCumple.getTime() -
+      inicioHoy.getTime()
+    ) / 86400000,
   );
 }
-
-function guardarPerfilLocal(
-  perfil: {
-    nombre: string;
-    fechaCumple: string;
-    avatar: string;
-    tipoExplorador: string;
-    areaFavorita: string;
-    metaSemanal: number;
-    objetivoPersonal: string;
-  },
-) {
-  localStorage.setItem(
-    "nombreUsuario",
-    perfil.nombre,
-  );
-
-  localStorage.setItem(
-    "cumpleUsuario",
-    perfil.fechaCumple,
-  );
-
-  localStorage.setItem(
-    "avatarUsuario",
-    perfil.avatar,
-  );
-
-  localStorage.setItem(
-    "tipoExploradorMDI",
-    perfil.tipoExplorador,
-  );
-
-  localStorage.setItem(
-    "areaFavoritaMDI",
-    perfil.areaFavorita,
-  );
-
-  localStorage.setItem(
-    "metaSemanalMDI",
-    perfil.metaSemanal.toString(),
-  );
-
-  localStorage.setItem(
-    "objetivoPersonalMDI",
-    perfil.objetivoPersonal,
-  );
-
-  /*
-  Este evento avisa al componente Menu
-  para que cambie inmediatamente el saludo.
-  */
-
-  window.dispatchEvent(
-    new Event("perfilActualizadoMDI"),
-  );
-}
-
-/* =====================================================
-   COMPONENTE
-===================================================== */
 
 export default function Perfil() {
   const [avatar, setAvatar] =
@@ -365,38 +254,68 @@ export default function Perfil() {
   const [nombre, setNombre] =
     useState("");
 
-  const [fechaCumple, setFechaCumple] =
-    useState("");
+  const [
+    fechaCumple,
+    setFechaCumple,
+  ] = useState("");
 
   const [
     tipoExplorador,
     setTipoExplorador,
-  ] = useState(tiposExplorador[0]);
+  ] = useState(
+    tiposExplorador[0],
+  );
 
   const [
     areaFavorita,
     setAreaFavorita,
-  ] = useState(areasFavoritas[0]);
+  ] = useState(
+    areasFavoritas[0],
+  );
 
-  const [metaSemanal, setMetaSemanal] =
-    useState(5);
+  const [
+    metaSemanal,
+    setMetaSemanal,
+  ] = useState(5);
 
   const [
     objetivoPersonal,
     setObjetivoPersonal,
   ] = useState("");
 
-  const [fechaAcceso, setFechaAcceso] =
+  const [
+    fechaAcceso,
+    setFechaAcceso,
+  ] = useState("");
+
+  const [
+    telefono,
+    setTelefono,
+  ] = useState("");
+
+  const [
+    modoAcceso,
+    setModoAcceso,
+  ] =
+    useState<ModoAcceso>(
+      "visitante",
+    );
+
+  const [
+    estadoGuardado,
+    setEstadoGuardado,
+  ] =
+    useState<EstadoGuardado>(
+      "neutral",
+    );
+
+  const [
+    consultando,
+    setConsultando,
+  ] = useState(true);
+
+  const [aviso, setAviso] =
     useState("");
-
-  const [telefono, setTelefono] =
-    useState("");
-
-  const [modoAcceso, setModoAcceso] =
-    useState<ModoAcceso>("visitante");
-
-  const [racha, setRacha] =
-    useState(0);
 
   const [
     diasCompletados,
@@ -409,291 +328,366 @@ export default function Perfil() {
   ] = useState(0);
 
   const [
-    estadoGuardado,
-    setEstadoGuardado,
-  ] = useState<EstadoGuardado>("neutral");
-
-  const [aviso, setAviso] =
-    useState("");
+    diamantesDisponibles,
+    setDiamantesDisponibles,
+  ] = useState(0);
 
   const [
-    consultandoPerfil,
-    setConsultandoPerfil,
-  ] = useState(true);
+    diamantesGanados,
+    setDiamantesGanados,
+  ] = useState(0);
 
-  /* ===================================================
-     CARGAR DATOS LOCALES Y GOOGLE SHEETS
-  =================================================== */
+  const [
+    diamantesCanjeados,
+    setDiamantesCanjeados,
+  ] = useState(0);
+
+  const [racha, setRacha] =
+    useState(0);
+
+  const [
+    mejorRacha,
+    setMejorRacha,
+  ] = useState(0);
+
+  const [
+    nivelDiamantes,
+    setNivelDiamantes,
+  ] = useState("NOVATO");
+
+  const [
+    estadoMembresia,
+    setEstadoMembresia,
+  ] = useState("PENDIENTE");
+
+  const [
+    planMembresia,
+    setPlanMembresia,
+  ] = useState("");
+
+  const [
+    fechaInicio,
+    setFechaInicio,
+  ] = useState("");
+
+  const [
+    fechaFin,
+    setFechaFin,
+  ] = useState("");
 
   useEffect(() => {
-    let componenteActivo = true;
+    let componenteActivo =
+      true;
 
-    const cargarPerfil = async () => {
-      const fechaActual =
-        new Date().toLocaleDateString(
-          "es-ES",
-        );
-
-      const accesoRegistrado =
-        localStorage.getItem(
-          "diaSesion",
-        ) || fechaActual;
-
-      const telefonoGuardado =
-        localStorage.getItem(
-          "telefonoAcceso",
-        ) ||
-        localStorage.getItem(
-          "telefonoUsuario",
-        ) ||
-        "";
-
-      const modoGuardado =
-        localStorage.getItem(
-          "modoAcceso",
-        );
-
-      const accesoVIP =
-        localStorage.getItem(
-          "accesoVIP",
-        ) === "true" ||
-        modoGuardado === "vip";
-
-      const limitePrueba = Number(
-        localStorage.getItem(
-          "limitePrueba",
-        ) || "0",
-      );
-
-      let acceso: ModoAcceso =
-        "visitante";
-
-      if (accesoVIP) {
-        acceso = "vip";
-      } else if (
-        modoGuardado === "prueba" &&
-        limitePrueba > Date.now()
-      ) {
-        acceso = "prueba";
-      }
-
-      const rachaGuardada = Number(
-        localStorage.getItem(
-          "rachaMDI",
-        ) || "0",
-      );
-
-      const dias = leerArreglo(
-        "diasPracticaMDI",
-      );
-
-      const likes = leerArreglo(
-        "misLikesComunidad",
-      );
-
-      const nombreLocal =
-        localStorage.getItem(
-          "nombreUsuario",
-        ) || "";
-
-      const cumpleLocal =
-        localStorage.getItem(
-          "cumpleUsuario",
-        ) || "";
-
-      const avatarLocal =
-        localStorage.getItem(
-          "avatarUsuario",
-        ) || avatares[0].url;
-
-      const tipoLocal =
-        localStorage.getItem(
-          "tipoExploradorMDI",
-        ) || tiposExplorador[0];
-
-      const areaLocal =
-        localStorage.getItem(
-          "areaFavoritaMDI",
-        ) || areasFavoritas[0];
-
-      const metaLocal = limitarMeta(
-        localStorage.getItem(
-          "metaSemanalMDI",
-        ) || "5",
-      );
-
-      const objetivoLocal =
-        localStorage.getItem(
-          "objetivoPersonalMDI",
-        ) || "";
-
-      setFechaAcceso(accesoRegistrado);
-      setTelefono(telefonoGuardado);
-      setModoAcceso(acceso);
-
-      setNombre(nombreLocal);
-      setFechaCumple(cumpleLocal);
-      setAvatar(avatarLocal);
-      setTipoExplorador(tipoLocal);
-      setAreaFavorita(areaLocal);
-      setMetaSemanal(metaLocal);
-      setObjetivoPersonal(objetivoLocal);
-
-      setRacha(
-        Number.isFinite(rachaGuardada)
-          ? rachaGuardada
-          : 0,
-      );
-
-      setDiasCompletados(dias.length);
-      setLikesComunidad(likes.length);
-
-      /*
-      Si existe número de teléfono, se consulta
-      el perfil guardado en Google Sheets.
-      */
-
-      if (!telefonoGuardado) {
-        setConsultandoPerfil(false);
-        return;
-      }
-
-      try {
-        const parametros =
-          new URLSearchParams({
-            accion: "consultar",
-            id: telefonoGuardado,
-          });
-
-        const respuesta = await fetch(
-          `${URL_SCRIPT}?${parametros.toString()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-          },
-        );
-
-        if (!respuesta.ok) {
-          throw new Error(
-            `Error ${respuesta.status}`,
+    const cargarPerfil =
+      async () => {
+        const hoy =
+          new Date().toLocaleDateString(
+            "es-ES",
           );
+
+        const telefonoGuardado =
+          localStorage.getItem(
+            "telefonoAcceso",
+          ) ||
+          localStorage.getItem(
+            "telefonoUsuario",
+          ) ||
+          "";
+
+        const modoGuardado =
+          localStorage.getItem(
+            "modoAcceso",
+          );
+
+        const accesoVIP =
+          localStorage.getItem(
+            "accesoVIP",
+          ) === "true" ||
+          modoGuardado === "vip";
+
+        const limitePrueba =
+          Number(
+            localStorage.getItem(
+              "limitePrueba",
+            ) || "0",
+          );
+
+        let acceso: ModoAcceso =
+          "visitante";
+
+        if (accesoVIP) {
+          acceso = "vip";
+        } else if (
+          modoGuardado ===
+            "prueba" &&
+          limitePrueba >
+            Date.now()
+        ) {
+          acceso = "prueba";
         }
 
-        const datos =
-          (await respuesta.json()) as RespuestaPerfil;
+        const nombreLocal =
+          localStorage.getItem(
+            "nombreUsuario",
+          ) || "";
+
+        const cumpleLocal =
+          localStorage.getItem(
+            "cumpleUsuario",
+          ) || "";
+
+        const avatarLocal =
+          localStorage.getItem(
+            "avatarUsuario",
+          ) ||
+          avatares[0].url;
+
+        const tipoLocal =
+          localStorage.getItem(
+            "tipoExploradorMDI",
+          ) ||
+          tiposExplorador[0];
+
+        const areaLocal =
+          localStorage.getItem(
+            "areaFavoritaMDI",
+          ) ||
+          areasFavoritas[0];
+
+        const metaLocal =
+          limitarMeta(
+            localStorage.getItem(
+              "metaSemanalMDI",
+            ) || "5",
+          );
+
+        const objetivoLocal =
+          localStorage.getItem(
+            "objetivoPersonalMDI",
+          ) || "";
+
+        setFechaAcceso(
+          localStorage.getItem(
+            "diaSesion",
+          ) || hoy,
+        );
+
+        setTelefono(
+          telefonoGuardado,
+        );
+
+        setModoAcceso(acceso);
+        setNombre(nombreLocal);
+        setFechaCumple(cumpleLocal);
+        setAvatar(avatarLocal);
+        setTipoExplorador(tipoLocal);
+        setAreaFavorita(areaLocal);
+        setMetaSemanal(metaLocal);
+
+        setObjetivoPersonal(
+          objetivoLocal,
+        );
+
+        setDiasCompletados(
+          leerArreglo(
+            "diasPracticaMDI",
+          ).length,
+        );
+
+        setLikesComunidad(
+          leerArreglo(
+            "misLikesComunidad",
+          ).length,
+        );
 
         if (
-          !componenteActivo ||
-          datos.encontrado !== true ||
-          !datos.perfil
+          !telefonoGuardado
         ) {
+          setAviso(
+            "No encontramos un número de WhatsApp. Ingresa primero desde la página de acceso.",
+          );
+
+          setEstadoGuardado(
+            "error",
+          );
+
+          setConsultando(false);
           return;
         }
 
-        const perfil = datos.perfil;
+        try {
+          const parametros =
+            new URLSearchParams({
+              whatsapp:
+                telefonoGuardado,
+            });
 
-        const nombreRecuperado = String(
-          perfil.nombre || nombreLocal,
-        ).trim();
+          const respuesta =
+            await fetch(
+              `/api/diamantes?${parametros.toString()}`,
+              {
+                method:
+                  "GET",
+                cache:
+                  "no-store",
+              },
+            );
 
-        const cumpleRecuperado = String(
-          perfil.fechaCumpleanos ||
-            cumpleLocal,
-        ).trim();
+          const datos =
+            (await respuesta.json()) as RespuestaDiamantes;
 
-        const avatarRecuperado =
-          String(
-            perfil.avatar || avatarLocal,
-          ).trim() || avatares[0].url;
+          if (
+            !respuesta.ok
+          ) {
+            throw new Error(
+              datos.mensaje ||
+                `Error ${respuesta.status}`,
+            );
+          }
 
-        const tipoRecuperado =
-          String(
-            perfil.tipoExplorador ||
-              tipoLocal,
-          ).trim() || tiposExplorador[0];
+          if (
+            !componenteActivo
+          ) {
+            return;
+          }
 
-        const areaRecuperada =
-          String(
-            perfil.areaFavorita ||
-              areaLocal,
-          ).trim() || areasFavoritas[0];
+          if (
+            datos.ok !== true ||
+            !datos.cliente
+          ) {
+            throw new Error(
+              datos.mensaje ||
+                "El cliente no fue encontrado en Google Sheets.",
+            );
+          }
 
-        const metaRecuperada =
-          limitarMeta(
-            perfil.metaSemanal ??
-              metaLocal,
+          const cliente =
+            datos.cliente;
+
+          const nombreRecuperado =
+            String(
+              cliente.nombre ||
+                nombreLocal,
+            ).trim();
+
+          setNombre(
+            nombreRecuperado,
           );
 
-        const objetivoRecuperado =
-          String(
-            perfil.objetivoPersonal ||
-              objetivoLocal,
-          ).trim();
+          setTelefono(
+            cliente.whatsapp ||
+              telefonoGuardado,
+          );
 
-        const accesoRecuperado =
-          String(
-            perfil.ultimoAcceso ||
-              accesoRegistrado,
-          ).trim();
+          setDiamantesDisponibles(
+            Number(
+              cliente.diamantesDisponibles,
+            ) || 0,
+          );
 
-        setNombre(nombreRecuperado);
-        setFechaCumple(cumpleRecuperado);
-        setAvatar(avatarRecuperado);
-        setTipoExplorador(tipoRecuperado);
-        setAreaFavorita(areaRecuperada);
-        setMetaSemanal(metaRecuperada);
-        setObjetivoPersonal(
-          objetivoRecuperado,
-        );
-        setFechaAcceso(accesoRecuperado);
+          setDiamantesGanados(
+            Number(
+              cliente.diamantesGanados,
+            ) || 0,
+          );
 
-        guardarPerfilLocal({
-          nombre: nombreRecuperado,
-          fechaCumple: cumpleRecuperado,
-          avatar: avatarRecuperado,
-          tipoExplorador: tipoRecuperado,
-          areaFavorita: areaRecuperada,
-          metaSemanal: metaRecuperada,
-          objetivoPersonal:
-            objetivoRecuperado,
-        });
-      } catch (error) {
-        console.warn(
-          "No se pudo recuperar el perfil:",
-          error,
-        );
-      } finally {
-        if (componenteActivo) {
-          setConsultandoPerfil(false);
+          setDiamantesCanjeados(
+            Number(
+              cliente.diamantesCanjeados,
+            ) || 0,
+          );
+
+          setRacha(
+            Number(
+              cliente.diasRacha,
+            ) || 0,
+          );
+
+          setMejorRacha(
+            Number(
+              cliente.mejorRacha,
+            ) || 0,
+          );
+
+          setNivelDiamantes(
+            cliente.nivel ||
+              "NOVATO",
+          );
+
+          setEstadoMembresia(
+            cliente.estadoMembresia ||
+              "PENDIENTE",
+          );
+
+          setPlanMembresia(
+            cliente.plan || "",
+          );
+
+          setFechaInicio(
+            cliente.fechaInicio ||
+              "",
+          );
+
+          setFechaFin(
+            cliente.fechaFin || "",
+          );
+
+          localStorage.setItem(
+            "nombreUsuario",
+            nombreRecuperado,
+          );
+
+          localStorage.setItem(
+            "rachaMDI",
+            String(
+              cliente.diasRacha ||
+                0,
+            ),
+          );
+
+          window.dispatchEvent(
+            new Event(
+              "perfilActualizadoMDI",
+            ),
+          );
+        } catch (error) {
+          if (
+            componenteActivo
+          ) {
+            setAviso(
+              error instanceof Error
+                ? error.message
+                : "No se pudo consultar Google Sheets.",
+            );
+
+            setEstadoGuardado(
+              "error",
+            );
+          }
+        } finally {
+          if (
+            componenteActivo
+          ) {
+            setConsultando(
+              false,
+            );
+          }
         }
-      }
-    };
+      };
 
     void cargarPerfil();
 
     return () => {
-      componenteActivo = false;
+      componenteActivo =
+        false;
     };
   }, []);
 
-  /* ===================================================
-     DATOS CALCULADOS
-  =================================================== */
-
-  const nivel = useMemo(
-    () => obtenerNivel(racha),
-    [racha],
-  );
-
-  const progresoNivel = Math.min(
-    100,
-    Math.round(
-      (racha / nivel.siguiente) * 100,
-    ),
-  );
-
   const diasCumple =
-    diasHastaCumpleanos(fechaCumple);
+    diasHastaCumpleanos(
+      fechaCumple,
+    );
 
   const perfilCompletado =
     useMemo(() => {
@@ -707,11 +701,15 @@ export default function Perfil() {
       ];
 
       const completos =
-        campos.filter(Boolean).length;
+        campos.filter(
+          Boolean,
+        ).length;
 
       return Math.round(
-        (completos / campos.length) *
-          100,
+        (
+          completos /
+          campos.length
+        ) * 100,
       );
     }, [
       nombre,
@@ -724,165 +722,97 @@ export default function Perfil() {
 
   const avatarSeleccionado =
     avatares.find(
-      (item) => item.url === avatar,
+      (item) =>
+        item.url === avatar,
     );
 
-  /* ===================================================
-     GUARDAR PERFIL
-  =================================================== */
-
-  const guardarPerfil = async () => {
+  const guardarPerfil = () => {
     const nombreLimpio =
       nombre.trim();
 
     if (!nombreLimpio) {
-      setEstadoGuardado("error");
+      setEstadoGuardado(
+        "error",
+      );
 
       setAviso(
-        "Escribe tu nombre antes de guardar el perfil.",
+        "Escribe tu nombre antes de guardar.",
       );
 
       return;
     }
 
-    const idUsuario =
-      telefono ||
-      localStorage.getItem(
-        "telefonoAcceso",
-      ) ||
-      localStorage.getItem(
-        "telefonoUsuario",
-      ) ||
-      "";
-
-    if (!idUsuario) {
-      setEstadoGuardado("error");
-
-      setAviso(
-        "No encontramos el número de WhatsApp asociado al acceso. Vuelve a ingresar desde la página de acceso.",
-      );
-
-      return;
-    }
-
-    setEstadoGuardado("guardando");
-
-    setAviso(
-      "Guardando tu pasaporte digital...",
+    setEstadoGuardado(
+      "guardando",
     );
 
-    const parametros =
-      new URLSearchParams({
-        accion: "guardar",
-        id: idUsuario,
-        nombre: nombreLimpio,
-        fecha: fechaCumple,
-        avatar,
-        acceso: fechaAcceso,
-        tipo: tipoExplorador,
-        area: areaFavorita,
-        meta: metaSemanal.toString(),
-        objetivo:
-          objetivoPersonal.trim(),
-      });
+    setAviso(
+      "Guardando tu pasaporte...",
+    );
 
-    try {
-      const respuesta = await fetch(
-        `${URL_SCRIPT}?${parametros.toString()}`,
-        {
-          method: "GET",
-          cache: "no-store",
-        },
-      );
+    localStorage.setItem(
+      "nombreUsuario",
+      nombreLimpio,
+    );
 
-      if (!respuesta.ok) {
-        throw new Error(
-          `Error ${respuesta.status}`,
-        );
-      }
+    localStorage.setItem(
+      "cumpleUsuario",
+      fechaCumple,
+    );
 
-      const datos =
-        (await respuesta.json()) as RespuestaPerfil;
+    localStorage.setItem(
+      "avatarUsuario",
+      avatar,
+    );
 
-      const guardadoCorrecto =
-        datos.status === "ok" ||
-        datos.ok === true ||
-        datos.exito === true;
+    localStorage.setItem(
+      "tipoExploradorMDI",
+      tipoExplorador,
+    );
 
-      if (!guardadoCorrecto) {
-        throw new Error(
-          datos.error ||
-            "Google no confirmó el guardado.",
-        );
-      }
+    localStorage.setItem(
+      "areaFavoritaMDI",
+      areaFavorita,
+    );
 
-      guardarPerfilLocal({
-        nombre: nombreLimpio,
-        fechaCumple,
-        avatar,
-        tipoExplorador,
-        areaFavorita,
-        metaSemanal,
-        objetivoPersonal:
-          objetivoPersonal.trim(),
-      });
+    localStorage.setItem(
+      "metaSemanalMDI",
+      String(metaSemanal),
+    );
 
-      setNombre(nombreLimpio);
+    localStorage.setItem(
+      "objetivoPersonalMDI",
+      objetivoPersonal.trim(),
+    );
 
-      setEstadoGuardado("exito");
+    window.dispatchEvent(
+      new Event(
+        "perfilActualizadoMDI",
+      ),
+    );
 
-      setAviso(
-        `¡Pasaporte actualizado! El menú ya puede saludarte como ${nombreLimpio.split(/\s+/)[0]}.`,
-      );
-    } catch (error) {
-      console.error(
-        "Error al guardar el perfil:",
-        error,
-      );
+    setNombre(
+      nombreLimpio,
+    );
 
-      setEstadoGuardado("error");
+    setEstadoGuardado(
+      "exito",
+    );
 
-      setAviso(
-        error instanceof Error
-          ? error.message
-          : "No pudimos guardar el perfil.",
-      );
-    }
+    setAviso(
+      `¡Pasaporte actualizado! Ahora eres ${nombreLimpio.split(/\s+/)[0]}.`,
+    );
   };
-
-  /* ===================================================
-     PÁGINA
-  =================================================== */
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-950 via-indigo-950 to-purple-950 px-4 pb-24 pt-24 text-white sm:px-6">
-      {/* FONDO ESPACIAL */}
-
       <div className="pointer-events-none absolute -left-44 top-10 h-[36rem] w-[36rem] rounded-full bg-blue-600/25 blur-3xl" />
 
       <div className="pointer-events-none absolute -right-44 top-32 h-[34rem] w-[34rem] rounded-full bg-fuchsia-600/20 blur-3xl" />
 
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl" />
 
-      <span className="pointer-events-none absolute left-[7%] top-48 hidden text-6xl opacity-50 lg:block">
-        👤
-      </span>
-
-      <span className="pointer-events-none absolute right-[8%] top-64 hidden text-7xl opacity-50 lg:block">
-        🚀
-      </span>
-
-      <span className="pointer-events-none absolute left-[11%] top-[65%] hidden text-4xl opacity-35 lg:block">
-        ⭐
-      </span>
-
-      <span className="pointer-events-none absolute right-[12%] top-[72%] hidden text-4xl opacity-35 lg:block">
-        🪐
-      </span>
-
       <div className="relative z-10 mx-auto max-w-7xl">
-        {/* ENCABEZADO */}
-
         <header className="mx-auto mb-10 max-w-4xl text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-violet-300/30 bg-violet-300/10 px-4 py-2 text-sm font-black tracking-wide text-violet-200 backdrop-blur">
             🪪 IDENTIDAD DE EXPLORADOR
@@ -893,28 +823,24 @@ export default function Perfil() {
           </h1>
 
           <p className="mx-auto mt-4 max-w-2xl text-base font-medium leading-relaxed text-blue-100/70 md:text-lg">
-            Personaliza tu identidad, descubre
-            tu nivel y conserva los logros
-            alcanzados dentro de Mundo Digital
-            Infantil.
+            Personaliza tu identidad,
+            consulta tus diamantes y
+            conserva todos tus logros.
           </p>
 
-          {consultandoPerfil && (
+          {consultando && (
             <div className="mx-auto mt-5 inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-5 py-3 text-sm font-bold text-cyan-200">
               <span className="animate-spin">
                 ✨
               </span>
 
-              Recuperando tu pasaporte...
+              Consultando Google
+              Sheets...
             </div>
           )}
         </header>
 
-        {/* TARJETAS PRINCIPALES */}
-
         <section className="mb-8 grid gap-7 lg:grid-cols-[0.9fr_1.1fr]">
-          {/* IDENTIDAD */}
-
           <article className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <div className="pointer-events-none absolute -right-16 -top-16 text-[13rem] opacity-[0.05]">
               🚀
@@ -922,7 +848,7 @@ export default function Perfil() {
 
             <div className="relative text-center">
               <div className="relative mx-auto h-44 w-44">
-                <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 blur-xl opacity-40" />
+                <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 opacity-40 blur-xl" />
 
                 <img
                   src={avatar}
@@ -941,7 +867,7 @@ export default function Perfil() {
                 />
 
                 <span className="absolute -bottom-2 -right-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-yellow-300 to-orange-400 text-3xl shadow-xl">
-                  {nivel.icono}
+                  💎
                 </span>
               </div>
 
@@ -951,65 +877,62 @@ export default function Perfil() {
               </p>
 
               <h2 className="mt-2 text-3xl font-black text-white">
-                {nombre || "Nuevo explorador"}
+                {nombre ||
+                  "Nuevo explorador"}
               </h2>
 
               <p className="mt-2 font-bold text-violet-200">
-                {nivel.nombre}
+                Nivel{" "}
+                {nivelDiamantes}
               </p>
 
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 <span
                   className={`rounded-full border px-4 py-2 text-xs font-black ${
-                    modoAcceso === "vip"
+                    estadoMembresia.toUpperCase() ===
+                    "ACTIVA"
                       ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
-                      : modoAcceso === "prueba"
-                        ? "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
-                        : "border-white/10 bg-white/5 text-blue-100/50"
+                      : "border-yellow-300/30 bg-yellow-300/10 text-yellow-200"
                   }`}
                 >
-                  {modoAcceso === "vip"
-                    ? "💎 Explorador VIP"
-                    : modoAcceso === "prueba"
-                      ? "⏱️ Prueba activa"
-                      : "🌌 Explorador visitante"}
+                  💳 Membresía{" "}
+                  {estadoMembresia}
                 </span>
 
+                {planMembresia && (
+                  <span className="rounded-full border border-violet-300/30 bg-violet-300/10 px-4 py-2 text-xs font-black text-violet-200">
+                    🚀 Plan{" "}
+                    {planMembresia}
+                  </span>
+                )}
+
                 <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-black text-blue-100/65">
-                  📱 {mascararTelefono(telefono)}
+                  📱{" "}
+                  {mascararTelefono(
+                    telefono,
+                  )}
                 </span>
               </div>
 
-              <div className="mt-7 rounded-3xl border border-white/10 bg-white/5 p-5 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-black text-white">
-                    Progreso de nivel
-                  </span>
+              <div className="mt-7 rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5">
+                <p className="text-sm font-black text-cyan-200">
+                  Diamantes
+                  disponibles
+                </p>
 
-                  <span className="text-sm font-black text-cyan-300">
-                    {racha}/{nivel.siguiente}
-                  </span>
-                </div>
+                <p className="mt-2 text-5xl font-black text-yellow-300">
+                  💎{" "}
+                  {diamantesDisponibles}
+                </p>
 
-                <div className="mt-3 h-4 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-violet-400 to-pink-400 transition-all duration-700"
-                    style={{
-                      width: `${progresoNivel}%`,
-                    }}
-                  />
-                </div>
-
-                <p className="mt-3 text-xs leading-relaxed text-blue-100/50">
-                  Continúa completando misiones
-                  para alcanzar el siguiente
-                  nivel.
+                <p className="mt-3 text-xs text-blue-100/55">
+                  Usa tus diamantes
+                  para reclamar premios
+                  y beneficios.
                 </p>
               </div>
             </div>
           </article>
-
-          {/* ESTADÍSTICAS */}
 
           <article className="rounded-[2.5rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-pink-300">
@@ -1037,43 +960,43 @@ export default function Perfil() {
 
               <div className="rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-5 text-center">
                 <span className="text-4xl">
-                  ⭐
+                  💎
                 </span>
 
                 <p className="mt-3 text-3xl font-black text-yellow-300">
-                  {diasCompletados}
+                  {diamantesGanados}
                 </p>
 
                 <p className="text-xs font-bold uppercase tracking-wide text-blue-100/45">
-                  Misiones logradas
+                  Diamantes ganados
                 </p>
               </div>
 
               <div className="rounded-3xl border border-pink-300/20 bg-pink-300/10 p-5 text-center">
                 <span className="text-4xl">
-                  ❤️
+                  🎁
                 </span>
 
                 <p className="mt-3 text-3xl font-black text-pink-300">
-                  {likesComunidad}
+                  {diamantesCanjeados}
                 </p>
 
                 <p className="text-xs font-bold uppercase tracking-wide text-blue-100/45">
-                  Reacciones dadas
+                  Diamantes canjeados
                 </p>
               </div>
 
               <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-center">
                 <span className="text-4xl">
-                  🪪
+                  🏆
                 </span>
 
                 <p className="mt-3 text-3xl font-black text-cyan-300">
-                  {perfilCompletado}%
+                  {mejorRacha}
                 </p>
 
                 <p className="text-xs font-bold uppercase tracking-wide text-blue-100/45">
-                  Perfil completo
+                  Mejor racha
                 </p>
               </div>
             </div>
@@ -1090,9 +1013,11 @@ export default function Perfil() {
                   </p>
 
                   <p className="mt-1 text-sm text-blue-100/60">
-                    {diasCumple === null
+                    {diasCumple ===
+                    null
                       ? "Agrega tu fecha de cumpleaños."
-                      : diasCumple === 0
+                      : diasCumple ===
+                          0
                         ? "¡Hoy es tu cumpleaños! 🎉"
                         : `Faltan ${diasCumple} días para tu cumpleaños.`}
                   </p>
@@ -1100,9 +1025,36 @@ export default function Perfil() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-5">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm font-black text-white">
+                  Inicio de membresía
+                </p>
+
+                <p className="mt-2 text-blue-100/60">
+                  📅{" "}
+                  {fechaInicio ||
+                    "Sin fecha"}
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <p className="text-sm font-black text-white">
+                  Fin de membresía
+                </p>
+
+                <p className="mt-2 text-blue-100/60">
+                  📅{" "}
+                  {fechaFin ||
+                    "Sin fecha"}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-3 rounded-3xl border border-white/10 bg-white/5 p-5">
               <p className="text-sm font-black text-white">
-                Última entrada a la plataforma
+                Última entrada a la
+                plataforma
               </p>
 
               <p className="mt-2 text-blue-100/60">
@@ -1112,69 +1064,101 @@ export default function Perfil() {
           </article>
         </section>
 
-        {/* EDICIÓN DEL PERFIL */}
-
         <section className="grid items-start gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-          {/* AVATARES */}
-
           <article className="rounded-[2.5rem] border border-white/10 bg-slate-900/70 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-yellow-300">
               Elige tu identidad
             </p>
 
             <h2 className="mt-2 text-3xl font-black text-white">
-              Tripulación de avatares
+              Tripulación de
+              avatares
             </h2>
 
             <p className="mt-3 text-sm leading-relaxed text-blue-100/60">
-              Selecciona el personaje que mejor
-              represente tu aventura digital.
+              Selecciona el
+              personaje que mejor
+              represente tu aventura
+              digital.
             </p>
 
             <div className="mt-7 grid grid-cols-4 gap-3 sm:grid-cols-5">
-              {avatares.map((item) => {
-                const seleccionado =
-                  item.url === avatar;
+              {avatares.map(
+                (item) => {
+                  const seleccionado =
+                    item.url ===
+                    avatar;
 
-                return (
-                  <button
-                    key={`${item.nombre}-${item.url}`}
-                    type="button"
-                    onClick={() =>
-                      setAvatar(item.url)
-                    }
-                    title={item.nombre}
-                    className={`relative aspect-square rounded-2xl border p-1.5 transition hover:-translate-y-1 ${
-                      seleccionado
-                        ? "border-yellow-300 bg-yellow-300/15 ring-2 ring-yellow-300/20"
-                        : "border-white/10 bg-white/5 hover:border-cyan-300/30 hover:bg-white/10"
-                    }`}
-                  >
-                    <img
-                      src={item.url}
-                      alt={item.nombre}
-                      className="h-full w-full rounded-xl object-cover"
-                      onError={(evento) => {
-                        evento.currentTarget.onerror =
-                          null;
+                  return (
+                    <button
+                      key={`${item.nombre}-${item.url}`}
+                      type="button"
+                      onClick={() =>
+                        setAvatar(
+                          item.url,
+                        )
+                      }
+                      title={
+                        item.nombre
+                      }
+                      className={`relative aspect-square rounded-2xl border p-1.5 transition hover:-translate-y-1 ${
+                        seleccionado
+                          ? "border-yellow-300 bg-yellow-300/15 ring-2 ring-yellow-300/20"
+                          : "border-white/10 bg-white/5 hover:border-cyan-300/30 hover:bg-white/10"
+                      }`}
+                    >
+                      <img
+                        src={
+                          item.url
+                        }
+                        alt={
+                          item.nombre
+                        }
+                        className="h-full w-full rounded-xl object-cover"
+                        onError={(
+                          evento,
+                        ) => {
+                          evento.currentTarget.onerror =
+                            null;
 
-                        evento.currentTarget.src =
-                          AVATAR_RESPALDO;
-                      }}
-                    />
+                          evento.currentTarget.src =
+                            AVATAR_RESPALDO;
+                        }}
+                      />
 
-                    {seleccionado && (
-                      <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-300 text-xs text-slate-950">
-                        ✓
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                      {seleccionado && (
+                        <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-yellow-300 text-xs font-black text-slate-950">
+                          ✓
+                        </span>
+                      )}
+                    </button>
+                  );
+                },
+              )}
+            </div>
+
+            <div className="mt-7 rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-black text-cyan-200">
+                  Perfil completo
+                </p>
+
+                <span className="font-black text-cyan-200">
+                  {perfilCompletado}
+                  %
+                </span>
+              </div>
+
+              <div className="mt-3 h-4 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 transition-all duration-700"
+                  style={{
+                    width: `${perfilCompletado}%`,
+                  }}
+                />
+              </div>
             </div>
           </article>
-
-          {/* FORMULARIO */}
 
           <article className="rounded-[2.5rem] border border-white/10 bg-slate-900/75 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
             <div className="flex items-start gap-4">
@@ -1188,7 +1172,8 @@ export default function Perfil() {
                 </p>
 
                 <h2 className="mt-1 text-3xl font-black text-white">
-                  Completa tu pasaporte
+                  Completa tu
+                  pasaporte
                 </h2>
               </div>
             </div>
@@ -1207,9 +1192,12 @@ export default function Perfil() {
                   type="text"
                   value={nombre}
                   maxLength={70}
-                  onChange={(evento) =>
+                  onChange={(
+                    evento,
+                  ) =>
                     setNombre(
-                      evento.target.value,
+                      evento.target
+                        .value,
                     )
                   }
                   placeholder="Ejemplo: María Pérez"
@@ -1222,16 +1210,22 @@ export default function Perfil() {
                   htmlFor="cumple"
                   className="mb-2 block text-sm font-black text-blue-100"
                 >
-                  Fecha de cumpleaños
+                  Fecha de
+                  cumpleaños
                 </label>
 
                 <input
                   id="cumple"
                   type="date"
-                  value={fechaCumple}
-                  onChange={(evento) =>
+                  value={
+                    fechaCumple
+                  }
+                  onChange={(
+                    evento,
+                  ) =>
                     setFechaCumple(
-                      evento.target.value,
+                      evento.target
+                        .value,
                     )
                   }
                   className="w-full rounded-2xl border border-white/10 bg-slate-950/50 p-4 text-white outline-none focus:border-pink-300 focus:ring-4 focus:ring-pink-300/10"
@@ -1243,15 +1237,21 @@ export default function Perfil() {
                   htmlFor="tipo"
                   className="mb-2 block text-sm font-black text-blue-100"
                 >
-                  Tipo de explorador
+                  Tipo de
+                  explorador
                 </label>
 
                 <select
                   id="tipo"
-                  value={tipoExplorador}
-                  onChange={(evento) =>
+                  value={
+                    tipoExplorador
+                  }
+                  onChange={(
+                    evento,
+                  ) =>
                     setTipoExplorador(
-                      evento.target.value,
+                      evento.target
+                        .value,
                     )
                   }
                   className="w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-white outline-none focus:border-violet-300"
@@ -1259,8 +1259,12 @@ export default function Perfil() {
                   {tiposExplorador.map(
                     (tipo) => (
                       <option
-                        key={tipo}
-                        value={tipo}
+                        key={
+                          tipo
+                        }
+                        value={
+                          tipo
+                        }
                       >
                         {tipo}
                       </option>
@@ -1279,10 +1283,15 @@ export default function Perfil() {
 
                 <select
                   id="area"
-                  value={areaFavorita}
-                  onChange={(evento) =>
+                  value={
+                    areaFavorita
+                  }
+                  onChange={(
+                    evento,
+                  ) =>
                     setAreaFavorita(
-                      evento.target.value,
+                      evento.target
+                        .value,
                     )
                   }
                   className="w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-white outline-none focus:border-yellow-300"
@@ -1290,8 +1299,12 @@ export default function Perfil() {
                   {areasFavoritas.map(
                     (area) => (
                       <option
-                        key={area}
-                        value={area}
+                        key={
+                          area
+                        }
+                        value={
+                          area
+                        }
                       >
                         {area}
                       </option>
@@ -1300,8 +1313,6 @@ export default function Perfil() {
                 </select>
               </div>
             </div>
-
-            {/* META SEMANAL */}
 
             <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-5">
               <div className="flex items-center justify-between gap-4">
@@ -1314,8 +1325,8 @@ export default function Perfil() {
                   </label>
 
                   <p className="mt-1 text-sm text-blue-100/50">
-                    ¿Cuántos días deseas
-                    practicar?
+                    ¿Cuántos días
+                    deseas practicar?
                   </p>
                 </div>
 
@@ -1329,19 +1340,22 @@ export default function Perfil() {
                 type="range"
                 min="1"
                 max="7"
-                value={metaSemanal}
-                onChange={(evento) =>
+                value={
+                  metaSemanal
+                }
+                onChange={(
+                  evento,
+                ) =>
                   setMetaSemanal(
                     Number(
-                      evento.target.value,
+                      evento.target
+                        .value,
                     ),
                   )
                 }
                 className="mt-5 w-full accent-yellow-300"
               />
             </div>
-
-            {/* MISIÓN PERSONAL */}
 
             <div className="mt-5">
               <label
@@ -1353,12 +1367,17 @@ export default function Perfil() {
 
               <textarea
                 id="objetivo"
-                value={objetivoPersonal}
+                value={
+                  objetivoPersonal
+                }
                 maxLength={250}
                 rows={4}
-                onChange={(evento) =>
+                onChange={(
+                  evento,
+                ) =>
                   setObjetivoPersonal(
-                    evento.target.value,
+                    evento.target
+                      .value,
                   )
                 }
                 placeholder="Ejemplo: Quiero aprender nuevas actividades para compartir con mi familia..."
@@ -1366,16 +1385,17 @@ export default function Perfil() {
               />
 
               <p className="mt-2 text-right text-xs text-blue-100/35">
-                {objetivoPersonal.length}/250
+                {
+                  objetivoPersonal.length
+                }
+                /250
               </p>
             </div>
 
-            {/* BOTÓN GUARDAR */}
-
             <button
               type="button"
-              onClick={() =>
-                void guardarPerfil()
+              onClick={
+                guardarPerfil
               }
               disabled={
                 estadoGuardado ===
@@ -1394,9 +1414,11 @@ export default function Perfil() {
                 role="status"
                 aria-live="polite"
                 className={`mt-5 rounded-2xl border p-4 text-sm font-bold ${
-                  estadoGuardado === "exito"
+                  estadoGuardado ===
+                  "exito"
                     ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-200"
-                    : estadoGuardado === "error"
+                    : estadoGuardado ===
+                        "error"
                       ? "border-rose-300/30 bg-rose-300/10 text-rose-200"
                       : "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
                 }`}
@@ -1407,9 +1429,71 @@ export default function Perfil() {
           </article>
         </section>
 
-        {/* ACCESOS RÁPIDOS */}
+        <section className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-3xl border border-yellow-300/20 bg-yellow-300/10 p-6 text-center shadow-xl">
+            <span className="text-4xl">
+              ⭐
+            </span>
 
-        <section className="mt-8">
+            <p className="mt-3 text-3xl font-black text-yellow-300">
+              {diasCompletados}
+            </p>
+
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-blue-100/50">
+              Misiones locales
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-pink-300/20 bg-pink-300/10 p-6 text-center shadow-xl">
+            <span className="text-4xl">
+              ❤️
+            </span>
+
+            <p className="mt-3 text-3xl font-black text-pink-300">
+              {likesComunidad}
+            </p>
+
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-blue-100/50">
+              Reacciones dadas
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-violet-300/20 bg-violet-300/10 p-6 text-center shadow-xl">
+            <span className="text-4xl">
+              🪪
+            </span>
+
+            <p className="mt-3 text-3xl font-black text-violet-300">
+              {perfilCompletado}%
+            </p>
+
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-blue-100/50">
+              Perfil completo
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-6 text-center shadow-xl">
+            <span className="text-4xl">
+              🚀
+            </span>
+
+            <p className="mt-3 text-xl font-black text-cyan-300">
+              {modoAcceso ===
+              "vip"
+                ? "VIP"
+                : modoAcceso ===
+                    "prueba"
+                  ? "PRUEBA"
+                  : "VISITANTE"}
+            </p>
+
+            <p className="mt-1 text-xs font-bold uppercase tracking-wide text-blue-100/50">
+              Tipo de acceso
+            </p>
+          </div>
+        </section>
+
+        <section className="mt-10">
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-pink-300">
               Continúa la aventura
@@ -1425,54 +1509,70 @@ export default function Perfil() {
               {
                 href: "/biblioteca",
                 icono: "📚",
-                titulo: "Explorar materiales",
+                titulo:
+                  "Explorar materiales",
                 texto:
                   "Visita la Biblioteca Estelar.",
               },
               {
                 href: "/tecnologia",
                 icono: "💻",
-                titulo: "Descubrir tecnología",
+                titulo:
+                  "Descubrir tecnología",
                 texto:
                   "Entra al Laboratorio Tech.",
               },
               {
                 href: "/comunidad",
                 icono: "💛",
-                titulo: "Compartir una idea",
+                titulo:
+                  "Compartir una idea",
                 texto:
                   "Participa en la comunidad.",
               },
               {
                 href: "/calendario",
                 icono: "🏆",
-                titulo: "Completar la racha",
+                titulo:
+                  "Completar la racha",
                 texto:
                   "Reclama tu estrella diaria.",
               },
-            ].map((mision) => (
-              <Link
-                key={mision.href}
-                href={mision.href}
-                className="group rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-xl backdrop-blur transition hover:-translate-y-2 hover:border-cyan-300/30 hover:bg-white/10"
-              >
-                <span className="text-5xl">
-                  {mision.icono}
-                </span>
+            ].map(
+              (mision) => (
+                <Link
+                  key={
+                    mision.href
+                  }
+                  href={
+                    mision.href
+                  }
+                  className="group rounded-3xl border border-white/10 bg-white/5 p-6 text-center shadow-xl backdrop-blur transition hover:-translate-y-2 hover:border-cyan-300/30 hover:bg-white/10"
+                >
+                  <span className="text-5xl">
+                    {
+                      mision.icono
+                    }
+                  </span>
 
-                <h3 className="mt-4 font-black text-white">
-                  {mision.titulo}
-                </h3>
+                  <h3 className="mt-4 font-black text-white">
+                    {
+                      mision.titulo
+                    }
+                  </h3>
 
-                <p className="mt-2 text-sm text-blue-100/50">
-                  {mision.texto}
-                </p>
+                  <p className="mt-2 text-sm text-blue-100/50">
+                    {
+                      mision.texto
+                    }
+                  </p>
 
-                <span className="mt-4 inline-block font-black text-cyan-300 transition group-hover:translate-x-1">
-                  Iniciar →
-                </span>
-              </Link>
-            ))}
+                  <span className="mt-4 inline-block font-black text-cyan-300 transition group-hover:translate-x-1">
+                    Iniciar →
+                  </span>
+                </Link>
+              ),
+            )}
           </div>
         </section>
       </div>
