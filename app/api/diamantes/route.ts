@@ -1,9 +1,34 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const whatsapp =
+    request.nextUrl.searchParams
+      .get("whatsapp")
+      ?.replace(/\D/g, "") || "";
+
+  if (!whatsapp) {
+    return NextResponse.json(
+      {
+        ok: false,
+        mensaje:
+          "Debes enviar un número de WhatsApp.",
+      },
+      {
+        status: 400,
+      },
+    );
+  }
+
   return NextResponse.json({
     ok: true,
-    mensaje: "Sistema de diamantes funcionando",
-    diamantes: 100,
+    cliente: {
+      whatsapp,
+      nombre: "Cliente de prueba",
+      diamantesDisponibles: 100,
+      diamantesGanados: 150,
+      diamantesCanjeados: 50,
+      nivel: "NOVATO",
+      diasRacha: 3,
+    },
   });
 }
