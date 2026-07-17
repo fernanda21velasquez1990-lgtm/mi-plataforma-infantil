@@ -31,12 +31,14 @@ type TipoMensaje =
   | "advertencia"
   | "error";
 
+type TipoAcceso = "vip" | "prueba";
+
 type RespuestaAcceso = {
   ok?: boolean;
   encontrado?: boolean;
   permitido?: boolean;
   estado?: string;
-  tipoAcceso?: "vip" | "prueba";
+  tipoAcceso?: TipoAcceso;
   nuevaPrueba?: boolean;
   inicioPrueba?: number;
   finPrueba?: number;
@@ -52,7 +54,9 @@ type RespuestaAcceso = {
 ===================================================== */
 
 function limpiarTelefono(valor: string): string {
-  return valor.replace(/\D/g, "").slice(0, 15);
+  return valor
+    .replace(/\D/g, "")
+    .slice(0, 15);
 }
 
 function normalizarEstado(valor: unknown): string {
@@ -68,21 +72,30 @@ function normalizarEstado(valor: unknown): string {
 export default function Acceso() {
   const router = useRouter();
 
-  const lecturaInicialRealizada = useRef(false);
+  const lecturaInicialRealizada =
+    useRef(false);
 
-  const [telefono, setTelefono] = useState("");
-  const [modoPrueba, setModoPrueba] = useState(false);
-  const [mensaje, setMensaje] = useState("");
+  const [telefono, setTelefono] =
+    useState("");
+
+  const [modoPrueba, setModoPrueba] =
+    useState(false);
+
+  const [mensaje, setMensaje] =
+    useState("");
+
   const [tipoMensaje, setTipoMensaje] =
     useState<TipoMensaje>("neutral");
-  const [cargando, setCargando] = useState(false);
+
+  const [cargando, setCargando] =
+    useState(false);
 
   /* ===================================================
-     OCULTAR EL BOTÓN AZUL ☰ EN /acceso
+     OCULTAR BOTÓN DE MENÚ EN ESTA PÁGINA
   =================================================== */
 
   useEffect(() => {
-    const ocultarMenuAzul = () => {
+    const ocultarMenu = () => {
       const botones =
         document.querySelectorAll<HTMLButtonElement>(
           "button",
@@ -99,12 +112,12 @@ export default function Acceso() {
             .getAttribute("aria-label")
             ?.toLowerCase() || "";
 
-        const esMenu =
+        const esBotonMenu =
           texto === "☰" ||
           ariaLabel.includes("abrir menú") ||
           ariaLabel.includes("abrir menu");
 
-        if (esMenu) {
+        if (esBotonMenu) {
           boton.setAttribute(
             "data-menu-oculto-acceso",
             "true",
@@ -119,16 +132,20 @@ export default function Acceso() {
       });
     };
 
-    ocultarMenuAzul();
+    ocultarMenu();
 
-    const observador = new MutationObserver(
-      ocultarMenuAzul,
+    const observador =
+      new MutationObserver(
+        ocultarMenu,
+      );
+
+    observador.observe(
+      document.body,
+      {
+        childList: true,
+        subtree: true,
+      },
     );
-
-    observador.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
 
     return () => {
       observador.disconnect();
@@ -150,408 +167,447 @@ export default function Acceso() {
   }, []);
 
   /* ===================================================
-     GUARDAR SESIÓN Y ENTRAR
+     GUARDAR SESIÓN
   =================================================== */
 
-  const guardarSesionYEntrar = useCallback(
-    (
-      tipoAcceso: "vip" | "prueba",
-      numero: string,
-      datos: RespuestaAcceso,
-    ) => {
-      localStorage.setItem(
-        "telefonoAcceso",
-        numero,
-      );
+  const guardarSesionYEntrar =
+    useCallback(
+      (
+        tipoAcceso: TipoAcceso,
+        numero: string,
+        datos: RespuestaAcceso,
+      ) => {
+        const telefonoLimpio =
+          limpiarTelefono(numero);
 
-      if (tipoAcceso === "vip") {
-        localStorage.setItem(
-          "accesoVIP",
-          "true",
-        );
+        /*
+          Guardamos las dos claves porque otras
+          páginas pueden utilizar cualquiera de ellas.
+        */
 
         localStorage.setItem(
-          "modoAcceso",
-          "vip",
-        );
-
-        localStorage.removeItem(
-          "limitePrueba",
-        );
-      }
-
-      if (tipoAcceso === "prueba") {
-        let limitePrueba =
-          Number(datos.finPrueba || 0);
-
-        if (
-          !limitePrueba &&
-          datos.tiempoRestanteMs
-        ) {
-          limitePrueba =
-            Date.now() +
-            Number(
-              datos.tiempoRestanteMs,
-            );
-        }
-
-        if (!limitePrueba) {
-          setTipoMensaje("error");
-
-          setMensaje(
-            "⚠️ La prueba fue aprobada, pero no recibimos una hora de finalización válida.",
-          );
-
-          return;
-        }
-
-        localStorage.removeItem(
-          "accesoVIP",
+          "telefonoAcceso",
+          telefonoLimpio,
         );
 
         localStorage.setItem(
-          "modoAcceso",
-          "prueba",
+          "telefonoUsuario",
+          telefonoLimpio,
         );
 
         localStorage.setItem(
-          "limitePrueba",
-          limitePrueba.toString(),
-        );
-      }
-
-      window.setTimeout(() => {
-        router.replace(
-          RUTA_BIBLIOTECA,
-        );
-      }, 1200);
-    },
-    [router],
-  );
-
-  /* ===================================================
-     CONSULTAR GOOGLE SHEETS
-  =================================================== */
-
-  const procesarAcceso = useCallback(
-    async (
-      telefonoRecibido?: string,
-      accionForzada?:
-        | "verificar"
-        | "iniciarPrueba",
-    ) => {
-      const numero = limpiarTelefono(
-        telefonoRecibido ?? telefono,
-      );
-
-      setTelefono(numero);
-
-      if (!numero) {
-        setTipoMensaje("advertencia");
-
-        setMensaje(
-          "⚠️ Escribe tu número de WhatsApp.",
+          "diaSesion",
+          new Date().toLocaleDateString(
+            "es-ES",
+          ),
         );
 
-        return;
-      }
-
-      if (
-        numero.length < 10 ||
-        numero.length > 15
-      ) {
-        setTipoMensaje("advertencia");
-
-        setMensaje(
-          "⚠️ Incluye el código del país y escribe entre 10 y 15 números.",
-        );
-
-        return;
-      }
-
-      const accion =
-        accionForzada ??
-        (modoPrueba
-          ? "iniciarPrueba"
-          : "verificar");
-
-      setCargando(true);
-      setTipoMensaje("cargando");
-
-      setMensaje(
-        accion === "iniciarPrueba"
-          ? "🛰️ Comprobando si puedes utilizar la prueba gratuita..."
-          : "🛰️ Verificando tu acceso...",
-      );
-
-      const controlador =
-        new AbortController();
-
-      const tiempoMaximo =
-        window.setTimeout(() => {
-          controlador.abort();
-        }, 20000);
-
-      try {
-        const parametros =
-          new URLSearchParams({
-            accion,
-            whatsapp: numero,
-          });
-
-        const respuesta = await fetch(
-          `${URL_GOOGLE_SCRIPT}?${parametros.toString()}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            signal:
-              controlador.signal,
-          },
-        );
-
-        if (!respuesta.ok) {
-          throw new Error(
-            `Error ${respuesta.status}`,
-          );
-        }
-
-        const datos =
-          (await respuesta.json()) as RespuestaAcceso;
-
-        console.log(
-          "Respuesta de acceso:",
-          datos,
-        );
-
-        if (datos.error) {
-          setTipoMensaje("error");
-
-          setMensaje(
-            `⚠️ ${datos.error}`,
-          );
-
-          return;
-        }
-
-        const estado =
-          normalizarEstado(
-            datos.estado,
-          );
-
-        const esVIP =
-          datos.tipoAcceso === "vip" ||
-          [
-            "pagado",
-            "vip",
-            "activo",
-            "aprobado",
-          ].includes(estado);
-
-        /* ===============================================
-           ACCESO VIP
-        =============================================== */
-
-        if (
-          datos.permitido === true &&
-          esVIP
-        ) {
-          setTipoMensaje("exito");
-
-          setMensaje(
-            "✅ ¡Acceso VIP aprobado! Entrando a la biblioteca...",
-          );
-
-          guardarSesionYEntrar(
-            "vip",
-            numero,
-            datos,
-          );
-
-          return;
-        }
-
-        /* ===============================================
-           PRUEBA ACTIVA O NUEVA
-        =============================================== */
-
-        if (
-          datos.permitido === true &&
-          datos.tipoAcceso === "prueba"
-        ) {
-          const tiempoRestante =
-            Number(
-              datos.tiempoRestanteMs ||
-                0,
-            );
-
-          const minutosRestantes =
-            Math.max(
-              1,
-              Math.ceil(
-                tiempoRestante /
-                  60000,
-              ),
-            );
-
-          setTipoMensaje("exito");
-
-          setMensaje(
-            datos.nuevaPrueba
-              ? "⏱️ Tu prueba gratuita comenzó. Tienes 60 minutos para explorar la plataforma."
-              : `⏱️ Tu prueba sigue activa. Te quedan aproximadamente ${minutosRestantes} minutos.`,
-          );
-
-          guardarSesionYEntrar(
-            "prueba",
-            numero,
-            datos,
-          );
-
-          return;
-        }
-
-        /* ===============================================
-           PRUEBA FINALIZADA
-        =============================================== */
-
-        if (
-          estado ===
-            "prueba_finalizada" ||
-          estado ===
-            "pruebafinalizada" ||
-          datos.motivo ===
-            "prueba_ya_utilizada" ||
-          datos.motivo ===
-            "tiempo_finalizado"
-        ) {
-          localStorage.removeItem(
+        if (tipoAcceso === "vip") {
+          localStorage.setItem(
             "accesoVIP",
+            "true",
           );
 
-          localStorage.removeItem(
+          localStorage.setItem(
             "modoAcceso",
+            "vip",
           );
 
           localStorage.removeItem(
             "limitePrueba",
           );
-
-          setTipoMensaje(
-            "advertencia",
-          );
-
-          setMensaje(
-            "⏳ Este número ya utilizó su prueba gratuita de 60 minutos. Debes activar el acceso VIP para continuar.",
-          );
-
-          return;
         }
 
-        /* ===============================================
-           IP YA UTILIZADA
-        =============================================== */
+        if (tipoAcceso === "prueba") {
+          let limitePrueba =
+            Number(
+              datos.finPrueba || 0,
+            );
 
-        if (
-          datos.motivo ===
-          "ip_ya_utilizada"
-        ) {
-          setTipoMensaje(
-            "advertencia",
+          if (
+            !limitePrueba &&
+            datos.tiempoRestanteMs
+          ) {
+            limitePrueba =
+              Date.now() +
+              Number(
+                datos.tiempoRestanteMs,
+              );
+          }
+
+          if (!limitePrueba) {
+            setTipoMensaje("error");
+
+            setMensaje(
+              "⚠️ La prueba fue aprobada, pero no recibimos una hora de finalización válida.",
+            );
+
+            return;
+          }
+
+          localStorage.removeItem(
+            "accesoVIP",
           );
 
-          setMensaje(
-            "⛔ Esta conexión ya utilizó una prueba gratuita. Debes activar el acceso VIP para continuar.",
+          localStorage.setItem(
+            "modoAcceso",
+            "prueba",
           );
 
-          return;
+          localStorage.setItem(
+            "limitePrueba",
+            limitePrueba.toString(),
+          );
         }
 
-        /* ===============================================
-           PAGO PENDIENTE
-        =============================================== */
-
-        if (
-          estado === "pendiente" ||
-          datos.motivo ===
-            "pago_pendiente"
-        ) {
-          setTipoMensaje(
-            "advertencia",
-          );
-
-          setMensaje(
-            "🕐 Tu pago todavía está pendiente de confirmación. Inténtalo nuevamente cuando recibas la aprobación.",
-          );
-
-          return;
-        }
-
-        /* ===============================================
-           NÚMERO NO REGISTRADO
-        =============================================== */
-
-        if (
-          datos.encontrado === false &&
-          accion === "verificar"
-        ) {
-          setTipoMensaje("error");
-
-          setMensaje(
-            "❌ Este número no aparece como cliente aprobado. Verifica que sea el mismo número utilizado para enviar el comprobante.",
-          );
-
-          return;
-        }
-
-        setTipoMensaje(
-          "advertencia",
+        window.dispatchEvent(
+          new Event(
+            "perfilActualizadoMDI",
+          ),
         );
 
-        setMensaje(
-          datos.mensaje ||
-            "⚠️ No tienes un acceso activo en este momento.",
-        );
-      } catch (error) {
-        console.error(
-          "Error de acceso:",
-          error,
-        );
-
-        if (
-          error instanceof Error &&
-          error.name === "AbortError"
-        ) {
-          setTipoMensaje("error");
-
-          setMensaje(
-            "⚠️ La consulta tardó demasiado. Revisa tu conexión e inténtalo nuevamente.",
+        window.setTimeout(() => {
+          router.replace(
+            RUTA_BIBLIOTECA,
           );
-        } else {
-          setTipoMensaje("error");
-
-          setMensaje(
-            "⚠️ No pudimos conectarnos con Google Sheets. Inténtalo nuevamente.",
-          );
-        }
-      } finally {
-        window.clearTimeout(
-          tiempoMaximo,
-        );
-
-        setCargando(false);
-      }
-    },
-    [
-      telefono,
-      modoPrueba,
-      guardarSesionYEntrar,
-    ],
-  );
+        }, 1000);
+      },
+      [router],
+    );
 
   /* ===================================================
-     LEER LA DIRECCIÓN DE LA PÁGINA
+     CONSULTAR ACCESO
+  =================================================== */
 
-     /acceso?modo=prueba
+  const procesarAcceso =
+    useCallback(
+      async (
+        telefonoRecibido?: string,
+        accionForzada?:
+          | "verificar"
+          | "iniciarPrueba",
+      ) => {
+        const numero =
+          limpiarTelefono(
+            telefonoRecibido ??
+              telefono,
+          );
+
+        setTelefono(numero);
+
+        if (!numero) {
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            "⚠️ Escribe tu número de WhatsApp.",
+          );
+
+          return;
+        }
+
+        if (
+          numero.length < 10 ||
+          numero.length > 15
+        ) {
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            "⚠️ Incluye el código del país y escribe entre 10 y 15 números.",
+          );
+
+          return;
+        }
+
+        const accion =
+          accionForzada ??
+          (modoPrueba
+            ? "iniciarPrueba"
+            : "verificar");
+
+        setCargando(true);
+        setTipoMensaje("cargando");
+
+        setMensaje(
+          accion ===
+            "iniciarPrueba"
+            ? "🛰️ Comprobando si puedes utilizar la prueba gratuita..."
+            : "🛰️ Verificando tu acceso VIP...",
+        );
+
+        const controlador =
+          new AbortController();
+
+        const tiempoMaximo =
+          window.setTimeout(() => {
+            controlador.abort();
+          }, 20000);
+
+        try {
+          const parametros =
+            new URLSearchParams({
+              accion,
+              whatsapp: numero,
+            });
+
+          const respuesta =
+            await fetch(
+              `${URL_GOOGLE_SCRIPT}?${parametros.toString()}`,
+              {
+                method: "GET",
+                cache: "no-store",
+                signal:
+                  controlador.signal,
+              },
+            );
+
+          if (!respuesta.ok) {
+            throw new Error(
+              `Error ${respuesta.status}`,
+            );
+          }
+
+          const datos =
+            (await respuesta.json()) as RespuestaAcceso;
+
+          if (datos.error) {
+            setTipoMensaje("error");
+
+            setMensaje(
+              `⚠️ ${datos.error}`,
+            );
+
+            return;
+          }
+
+          const estado =
+            normalizarEstado(
+              datos.estado,
+            );
+
+          const esVIP =
+            datos.tipoAcceso ===
+              "vip" ||
+            [
+              "pagado",
+              "vip",
+              "activo",
+              "activa",
+              "aprobado",
+            ].includes(estado);
+
+          /* =============================================
+             ACCESO VIP APROBADO
+          ============================================= */
+
+          if (
+            datos.permitido ===
+              true &&
+            esVIP
+          ) {
+            setTipoMensaje("exito");
+
+            setMensaje(
+              "✅ ¡Acceso VIP aprobado! Entrando a la biblioteca...",
+            );
+
+            guardarSesionYEntrar(
+              "vip",
+              numero,
+              datos,
+            );
+
+            return;
+          }
+
+          /* =============================================
+             PRUEBA APROBADA
+          ============================================= */
+
+          if (
+            datos.permitido ===
+              true &&
+            datos.tipoAcceso ===
+              "prueba"
+          ) {
+            const tiempoRestante =
+              Number(
+                datos.tiempoRestanteMs ||
+                  0,
+              );
+
+            const minutosRestantes =
+              Math.max(
+                1,
+                Math.ceil(
+                  tiempoRestante /
+                    60000,
+                ),
+              );
+
+            setTipoMensaje("exito");
+
+            setMensaje(
+              datos.nuevaPrueba
+                ? "⏱️ Tu prueba gratuita comenzó. Tienes 60 minutos para explorar la plataforma."
+                : `⏱️ Tu prueba sigue activa. Te quedan aproximadamente ${minutosRestantes} minutos.`,
+            );
+
+            guardarSesionYEntrar(
+              "prueba",
+              numero,
+              datos,
+            );
+
+            return;
+          }
+
+          /* =============================================
+             PRUEBA FINALIZADA
+          ============================================= */
+
+          if (
+            estado ===
+              "prueba_finalizada" ||
+            estado ===
+              "pruebafinalizada" ||
+            datos.motivo ===
+              "prueba_ya_utilizada" ||
+            datos.motivo ===
+              "tiempo_finalizado"
+          ) {
+            localStorage.removeItem(
+              "accesoVIP",
+            );
+
+            localStorage.removeItem(
+              "modoAcceso",
+            );
+
+            localStorage.removeItem(
+              "limitePrueba",
+            );
+
+            setTipoMensaje(
+              "advertencia",
+            );
+
+            setMensaje(
+              "⏳ Este número ya utilizó su prueba gratuita. Debes activar el acceso VIP para continuar.",
+            );
+
+            return;
+          }
+
+          /* =============================================
+             IP YA UTILIZADA
+          ============================================= */
+
+          if (
+            datos.motivo ===
+            "ip_ya_utilizada"
+          ) {
+            setTipoMensaje(
+              "advertencia",
+            );
+
+            setMensaje(
+              "⛔ Esta conexión ya utilizó una prueba gratuita. Debes activar el acceso VIP para continuar.",
+            );
+
+            return;
+          }
+
+          /* =============================================
+             PAGO PENDIENTE
+          ============================================= */
+
+          if (
+            estado ===
+              "pendiente" ||
+            datos.motivo ===
+              "pago_pendiente"
+          ) {
+            setTipoMensaje(
+              "advertencia",
+            );
+
+            setMensaje(
+              "🕐 Tu pago todavía está pendiente de confirmación.",
+            );
+
+            return;
+          }
+
+          /* =============================================
+             NÚMERO NO REGISTRADO
+          ============================================= */
+
+          if (
+            datos.encontrado ===
+              false &&
+            accion === "verificar"
+          ) {
+            setTipoMensaje("error");
+
+            setMensaje(
+              "❌ Este número no aparece como cliente aprobado. Verifica que sea el mismo número utilizado para enviar el comprobante.",
+            );
+
+            return;
+          }
+
+          setTipoMensaje(
+            "advertencia",
+          );
+
+          setMensaje(
+            datos.mensaje ||
+              "⚠️ No tienes un acceso activo en este momento.",
+          );
+        } catch (error) {
+          console.error(
+            "Error de acceso:",
+            error,
+          );
+
+          if (
+            error instanceof Error &&
+            error.name ===
+              "AbortError"
+          ) {
+            setTipoMensaje("error");
+
+            setMensaje(
+              "⚠️ La consulta tardó demasiado. Revisa tu conexión e inténtalo nuevamente.",
+            );
+          } else {
+            setTipoMensaje("error");
+
+            setMensaje(
+              "⚠️ No pudimos conectarnos con Google Sheets. Inténtalo nuevamente.",
+            );
+          }
+        } finally {
+          window.clearTimeout(
+            tiempoMaximo,
+          );
+
+          setCargando(false);
+        }
+      },
+      [
+        telefono,
+        modoPrueba,
+        guardarSesionYEntrar,
+      ],
+    );
+
+  /* ===================================================
+     LEER PARÁMETROS DE LA URL
   =================================================== */
 
   useEffect(() => {
@@ -583,10 +639,14 @@ export default function Acceso() {
       parametros.get("auto") ===
       "1";
 
-    setModoPrueba(esModoPrueba);
+    setModoPrueba(
+      esModoPrueba,
+    );
 
     if (telefonoURL) {
-      setTelefono(telefonoURL);
+      setTelefono(
+        telefonoURL,
+      );
     }
 
     if (
@@ -607,7 +667,8 @@ export default function Acceso() {
   =================================================== */
 
   const enviarFormulario = (
-    evento: FormEvent<HTMLFormElement>,
+    evento:
+      FormEvent<HTMLFormElement>,
   ) => {
     evento.preventDefault();
 
@@ -615,7 +676,7 @@ export default function Acceso() {
   };
 
   /* ===================================================
-     WHATSAPP
+     ENLACE DE WHATSAPP
   =================================================== */
 
   const mensajeWhatsApp =
@@ -626,10 +687,6 @@ export default function Acceso() {
     `?text=${encodeURIComponent(
       mensajeWhatsApp,
     )}`;
-
-  /* ===================================================
-     COLOR DEL MENSAJE
-  =================================================== */
 
   const claseMensaje = {
     neutral:
@@ -761,7 +818,7 @@ export default function Acceso() {
               <ul className="mt-6 space-y-3 text-sm font-bold">
                 <li>✓ Una sola prueba por número</li>
                 <li>✓ Visualización de materiales</li>
-                <li>🔒 Descargas de biblioteca bloqueadas</li>
+                <li>🔒 Descargas bloqueadas</li>
               </ul>
             </div>
           </article>
@@ -799,7 +856,7 @@ export default function Acceso() {
           </article>
         </div>
 
-        {/* FORMULARIO */}
+        {/* FORMULARIO Y SOPORTE */}
 
         <div className="grid items-start gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <section className="rounded-[2.5rem] border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur-xl sm:p-9">
@@ -811,7 +868,9 @@ export default function Acceso() {
                     : "bg-gradient-to-br from-blue-500 to-cyan-400"
                 }`}
               >
-                {modoPrueba ? "⏱️" : "🔐"}
+                {modoPrueba
+                  ? "⏱️"
+                  : "🔐"}
               </span>
 
               <div>
@@ -831,7 +890,11 @@ export default function Acceso() {
               </div>
             </div>
 
-            <form onSubmit={enviarFormulario}>
+            <form
+              onSubmit={
+                enviarFormulario
+              }
+            >
               <label
                 htmlFor="telefono"
                 className="mb-2 block text-sm font-black"
@@ -861,6 +924,7 @@ export default function Acceso() {
 
                     if (mensaje) {
                       setMensaje("");
+
                       setTipoMensaje(
                         "neutral",
                       );
@@ -902,8 +966,6 @@ export default function Acceso() {
             )}
           </section>
 
-          {/* SOPORTE VIP */}
-
           <aside className="rounded-[2.5rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/15 to-green-500/5 p-6 shadow-2xl sm:p-8">
             <span className="text-5xl">
               💎
@@ -923,20 +985,25 @@ export default function Acceso() {
                 "Envía el comprobante",
                 "Espera la confirmación",
                 "Entra con tu WhatsApp",
-              ].map((elemento, indice) => (
-                <div
-                  key={elemento}
-                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
-                    {indice + 1}
-                  </span>
+              ].map(
+                (
+                  elemento,
+                  indice,
+                ) => (
+                  <div
+                    key={elemento}
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-300 font-black text-slate-950">
+                      {indice + 1}
+                    </span>
 
-                  <span className="font-bold">
-                    {elemento}
-                  </span>
-                </div>
-              ))}
+                    <span className="font-bold">
+                      {elemento}
+                    </span>
+                  </div>
+                ),
+              )}
             </div>
 
             <a
@@ -950,8 +1017,6 @@ export default function Acceso() {
           </aside>
         </div>
       </section>
-
-      {/* PIE DE PÁGINA */}
 
       <footer className="relative z-10 border-t border-white/10 bg-slate-950/80 px-5 py-8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 sm:flex-row">
